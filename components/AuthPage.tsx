@@ -174,7 +174,9 @@ export const AuthPage: React.FC = () => {
                     <div className="flex justify-between items-baseline">
                         <Label htmlFor="password">Password</Label>
                         {view === 'login' && (
-                            <button type="button" onClick={() => switchView('forgot_password')} className="text-xs text-blue-600 hover:underline dark:text-blue-400">Forgot Password?</button>
+                            <Tooltip text="Click to reset your password via email">
+                              <button type="button" onClick={() => switchView('forgot_password')} className="text-xs text-blue-600 hover:underline dark:text-blue-400">Forgot Password?</button>
+                            </Tooltip>
                         )}
                     </div>
                   <Tooltip text="Enter your password (minimum 6 characters)">
