@@ -5,6 +5,7 @@ import { Spotlight } from './components/magicui/spotlight';
 import { SparklesText } from './components/magicui/sparkles-text';
 import { useAuth } from './contexts/AuthContext';
 import { AuthPage } from './components/AuthPage';
+import { LandingPage } from './components/LandingPage';
 import { Spinner } from './components/Spinner';
 
 // Lazy load role-specific dashboards for code splitting
@@ -14,10 +15,14 @@ const AdminDashboard = lazy(() => import('./components/DatabasePlan').then(modul
 const ResetPasswordPage = lazy(() => import('./components/ResetPasswordPage').then(module => ({ default: module.ResetPasswordPage })));
 
 type UserDashboardView = 'dashboard' | 'new_letter_form';
+type AppView = 'landing' | 'auth' | 'dashboard';
+type AuthView = 'login' | 'signup';
 
 const App: React.FC = () => {
   const { user, isLoading, authEvent } = useAuth();
   const [userDashboardView, setUserDashboardView] = useState<UserDashboardView>('dashboard');
+  const [appView, setAppView] = useState<AppView>('landing');
+  const [authView, setAuthView] = useState<AuthView>('signup');
 
   if (isLoading) {
     return <Spinner />;
@@ -33,8 +38,27 @@ const App: React.FC = () => {
     );
   }
 
+  // Handle navigation between views
+  const handleGetStarted = () => {
+    setAuthView('signup');
+    setAppView('auth');
+  };
+
+  const handleLogin = () => {
+    setAuthView('login');
+    setAppView('auth');
+  };
+
+  const handleBackToLanding = () => {
+    setAppView('landing');
+  };
+
+  // Show landing page if no user and not in auth view
   if (!user) {
-    return <AuthPage />;
+    if (appView === 'auth') {
+      return <AuthPage initialView={authView} onBackToLanding={handleBackToLanding} />;
+    }
+    return <LandingPage onGetStarted={handleGetStarted} onLogin={handleLogin} />;
   }
 
   const renderDashboard = () => {
@@ -80,6 +104,7 @@ const App: React.FC = () => {
           <Header 
             userDashboardView={user.role === 'user' ? userDashboardView : undefined}
             setUserDashboardView={user.role === 'user' ? setUserDashboardView : undefined}
+            onBackToLanding={handleBackToLanding}
           />
           <div className="text-center absolute bottom-12 z-10 p-4">
             <h1 className="text-4xl font-bold tracking-tighter text-gray-100 sm:text-5xl">

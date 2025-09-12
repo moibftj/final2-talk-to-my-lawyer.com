@@ -6,9 +6,10 @@ import { IconLogo, IconUser } from '../constants';
 interface HeaderProps {
     userDashboardView?: 'dashboard' | 'new_letter_form';
     setUserDashboardView?: (view: 'dashboard' | 'new_letter_form') => void;
+    onBackToLanding?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ userDashboardView, setUserDashboardView }) => {
+export const Header: React.FC<HeaderProps> = ({ userDashboardView, setUserDashboardView, onBackToLanding }) => {
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
