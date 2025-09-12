@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Header } from './components/Header';
 import { Spotlight } from './components/magicui/spotlight';
 import { SparklesText } from './components/magicui/sparkles-text';
@@ -7,11 +7,11 @@ import { useAuth } from './contexts/AuthContext';
 import { AuthPage } from './components/AuthPage';
 import { Spinner } from './components/Spinner';
 
-// Import the new role-specific dashboards
-import { UserDashboard } from './components/Dashboard';
-import { EmployeeDashboard } from './components/ProjectRoadmap';
-import { AdminDashboard } from './components/DatabasePlan';
-import { ResetPasswordPage } from './components/ResetPasswordPage';
+// Lazy load role-specific dashboards for code splitting
+const UserDashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.UserDashboard })));
+const EmployeeDashboard = lazy(() => import('./components/ProjectRoadmap').then(module => ({ default: module.EmployeeDashboard })));
+const AdminDashboard = lazy(() => import('./components/DatabasePlan').then(module => ({ default: module.AdminDashboard })));
+const ResetPasswordPage = lazy(() => import('./components/ResetPasswordPage').then(module => ({ default: module.ResetPasswordPage })));
 
 type UserDashboardView = 'dashboard' | 'new_letter_form';
 
@@ -26,7 +26,11 @@ const App: React.FC = () => {
   // Supabase sends a PASSWORD_RECOVERY event when the user clicks the reset link.
   // We use this to show the password update form.
   if (authEvent === 'PASSWORD_RECOVERY') {
-    return <ResetPasswordPage />;
+    return (
+      <Suspense fallback={<Spinner />}>
+        <ResetPasswordPage />
+      </Suspense>
+    );
   }
 
   if (!user) {
@@ -34,15 +38,21 @@ const App: React.FC = () => {
   }
 
   const renderDashboard = () => {
-    switch (user.role) {
-      case 'admin':
-        return <AdminDashboard />;
-      case 'employee':
-        return <EmployeeDashboard />;
-      case 'user':
-      default:
-        return <UserDashboard currentView={userDashboardView} setCurrentView={setUserDashboardView} />;
-    }
+    return (
+      <Suspense fallback={<Spinner />}>
+        {(() => {
+          switch (user.role) {
+            case 'admin':
+              return <AdminDashboard />;
+            case 'employee':
+              return <EmployeeDashboard />;
+            case 'user':
+            default:
+              return <UserDashboard currentView={userDashboardView} setCurrentView={setUserDashboardView} />;
+          }
+        })()}
+      </Suspense>
+    );
   };
   
   const getTitle = () => {
