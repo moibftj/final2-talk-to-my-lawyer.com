@@ -5,6 +5,8 @@ import { LETTER_TEMPLATES, IconSpinner } from '../constants';
 import { ShinyButton } from './magicui/shiny-button';
 import { ShimmerButton } from './magicui/shimmer-button';
 import { SparklesText } from './magicui/sparkles-text';
+import { Tooltip } from './Tooltip';
+import { CompletionBanner, useBanners } from './CompletionBanner';
 import { generateLetterDraft, LetterTone, LetterLength } from '../services/aiService';
 import { isValidEmail } from '../lib/utils';
 import type { LetterRequest, LetterTemplate } from '../types';
@@ -62,6 +64,7 @@ interface LetterRequestFormProps {
 }
 
 export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubmit, onCancel, letterToEdit }) => {
+  const { banners, showSuccess, showError, showInfo } = useBanners();
   const [selectedTemplate, setSelectedTemplate] = useState<LetterTemplate | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [title, setTitle] = useState('');
@@ -116,6 +119,7 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubm
     setIsGenerating(true);
     setError(null);
     setAiDraft('');
+    showInfo('Generating Draft', 'AI is analyzing your inputs and creating a professional letter...');
     try {
       const draft = await generateLetterDraft({
         title,
@@ -126,8 +130,10 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubm
         length,
       });
       setAiDraft(draft);
+      showSuccess('Draft Generated!', 'Your AI-powered letter draft is ready for review.');
     } catch (err: any) {
       setError(err.message);
+      showError('Generation Failed', err.message || 'Unable to generate draft. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -136,6 +142,7 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubm
   const handleSaveLetter = async () => {
     if (!selectedTemplate) return;
     setIsSaving(true);
+    showInfo('Saving Letter', 'Saving your letter to the dashboard...');
     try {
         const letterData: Partial<LetterRequest> = {
             id: letterToEdit?.id, // Keep id if editing
@@ -148,9 +155,11 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubm
             priority: letterToEdit?.priority || 'medium',
         };
         await onFormSubmit(letterData);
+        showSuccess('Letter Saved!', 'Your letter has been saved to your dashboard.');
     } catch (error) {
         console.error("Failed to save letter:", error);
         setError("Could not save the letter. Please try again.");
+        showError('Save Failed', 'Could not save the letter. Please try again.');
     } finally {
         setIsSaving(false);
     }
@@ -159,11 +168,13 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubm
     const handleSendEmail = (e: React.FormEvent) => {
         e.preventDefault();
         setIsSending(true);
+        showInfo('Sending Email', `Sending your letter draft to ${attorneyEmail}...`);
         console.log(`Simulating sending email to: ${attorneyEmail} with content: ${aiDraft}`);
         // Simulate API call
         setTimeout(() => {
             setSendSuccess(true);
             setIsSending(false);
+            showSuccess('Email Sent!', `Your letter draft has been successfully sent to ${attorneyEmail}`);
             setTimeout(() => {
                 setShowSendForm(false);
                 setSendSuccess(false);
@@ -185,6 +196,7 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubm
     const handleExportPdf = () => {
         if (!aiDraft) return;
         setIsExporting(true);
+        showInfo('Exporting PDF', 'Creating your PDF document...');
         // Simulate processing time
         setTimeout(() => {
             const doc = new jsPDF();
@@ -202,6 +214,7 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubm
             const safeFilename = title.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'letter_draft';
             doc.save(`${safeFilename}.pdf`);
             setIsExporting(false);
+            showSuccess('PDF Exported!', `${safeFilename}.pdf has been downloaded to your device.`);
         }, 500);
     };
 
@@ -215,57 +228,75 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubm
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="template">Select a Template</Label>
-            <Select id="template" value={selectedTemplate?.value || ''} onChange={handleTemplateChange}>
-              {LETTER_TEMPLATES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </Select>
+            <Tooltip text="Choose a legal letter template that best matches your situation">
+              <Select id="template" value={selectedTemplate?.value || ''} onChange={handleTemplateChange}>
+                {LETTER_TEMPLATES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </Select>
+            </Tooltip>
             {selectedTemplate && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{selectedTemplate.description}</p>}
           </div>
 
           {selectedTemplate && selectedTemplate.requiredFields.map(field => (
             <div key={field}>
               <Label htmlFor={field}>{field}</Label>
-              <Input id={field} value={formData[field] || ''} onChange={(e) => handleFieldChange(field, e.target.value)} />
+              <Tooltip text={`Enter the ${field.toLowerCase()} for this legal matter`}>
+                <Input id={field} value={formData[field] || ''} onChange={(e) => handleFieldChange(field, e.target.value)} />
+              </Tooltip>
             </div>
           ))}
 
           <div>
             <Label htmlFor="title">Subject / Title of Letter</Label>
-            <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Final Demand for Payment" />
+            <Tooltip text="Enter a clear, descriptive title for your letter">
+              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Final Demand for Payment" />
+            </Tooltip>
           </div>
 
           <div>
             <Label htmlFor="context">Additional Context (Optional)</Label>
-            <Textarea id="context" value={additionalContext} onChange={(e) => setAdditionalContext(e.target.value)} placeholder="Provide any extra details the AI should consider..." />
+            <Tooltip text="Add any specific details, background information, or special circumstances" size="md">
+              <Textarea id="context" value={additionalContext} onChange={(e) => setAdditionalContext(e.target.value)} placeholder="Provide any extra details the AI should consider..." />
+            </Tooltip>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
              <div>
                 <Label htmlFor="tone">Tone of Voice</Label>
-                <Select id="tone" value={tone} onChange={e => setTone(e.target.value as LetterTone)}>
-                    <option>Formal</option>
-                    <option>Aggressive</option>
-                    <option>Conciliatory</option>
-                    <option>Neutral</option>
-                </Select>
+                <Tooltip text="Choose the appropriate tone for your legal matter - formal for standard communications, aggressive for demands">
+                  <Select id="tone" value={tone} onChange={e => setTone(e.target.value as LetterTone)}>
+                      <option>Formal</option>
+                      <option>Aggressive</option>
+                      <option>Conciliatory</option>
+                      <option>Neutral</option>
+                  </Select>
+                </Tooltip>
             </div>
              <div>
                 <Label htmlFor="length">Desired Length</Label>
-                <Select id="length" value={length} onChange={e => setLength(e.target.value as LetterLength)}>
-                    <option>Short</option>
-                    <option>Medium</option>
-                    <option>Long</option>
-                </Select>
+                <Tooltip text="Select letter length - Short (1 paragraph), Medium (2-3 paragraphs), Long (detailed)">
+                  <Select id="length" value={length} onChange={e => setLength(e.target.value as LetterLength)}>
+                      <option>Short</option>
+                      <option>Medium</option>
+                      <option>Long</option>
+                  </Select>
+                </Tooltip>
             </div>
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <button onClick={onCancel} className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">Cancel</button>
+          <Tooltip text="Cancel and return to dashboard">
+            <button onClick={onCancel} className="text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">Cancel</button>
+          </Tooltip>
           {isGenerating ? (
-            <ShinyButton disabled>
-                <SparklesText>Generating...</SparklesText>
-            </ShinyButton>
+            <Tooltip text="AI is generating your letter draft...">
+              <ShinyButton disabled>
+                  <SparklesText>Generating...</SparklesText>
+              </ShinyButton>
+            </Tooltip>
           ) : (
-            <ShimmerButton onClick={handleGenerateDraft}>Generate AI Draft</ShimmerButton>
+            <Tooltip text="Use AI to generate a professional legal letter based on your inputs">
+              <ShimmerButton onClick={handleGenerateDraft}>Generate AI Draft</ShimmerButton>
+            </Tooltip>
           )}
         </CardFooter>
       </Card>
@@ -290,27 +321,33 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubm
           </CardContent>
           <CardFooter className="flex flex-col gap-4 items-stretch pt-6">
              <div className="flex flex-col sm:flex-row gap-2 justify-end">
-                <button onClick={handleExportPdf} disabled={!aiDraft || isExporting} className="flex items-center justify-center gap-2 text-sm font-medium px-4 py-2 rounded-md transition-colors border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed">
-                    {isExporting ? <IconSpinner className="w-4 h-4 animate-spin" /> : <IconDownload className="w-4 h-4" />}
-                    {isExporting ? 'Exporting...' : 'Export as PDF'}
-                </button>
-                <button 
-                  onClick={() => { setShowSendForm(prev => !prev); setSendSuccess(false); }}
-                  disabled={!aiDraft}
-                  className="text-sm font-medium px-4 py-2 rounded-md transition-colors border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Send via Attorney's Email
-                </button>
-                 <ShimmerButton onClick={handleSaveLetter} disabled={!aiDraft || isSaving}>
-                    {isSaving ? (
-                        <span className="flex items-center gap-2">
-                            <IconSpinner className="h-4 w-4 animate-spin" />
-                            Saving...
-                        </span>
-                    ) : (
-                        'Save Letter'
-                    )}
-                </ShimmerButton>
+                <Tooltip text="Download your letter as a PDF file" position="bottom">
+                  <button onClick={handleExportPdf} disabled={!aiDraft || isExporting} className="flex items-center justify-center gap-2 text-sm font-medium px-4 py-2 rounded-md transition-colors border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                      {isExporting ? <IconSpinner className="w-4 h-4 animate-spin" /> : <IconDownload className="w-4 h-4" />}
+                      {isExporting ? 'Exporting...' : 'Export as PDF'}
+                  </button>
+                </Tooltip>
+                <Tooltip text="Send the letter draft directly to an attorney via email" position="bottom">
+                  <button 
+                    onClick={() => { setShowSendForm(prev => !prev); setSendSuccess(false); }}
+                    disabled={!aiDraft}
+                    className="text-sm font-medium px-4 py-2 rounded-md transition-colors border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Send via Attorney's Email
+                  </button>
+                </Tooltip>
+                 <Tooltip text="Save this letter to your dashboard for later use" position="bottom">
+                   <ShimmerButton onClick={handleSaveLetter} disabled={!aiDraft || isSaving}>
+                      {isSaving ? (
+                          <span className="flex items-center gap-2">
+                              <IconSpinner className="h-4 w-4 animate-spin" />
+                              Saving...
+                          </span>
+                      ) : (
+                          'Save Letter'
+                      )}
+                  </ShimmerButton>
+                 </Tooltip>
              </div>
              {showSendForm && (
                  <div className="p-4 border-t border-slate-200 dark:border-slate-700/50 mt-2">
@@ -331,16 +368,18 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubm
                                 />
                                 {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
                             </div>
-                            <ShimmerButton type="submit" className="w-full" disabled={!attorneyEmail || !!emailError || isSending}>
-                                 {isSending ? (
-                                    <span className="flex items-center justify-center gap-2">
-                                        <IconSpinner className="h-4 w-4 animate-spin" />
-                                        Sending...
-                                    </span>
-                                ) : (
-                                    'Send'
-                                )}
-                            </ShimmerButton>
+                            <Tooltip text="Send the draft letter to the attorney's email address">
+                              <ShimmerButton type="submit" className="w-full" disabled={!attorneyEmail || !!emailError || isSending}>
+                                   {isSending ? (
+                                      <span className="flex items-center justify-center gap-2">
+                                          <IconSpinner className="h-4 w-4 animate-spin" />
+                                          Sending...
+                                      </span>
+                                  ) : (
+                                      'Send'
+                                  )}
+                              </ShimmerButton>
+                            </Tooltip>
                         </form>
                     )}
                  </div>
@@ -348,6 +387,11 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubm
           </CardFooter>
         </Card>
       </div>
+      
+      {/* Render all banners */}
+      {banners.map(banner => (
+        <CompletionBanner key={banner.id} {...banner} />
+      ))}
     </div>
   );
 };

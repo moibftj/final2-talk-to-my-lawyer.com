@@ -6,6 +6,8 @@ import { ShimmerButton } from './magicui/shimmer-button';
 import { IconLogo } from '../constants';
 import type { UserRole } from '../types';
 import { isValidEmail } from '../lib/utils';
+import { Tooltip } from './Tooltip';
+import { CompletionBanner, useBanners } from './CompletionBanner';
 
 type View = 'login' | 'signup' | 'forgot_password';
 
@@ -35,6 +37,7 @@ export const AuthPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { login, signup, requestPasswordReset } = useAuth();
+  const { banners, showSuccess, showError, showInfo } = useBanners();
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newEmail = e.target.value;
@@ -53,17 +56,30 @@ export const AuthPage: React.FC = () => {
     setLoading(true);
     setError(null);
     setSuccessMessage(null);
+    
+    if (view === 'login') {
+      showInfo('Signing In', 'Verifying your credentials...');
+    } else if (view === 'signup') {
+      showInfo('Creating Account', 'Setting up your new account...');
+    } else {
+      showInfo('Sending Reset Link', 'Processing your password reset request...');
+    }
+    
     try {
       if (view === 'login') {
         await login(email, password);
+        showSuccess('Welcome Back!', 'Successfully signed in to your account.');
       } else if (view === 'signup') {
         await signup(email, password, role, affiliateCode);
+        showSuccess('Account Created!', 'Welcome to Law Letter AI. You can now start creating letters.');
       } else { // forgot_password
         await requestPasswordReset(email);
         setSuccessMessage("If an account with that email exists, a password reset link has been sent.");
+        showSuccess('Reset Link Sent', 'Check your email for password reset instructions.');
       }
     } catch (err: any) {
       setError(err.message);
+      showError('Authentication Failed', err.message || 'Please check your credentials and try again.');
     } finally {
       setLoading(false);
     }
@@ -90,14 +106,16 @@ export const AuthPage: React.FC = () => {
                     <CardContent className="space-y-4">
                         <div className="space-y-1">
                           <Label htmlFor="email">Email Address</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="you@example.com"
-                            required
-                            value={email}
-                            onChange={handleEmailChange}
-                          />
+                          <Tooltip text="Enter the email address associated with your account">
+                            <Input
+                              id="email"
+                              type="email"
+                              placeholder="you@example.com"
+                              required
+                              value={email}
+                              onChange={handleEmailChange}
+                            />
+                          </Tooltip>
                           {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
                         </div>
                     </CardContent>
@@ -106,16 +124,22 @@ export const AuthPage: React.FC = () => {
                         {successMessage && <p className="text-sm text-green-600 dark:text-green-500 text-center">{successMessage}</p>}
                         
                         {loading ? (
-                            <ShinyButton disabled className="w-full">Processing...</ShinyButton>
+                            <Tooltip text="Processing your password reset request...">
+                              <ShinyButton disabled className="w-full">Processing...</ShinyButton>
+                            </Tooltip>
                         ) : (
-                            <ShimmerButton type="submit" className="w-full" disabled={!email || !!emailError}>
-                                Send Reset Link
-                            </ShimmerButton>
+                            <Tooltip text="Click to receive a password reset link via email">
+                              <ShimmerButton type="submit" className="w-full" disabled={!email || !!emailError}>
+                                  Send Reset Link
+                              </ShimmerButton>
+                            </Tooltip>
                         )}
 
-                        <button type="button" onClick={() => switchView('login')} className="text-sm text-blue-600 hover:underline dark:text-blue-400">
-                            Back to Sign In
-                        </button>
+                        <Tooltip text="Return to the sign in page">
+                          <button type="button" onClick={() => switchView('login')} className="text-sm text-blue-600 hover:underline dark:text-blue-400">
+                              Back to Sign In
+                          </button>
+                        </Tooltip>
                     </CardFooter>
                 </form>
             </>
@@ -134,14 +158,16 @@ export const AuthPage: React.FC = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-1">
                   <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    required
-                    value={email}
-                    onChange={handleEmailChange}
-                  />
+                  <Tooltip text="Enter your email address for account access">
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      required
+                      value={email}
+                      onChange={handleEmailChange}
+                    />
+                  </Tooltip>
                   {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
                 </div>
                 <div className="space-y-1">
@@ -151,34 +177,40 @@ export const AuthPage: React.FC = () => {
                             <button type="button" onClick={() => switchView('forgot_password')} className="text-xs text-blue-600 hover:underline dark:text-blue-400">Forgot Password?</button>
                         )}
                     </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    required
-                    minLength={6}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                  <Tooltip text="Enter your password (minimum 6 characters)">
+                    <Input
+                      id="password"
+                      type="password"
+                      required
+                      minLength={6}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </Tooltip>
                 </div>
                 {view === 'signup' && (
                   <>
                     <div className="space-y-1">
                       <Label htmlFor="role">I am a...</Label>
-                      <Select id="role" value={role} onChange={(e) => setRole(e.target.value as UserRole)}>
-                          <option value="user">User</option>
-                          <option value="employee">Employee</option>
-                      </Select>
+                      <Tooltip text="Select your role - Users create letters, Employees track referrals and earn commissions">
+                        <Select id="role" value={role} onChange={(e) => setRole(e.target.value as UserRole)}>
+                            <option value="user">User</option>
+                            <option value="employee">Employee</option>
+                        </Select>
+                      </Tooltip>
                     </div>
                      <div className="space-y-1">
                         <Label htmlFor="affiliateCode">Affiliate Code (Optional)</Label>
-                        <Input 
-                            id="affiliateCode"
-                            type="text"
-                            placeholder="e.g., EMP123XYZ"
-                            value={affiliateCode}
-                            onChange={(e) => setAffiliateCode(e.target.value)}
-                        />
+                        <Tooltip text="Enter an employee's affiliate code to give them credit for your referral">
+                          <Input 
+                              id="affiliateCode"
+                              type="text"
+                              placeholder="e.g., EMP123XYZ"
+                              value={affiliateCode}
+                              onChange={(e) => setAffiliateCode(e.target.value)}
+                          />
+                        </Tooltip>
                     </div>
                   </>
                 )}
@@ -187,22 +219,28 @@ export const AuthPage: React.FC = () => {
                 {error && <p className="text-sm text-red-500 text-center">{error}</p>}
                 
                 {loading ? (
-                    <ShinyButton disabled className="w-full">
-                        Processing...
-                    </ShinyButton>
+                    <Tooltip text="Processing your authentication...">
+                      <ShinyButton disabled className="w-full">
+                          Processing...
+                      </ShinyButton>
+                    </Tooltip>
                 ) : (
-                    <ShimmerButton type="submit" className="w-full" disabled={!email || !password || !!emailError}>
-                        {view === 'login' ? 'Sign In' : 'Sign Up'}
-                    </ShimmerButton>
+                    <Tooltip text={view === 'login' ? 'Click to sign in to your account' : 'Click to create your new account'}>
+                      <ShimmerButton type="submit" className="w-full" disabled={!email || !password || !!emailError}>
+                          {view === 'login' ? 'Sign In' : 'Sign Up'}
+                      </ShimmerButton>
+                    </Tooltip>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => switchView(view === 'login' ? 'signup' : 'login')}
-                  className="text-sm text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {view === 'login' ? 'Need an account? Sign Up' : 'Already have an account? Sign In'}
-                </button>
+                <Tooltip text={view === 'login' ? 'Switch to create a new account' : 'Switch to sign in with existing account'}>
+                  <button
+                    type="button"
+                    onClick={() => switchView(view === 'login' ? 'signup' : 'login')}
+                    className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    {view === 'login' ? 'Need an account? Sign Up' : 'Already have an account? Sign In'}
+                  </button>
+                </Tooltip>
               </CardFooter>
             </form>
         </>
@@ -218,6 +256,11 @@ export const AuthPage: React.FC = () => {
       <Card className="w-full max-w-md">
         {renderContent()}
       </Card>
+      
+      {/* Render all banners */}
+      {banners.map(banner => (
+        <CompletionBanner key={banner.id} {...banner} />
+      ))}
     </div>
   );
 };
