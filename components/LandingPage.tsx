@@ -3,6 +3,8 @@ import { ShimmerButton } from './magicui/shimmer-button';
 import { ShinyButton } from './magicui/shiny-button';
 import { SparklesText } from './magicui/sparkles-text';
 import { Spotlight } from './magicui/spotlight';
+import { HeroGeometric } from './ui/shape-landing-hero';
+import { GradientButton } from './ui/gradient-button';
 import { IconLogo, IconFilePlus, IconUsers, IconStar } from '../constants';
 
 interface LandingPageProps {
@@ -13,15 +15,13 @@ interface LandingPageProps {
 export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin }) => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-950 text-gray-800 dark:text-gray-200">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <Spotlight className="absolute -top-40 left-0 md:left-60 md:-top-20" fill="rgba(59, 130, 246, 0.3)" />
-        
-        {/* Navigation */}
-        <nav className="relative z-10 flex items-center justify-between p-4 sm:p-6 lg:p-8">
+      {/* Hero Section with Geometric Design */}
+      <div className="relative">
+        {/* Navigation overlay */}
+        <nav className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-4 sm:p-6 lg:p-8">
           <div className="flex items-center gap-2 sm:gap-3">
-            <IconLogo className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 dark:text-blue-400" />
-            <span className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
+            <IconLogo className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400" />
+            <span className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
               Law Letter AI
             </span>
           </div>
@@ -29,7 +29,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
           <div className="flex items-center gap-3 sm:gap-4">
             <button 
               onClick={onLogin}
-              className="text-sm sm:text-base font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+              className="text-sm sm:text-base font-medium text-white/80 hover:text-white transition-colors"
             >
               Sign In
             </button>
@@ -42,34 +42,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
           </div>
         </nav>
 
-        {/* Hero Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 lg:pt-32 pb-16 sm:pb-24 lg:pb-32">
-          <div className="text-center">
-            <h1 className="text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-gray-900 dark:text-white mb-6 sm:mb-8">
-              <SparklesText>Generate Legal Letters</SparklesText>
-              <br />
-              <span className="text-blue-600 dark:text-blue-400">with AI Power</span>
-            </h1>
-            
-            <p className="text-base sm:text-lg lg:text-xl xl:text-2xl text-gray-600 dark:text-gray-300 mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed">
-              Create professional legal documents in minutes. From demand letters to cease and desist notices, 
-              our AI assistant helps you craft legally sound letters with ease.
-            </p>
-            
+        {/* Hero Geometric Component */}
+        <HeroGeometric 
+          badge="⚖️ Law Letter AI"
+          title1="Generate Legal Letters"
+          title2="with AI Power"
+        />
+        
+        {/* Call to Action overlay */}
+        <div className="absolute bottom-20 left-0 right-0 z-50">
+          <div className="max-w-3xl mx-auto text-center px-4">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-              <ShimmerButton 
+              <GradientButton 
                 onClick={onGetStarted}
-                className="w-full sm:w-auto h-10 sm:h-12 lg:h-14 px-6 sm:px-8 lg:px-12 text-sm sm:text-base lg:text-lg font-semibold"
+                className="w-full sm:w-auto h-12 lg:h-14 px-8 lg:px-12 text-sm lg:text-lg font-semibold"
               >
                 Start Creating Letters
-              </ShimmerButton>
+              </GradientButton>
               
-              <ShinyButton 
+              <GradientButton 
                 onClick={onLogin}
-                className="w-full sm:w-auto h-10 sm:h-12 lg:h-14 px-6 sm:px-8 lg:px-12 text-sm sm:text-base lg:text-lg font-semibold bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                variant="variant"
+                className="w-full sm:w-auto h-12 lg:h-14 px-8 lg:px-12 text-sm lg:text-lg font-semibold"
               >
-                Sign In
-              </ShinyButton>
+                Already have an account?
+              </GradientButton>
             </div>
           </div>
         </div>

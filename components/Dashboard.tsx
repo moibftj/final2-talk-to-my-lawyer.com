@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './Card';
-import { STATUS_STYLES, IconFilePlus, IconEdit, IconTrash, getTemplateLabel, IconSpinner } from '../constants';
+import { STATUS_STYLES, IconFilePlus, IconEdit, IconTrash, getTemplateLabel } from '../constants';
+import { LoaderOne } from './ui/loader-one';
 import { ShimmerButton } from './magicui/shimmer-button';
 import { NeonGradientCard } from './magicui/neon-gradient-card';
 import { BlurFade } from './magicui/blur-fade';
@@ -65,7 +66,7 @@ const LetterRow: React.FC<{ letter: LetterRequest; onEdit: (letter: LetterReques
         </Tooltip>
         <Tooltip text="Delete Letter">
              <button onClick={() => onDelete(letter.id)} className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 p-1 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled={isDeleting}>
-                {isDeleting ? <IconSpinner className="h-4 w-4 animate-spin" /> : <IconTrash className="h-4 w-4" />}
+                {isDeleting ? <LoaderOne size="sm" className="w-4 h-4" /> : <IconTrash className="h-4 w-4" />}
             </button>
         </Tooltip>
       </div>

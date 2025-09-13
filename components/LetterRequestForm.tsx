@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from './Card';
-import { LETTER_TEMPLATES, IconSpinner } from '../constants';
+import { LETTER_TEMPLATES } from '../constants';
+import { LoaderOne } from './ui/loader-one';
 import { ShinyButton } from './magicui/shiny-button';
 import { ShimmerButton } from './magicui/shimmer-button';
 import { SparklesText } from './magicui/sparkles-text';
@@ -328,7 +329,7 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubm
              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end">
                 <Tooltip text="Download your letter as a PDF file" position="bottom">
                   <button onClick={handleExportPdf} disabled={!aiDraft || isExporting} className="flex items-center justify-center gap-2 text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-md transition-colors border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed">
-                      {isExporting ? <IconSpinner className="w-4 h-4 animate-spin" /> : <IconDownload className="w-4 h-4" />}
+                      {isExporting ? <LoaderOne size="sm" className="w-4 h-4" /> : <IconDownload className="w-4 h-4" />}
                       {isExporting ? 'Exporting...' : 'Export as PDF'}
                   </button>
                 </Tooltip>
@@ -345,7 +346,7 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubm
                    <ShimmerButton onClick={handleSaveLetter} disabled={!aiDraft || isSaving} className="h-8 sm:h-9 md:h-10 lg:h-11">
                       {isSaving ? (
                           <span className="flex items-center gap-2">
-                              <IconSpinner className="h-4 w-4 animate-spin" />
+                              <LoaderOne size="sm" className="w-4 h-4" />
                               Saving...
                           </span>
                       ) : (
@@ -377,7 +378,7 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({ onFormSubm
                               <ShimmerButton type="submit" className="w-full h-8 sm:h-9 md:h-10 lg:h-11" disabled={!attorneyEmail || !!emailError || isSending}>
                                    {isSending ? (
                                       <span className="flex items-center justify-center gap-2">
-                                          <IconSpinner className="h-4 w-4 animate-spin" />
+                                          <LoaderOne size="sm" className="w-4 h-4" />
                                           Sending...
                                       </span>
                                   ) : (

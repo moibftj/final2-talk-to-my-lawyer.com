@@ -76,7 +76,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialView = 'login', onBac
         showSuccess('Welcome Back!', 'Successfully signed in to your account.');
       } else if (view === 'signup') {
         await signup(email, password, role, affiliateCode);
-        showSuccess('Account Created!', 'Welcome to Law Letter AI. You can now start creating letters.');
+        showSuccess('Please Check Email For Verification Link', 'We\'ve sent a verification link to your email address. Please check your inbox and click the link to activate your account.');
       } else { // forgot_password
         await requestPasswordReset(email);
         setSuccessMessage("If an account with that email exists, a password reset link has been sent.");
@@ -111,7 +111,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialView = 'login', onBac
                     <CardContent className="space-y-4 px-6">
                         <div className="space-y-1">
                           <Label htmlFor="email">Email Address</Label>
-                          <Tooltip text="Enter the email address associated with your account">
+                          <Tooltip text="Enter the email address associated with your account. We'll send you a secure password reset link." size="md" delay={500}>
                             <Input
                               id="email"
                               type="email"
@@ -202,7 +202,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialView = 'login', onBac
                   <>
                     <div className="space-y-1">
                       <Label htmlFor="role">I am a...</Label>
-                      <Tooltip text="Select your role - Users create letters, Employees track referrals and earn commissions">
+                      <Tooltip text="Select your account type: Users can create and manage legal letters, Employees can track referrals and earn commissions from user signups." size="md" delay={300}>
                         <Select id="role" value={role} onChange={(e) => setRole(e.target.value as UserRole)}>
                             <option value="user">User</option>
                             <option value="employee">Employee</option>
@@ -211,7 +211,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialView = 'login', onBac
                     </div>
                      <div className="space-y-1">
                         <Label htmlFor="affiliateCode">Affiliate Code (Optional)</Label>
-                        <Tooltip text="Enter an employee's affiliate code to give them credit for your referral">
+                        <Tooltip text="Optional: Enter an employee's referral code to give them credit for bringing you to our platform. They'll receive a commission when you sign up." size="md" delay={300}>
                           <Input 
                               id="affiliateCode"
                               type="text"

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import supabase from '../services/supabase';
+import { emailService } from '../services/emailService';
 import type { User, UserRole } from '../types';
 import type { AuthChangeEvent, Session, User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -37,6 +38,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setAuthEvent(event);
         if (event === 'SIGNED_IN' && session) {
           await handleAuthSession(session);
+          // Send welcome email when user verifies their email
+          if (session.user.email) {
+            try {
+              await emailService.sendWelcomeEmail(session.user.email);
+            } catch (error) {
+              console.error('Failed to send welcome email:', error);
+            }
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
         } else if (event === 'PASSWORD_RECOVERY') {
@@ -82,17 +91,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // The database is configured with a trigger that automatically creates a
     // 'profiles' row for each new user in the 'auth.users' table.
     // We pass the role in the metadata so the trigger can access it.
-    const { error } = await supabase.auth.signUp({ 
+    const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
             data: {
                 role: role,
                 affiliate_code: affiliateCode
-            }
+            },
+            emailRedirectTo: `${window.location.origin}/#verified`
         }
     });
     if (error) throw error;
+    
+    // Send verification email via MailerSend
+    if (data.user && data.user.email && !data.user.email_confirmed_at) {
+      try {
+        // Get the confirmation URL from Supabase (this would normally be in the email)
+        const verificationLink = `${window.location.origin}/#verify-email?token=${data.user.id}`;
+        await emailService.sendVerificationEmail(data.user.email, verificationLink);
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        // Don't throw here as the user account was created successfully
+      }
+    }
+    
     // The user will be signed in after confirming their email.
     // The onAuthStateChange listener will handle the session and profile fetching.
   };
