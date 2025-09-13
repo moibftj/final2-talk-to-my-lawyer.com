@@ -38,8 +38,8 @@ Deno.serve(async (req) => {
     }
 
     // 4. Initialize the Gemini client and build the prompt
-    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-    const model = "gemini-2.5-flash";
+    const genAI = new GoogleGenAI(GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
     let styleInstructions = '';
     if (payload.tone || payload.length) {
@@ -78,8 +78,8 @@ Deno.serve(async (req) => {
     `;
 
     // 5. Call the Gemini API
-    const response = await ai.models.generateContent({ model, contents: prompt });
-    const draft = response.text;
+    const response = await model.generateContent(prompt);
+    const draft = response.response.text();
 
     // 6. Return the successful response
     return new Response(JSON.stringify({ draft }), {

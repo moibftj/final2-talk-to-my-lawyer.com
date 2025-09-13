@@ -32,6 +32,13 @@ body {
   background: rgba(0, 0, 0, 0.3);
 }
 
+form .inline-flex
+{
+  display:block !important;
+}
+
+
+
 /* Dark mode scrollbar */
 @media (prefers-color-scheme: dark) {
   ::-webkit-scrollbar-thumb {
