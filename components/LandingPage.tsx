@@ -5,6 +5,7 @@ import { SparklesText } from './magicui/sparkles-text';
 import { Spotlight } from './magicui/spotlight';
 import { HeroGeometric } from './ui/shape-landing-hero';
 import { GradientButton } from './ui/gradient-button';
+import CardFlip from './ui/card-flip';
 import { IconLogo, IconFilePlus, IconUsers, IconStar } from '../constants';
 
 interface LandingPageProps {
@@ -84,45 +85,45 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, onLogin 
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12">
+          <div className="flex flex-wrap justify-center gap-6 sm:gap-8 lg:gap-12">
             {/* Feature 1 */}
-            <div className="text-center p-6 sm:p-8 rounded-2xl bg-slate-50 dark:bg-gray-800 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors">
-              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 dark:bg-blue-900/20 rounded-xl mb-4 sm:mb-6">
-                <IconFilePlus className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
-                AI-Powered Generation
-              </h3>
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-                Our advanced AI creates professional legal letters tailored to your specific situation and requirements.
-              </p>
-            </div>
+            <CardFlip
+              title="AI-Powered Generation"
+              subtitle="Advanced artificial intelligence"
+              description="Our cutting-edge AI technology creates professional legal letters tailored specifically to your unique situation and requirements."
+              features={[
+                "Smart text generation",
+                "Context-aware content",
+                "Professional formatting", 
+                "Legal accuracy checks"
+              ]}
+            />
             
             {/* Feature 2 */}
-            <div className="text-center p-6 sm:p-8 rounded-2xl bg-slate-50 dark:bg-gray-800 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors">
-              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-green-100 dark:bg-green-900/20 rounded-xl mb-4 sm:mb-6">
-                <IconStar className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 dark:text-green-400" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
-                Multiple Templates
-              </h3>
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-                Choose from demand letters, cease and desist notices, recommendation letters, and more.
-              </p>
-            </div>
+            <CardFlip
+              title="Multiple Templates"
+              subtitle="Comprehensive template library"
+              description="Access a wide variety of legal document templates designed by legal professionals for different situations."
+              features={[
+                "Demand letters",
+                "Cease & desist notices", 
+                "Recommendation letters",
+                "Custom templates"
+              ]}
+            />
             
             {/* Feature 3 */}
-            <div className="text-center p-6 sm:p-8 rounded-2xl bg-slate-50 dark:bg-gray-800 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors">
-              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 dark:bg-purple-900/20 rounded-xl mb-4 sm:mb-6">
-                <IconUsers className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 dark:text-purple-400" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
-                Easy to Use
-              </h3>
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-                Simple form-based interface makes creating professional legal documents accessible to everyone.
-              </p>
-            </div>
+            <CardFlip
+              title="Easy to Use"
+              subtitle="Intuitive user interface"
+              description="Simple, form-based interface that makes creating professional legal documents accessible to everyone, regardless of legal background."
+              features={[
+                "Step-by-step guidance",
+                "Form-based input",
+                "Instant preview",
+                "One-click generation"
+              ]}
+            />
           </div>
         </div>
       </div>
