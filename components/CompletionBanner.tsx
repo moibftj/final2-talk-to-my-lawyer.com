@@ -176,7 +176,7 @@ export const useBanners = () => {
   const [banners, setBanners] = useState<Array<CompletionBannerProps & { id: string }>>([]);
 
   const showBanner = (banner: Omit<CompletionBannerProps, 'show' | 'onClose'>) => {
-    const id = Date.now().toString();
+    const id = Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9);
     setBanners(prev => [...prev, { ...banner, show: true, id, onClose: () => removeBanner(id) }]);
     return id;
   };

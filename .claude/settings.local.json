@@ -11,7 +11,12 @@
       "Bash(curl:*)",
       "Bash(npx supabase:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(docker:*)"
+      "Bash(docker:*)",
+      "Bash(del:*)",
+      "Bash(supabase:*)",
+      "Bash(scoop install:*)",
+      "Bash(scoop:*)",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": []
