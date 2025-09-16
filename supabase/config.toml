@@ -20,7 +20,7 @@ port = 54322
 shadow_port = 54320
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW
 # server_version_num;` on the remote database to check.
-major_version = 15
+major_version = 17
 
 [studio]
 # Port to use for Supabase Studio.
@@ -44,16 +44,16 @@ file_size_limit = "50MiB"
 [auth]
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://localhost:3000"
+site_url = "http://localhost:5174"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://localhost:3000"]
+additional_redirect_urls = ["http://localhost:5174"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604800 (1 week).
 jwt_expiry = 3600
 # If disabled, the refresh token will never expire.
 enable_refresh_token_rotation = true
 # Allows refresh tokens to be reused after expiry, up to the specified interval in seconds.
 # Requires enable_refresh_token_rotation = true.
-refresh_token_reuse_interval = 10
+refresh_token_reuse_interval = 3600
 # Allow/disallow new user signups to your project.
 enable_signup = true
 
@@ -64,12 +64,8 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+enable_confirmations = true
 
-# Use pre-defined map of claims
-[auth.jwt]
-default_group = "authenticated"
-admin_group_threshold = 0
 
 # Configuration for third-party auth providers
 [auth.external.google]
@@ -82,8 +78,3 @@ redirect_uri = ""
 # or any other auth provider.
 url = ""
 
-[edge_functions]
-# The hostname to use for the edge functions server.
-hostname = "localhost"
-# The port to use for the edge functions server.
-port = 54325
