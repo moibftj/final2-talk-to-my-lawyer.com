@@ -1,50 +1,33 @@
-// MailerSend Email Service Integration
-const MAILERSEND_API_URL = 'https://api.mailersend.com/v1/';
-const MAILERSEND_API_KEY = 'mlsn.565957633da77bc68f8e5fa104bf2fef589f3a8141c0732f11333da440acc177';
+import supabase from './supabase';
 
-interface EmailRecipient {
-  email: string;
-  name?: string;
-}
-
-interface EmailSender {
-  email: string;
-  name: string;
-}
-
-interface SendEmailRequest {
-  from: EmailSender;
-  to: EmailRecipient[];
+interface EmailRequest {
+  to: string;
   subject: string;
-  text?: string;
-  html?: string;
-  template_id?: string;
-  variables?: Array<{
-    email: string;
-    substitutions: Array<{
-      var: string;
-      value: string;
-    }>;
-  }>;
+  html: string;
 }
 
 interface MailerSendResponse {
+  success: boolean;
   message?: string;
   errors?: any;
 }
 
 class EmailService {
-  private async makeRequest(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE', data?: any): Promise<any> {
+  private async makeRequest(data: EmailRequest): Promise<MailerSendResponse> {
     try {
-      const response = await fetch(`${MAILERSEND_API_URL}${endpoint}`, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${MAILERSEND_API_KEY}`,
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-        ...(data && { body: JSON.stringify(data) }),
+      const { data: response, error } = await supabase.functions.invoke('send-email', {
+        body: data
       });
+
+      if (error) {
+        console.error('Email service error:', error);
+        throw new Error(error.message || 'Failed to send email');
+      }
+
+      return {
+        success: true,
+        ...(response || {})
+      };
 
       const result = await response.json();
       

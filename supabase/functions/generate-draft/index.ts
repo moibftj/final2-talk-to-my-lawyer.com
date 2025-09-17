@@ -1,12 +1,8 @@
-// FIX: Replaced unsupported 'lib' reference with a 'types' reference to a stable Deno types URL to resolve TypeScript errors.
-/// <reference types="https://raw.githubusercontent.com/denoland/deno/v1.40.2/cli/dts/lib.deno.ns.d.ts" />
-
-// Follow this guide to deploy the function to your Supabase project:
-// https://supabase.com/docs/guides/functions/deploy
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// Define interfaces for type safety
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+
 interface GenerateDraftPayload {
     title: string;
     templateBody: string;
@@ -16,11 +12,11 @@ interface GenerateDraftPayload {
     length?: 'Short' | 'Medium' | 'Long';
 }
 
-Deno.serve(async (req) => {
-  // 1. Set up CORS headers
+serve(async (req) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
   };
 
   if (req.method === 'OPTIONS') {
@@ -28,6 +24,9 @@ Deno.serve(async (req) => {
   }
 
   try {
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not set');
+    }
     // 2. Get the payload from the request body
     const payload: GenerateDraftPayload = await req.json();
     
