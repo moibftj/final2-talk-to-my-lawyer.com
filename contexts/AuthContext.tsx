@@ -24,9 +24,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await handleAuthSession(session);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await handleAuthSession(session);
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+        setIsLoading(false);
       }
       setIsLoading(false);
     };
@@ -70,16 +75,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', supabaseUser.id)
-      .single();
-    if (error) {
-      console.error('Error fetching user profile:', error);
+    try {
+      // First try to get the profile
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', supabaseUser.id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        
+        // If profile doesn't exist, try to create it
+        if (error.code === 'PGRST116') {
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: supabaseUser.id,
+                email: supabaseUser.email,
+                role: 'user'
+              }
+            ])
+            .select('role')
+            .single();
+            
+          if (createError) {
+            console.error('Error creating user profile:', createError);
+            return null;
+          }
+          return newProfile as { role: UserRole };
+        }
+        return null;
+      }
+      return data as { role: UserRole };
+    } catch (error) {
+      console.error('Unexpected error in fetchUserProfile:', error);
       return null;
     }
-    return data as { role: UserRole };
   };
 
   const login = async (email: string, password: string) => {
