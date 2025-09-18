@@ -3,6 +3,7 @@
 import { cn } from "../../lib/utils";
 import { ArrowRight, Repeat2 } from "lucide-react";
 import { useState } from "react";
+import styles from "./card-flip.module.css";
 
 export interface CardFlipProps {
     title?: string;
@@ -34,6 +35,7 @@ export default function CardFlip({
                         ? "[transform:rotateY(180deg)]"
                         : "[transform:rotateY(0deg)]"
                 )}
+                style={{ transformStyle: "preserve-3d" }}
             >
                 <div
                     className={cn(
@@ -172,26 +174,6 @@ export default function CardFlip({
                     </div>
                 </div>
             </div>
-
-            <style jsx>{`
-                @keyframes scale {
-                    0% {
-                        transform: scale(2);
-                        opacity: 0;
-                        box-shadow: 0px 0px 50px rgba(59, 130, 246, 0.5);
-                    }
-                    50% {
-                        transform: translate(0px, -5px) scale(1);
-                        opacity: 1;
-                        box-shadow: 0px 8px 20px rgba(59, 130, 246, 0.5);
-                    }
-                    100% {
-                        transform: translate(0px, 5px) scale(0.1);
-                        opacity: 0;
-                        box-shadow: 0px 10px 20px rgba(59, 130, 246, 0);
-                    }
-                }
-            `}</style>
         </div>
     );
 }
