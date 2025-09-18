@@ -152,7 +152,7 @@ export const EMAIL_TEMPLATES = {
     </div>
 </body>
 </html>
-  `
+  `,
 };
 
 // SMTP Configuration Guide

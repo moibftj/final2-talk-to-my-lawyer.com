@@ -16,7 +16,11 @@
       "Bash(supabase:*)",
       "Bash(scoop install:*)",
       "Bash(scoop:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(npx tsc:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []
