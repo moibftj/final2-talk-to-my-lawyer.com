@@ -16,12 +16,19 @@ class EmailService {
   private async makeRequest(data: EmailRequest): Promise<MailerSendResponse> {
     try {
       const { data: response, error } = await supabase.functions.invoke('send-email', {
-        body: data
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
 
       if (error) {
         console.error('Email service error:', error);
-        throw new Error(error.message || 'Failed to send email');
+        return {
+          success: false,
+          message: error.message || 'Failed to send email',
+          errors: error
+        };
       }
 
       return {

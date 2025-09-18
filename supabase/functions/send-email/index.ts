@@ -5,6 +5,16 @@ const MAILERSEND_API_URL = 'https://api.mailersend.com/v1/';
 const MAILERSEND_API_KEY = 'mlsn.565957633da77bc68f8e5fa104bf2fef589f3a8141c0732f11333da440acc177';
 
 serve(async (req) => {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   try {
     const { to, subject, html, text, template_id, variables } = await req.json();
 
@@ -35,12 +45,12 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify(result), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     });
   }
