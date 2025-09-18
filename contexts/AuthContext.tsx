@@ -25,12 +25,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const getInitialSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          setIsLoading(false);
+          return;
+        }
+
         if (session) {
           await handleAuthSession(session);
+        } else {
+          setIsLoading(false);
         }
       } catch (error) {
         console.error('Error getting initial session:', error);
+        setIsLoading(false);
+      } finally {
         setIsLoading(false);
       }
       setIsLoading(false);
