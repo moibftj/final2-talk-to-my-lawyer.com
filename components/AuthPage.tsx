@@ -192,6 +192,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialView = 'login', onBac
                       required
                       minLength={6}
                       placeholder="••••••••"
+                      autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
