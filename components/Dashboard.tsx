@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { LettersTable } from './LettersTable';
 import { LetterRequestForm } from './LetterRequestForm';
+import { SubscriptionForm } from './SubscriptionForm';
 import { apiClient } from '../services/apiClient';
 import type { LetterRequest } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
 import { CompletionBanner, useBanners } from './CompletionBanner';
 
-type View = 'dashboard' | 'new_letter_form';
+type View = 'dashboard' | 'new_letter_form' | 'subscription';
 
 interface UserDashboardProps {
   currentView: View;
@@ -130,12 +131,41 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     }
   };
 
+  const handleSubscribe = async (planId: string, discountCode?: string) => {
+    try {
+      showInfo('Processing Subscription', 'Setting up your subscription...');
+
+      // Here you would integrate with your payment processor
+      // For now, we'll simulate a successful subscription
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      showSuccess(
+        'Subscription Successful',
+        `Welcome to ${planId.replace('_', ' ')} plan! You can now generate letters.`
+      );
+
+      // Navigate back to dashboard
+      navigateTo('dashboard');
+    } catch (error) {
+      console.error('Subscription error:', error);
+      showError('Subscription Failed', 'Unable to process subscription. Please try again.');
+    }
+  };
+
   if (currentView === 'new_letter_form') {
     return (
       <LetterRequestForm
         onFormSubmit={handleSaveLetter}
         onCancel={handleCancelForm}
         letterToEdit={editingLetter}
+      />
+    );
+  }
+
+  if (currentView === 'subscription') {
+    return (
+      <SubscriptionForm
+        onSubscribe={handleSubscribe}
       />
     );
   }

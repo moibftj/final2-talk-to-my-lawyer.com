@@ -29,7 +29,7 @@ const ResetPasswordPage = lazy(() =>
   }))
 );
 
-type UserDashboardView = 'dashboard' | 'new_letter_form';
+type UserDashboardView = 'dashboard' | 'new_letter_form' | 'subscription';
 type AppView = 'landing' | 'auth' | 'dashboard';
 type AuthView = 'login' | 'signup';
 

@@ -3,8 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { IconLogo, IconUser } from '../constants';
 
 interface HeaderProps {
-  userDashboardView?: 'dashboard' | 'new_letter_form';
-  setUserDashboardView?: (view: 'dashboard' | 'new_letter_form') => void;
+  userDashboardView?: 'dashboard' | 'new_letter_form' | 'subscription';
+  setUserDashboardView?: (view: 'dashboard' | 'new_letter_form' | 'subscription') => void;
   onBackToLanding?: () => void;
 }
 
@@ -27,17 +27,26 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
           <div className='flex items-center gap-2 sm:gap-4'>
-            {user &&
-              user.role === 'user' &&
-              userDashboardView === 'new_letter_form' &&
-              setUserDashboardView && (
-                <button
-                  onClick={() => setUserDashboardView('dashboard')}
-                  className='text-sm font-medium text-gray-300 hover:text-white transition-colors hidden sm:block px-4 py-2 rounded-md hover:bg-white/10'
-                >
-                  My Letters
-                </button>
-              )}
+            {user && user.role === 'user' && setUserDashboardView && (
+              <div className="hidden sm:flex items-center gap-2">
+                {userDashboardView !== 'dashboard' && (
+                  <button
+                    onClick={() => setUserDashboardView('dashboard')}
+                    className='text-sm font-medium text-gray-300 hover:text-white transition-colors px-4 py-2 rounded-md hover:bg-white/10'
+                  >
+                    My Letters
+                  </button>
+                )}
+                {userDashboardView !== 'subscription' && (
+                  <button
+                    onClick={() => setUserDashboardView('subscription')}
+                    className='text-sm font-medium text-gray-300 hover:text-white transition-colors px-4 py-2 rounded-md hover:bg-white/10'
+                  >
+                    Subscribe
+                  </button>
+                )}
+              </div>
+            )}
             {user && (
               <div className='relative'>
                 <button
