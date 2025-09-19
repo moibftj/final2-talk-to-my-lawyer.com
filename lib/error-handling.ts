@@ -6,7 +6,9 @@ export interface ErrorResponse {
   details?: unknown;
 }
 
-export function handleSupabaseError(error: PostgrestError | null): ErrorResponse {
+export function handleSupabaseError(
+  error: PostgrestError | null
+): ErrorResponse {
   if (!error) {
     return { message: 'An unknown error occurred' };
   }
@@ -17,7 +19,7 @@ export function handleSupabaseError(error: PostgrestError | null): ErrorResponse
   return {
     message: error.message,
     code: error.code,
-    details: error.details
+    details: error.details,
   };
 }
 
@@ -28,13 +30,13 @@ export function handleApiError(error: unknown): ErrorResponse {
   if (error instanceof Error) {
     return {
       message: error.message,
-      details: error.stack
+      details: error.stack,
     };
   }
 
   return {
     message: 'An unexpected error occurred',
-    details: error
+    details: error,
   };
 }
 
@@ -44,6 +46,6 @@ export function handleAuthError(error: Error): ErrorResponse {
 
   return {
     message: error.message,
-    details: error.stack
+    details: error.stack,
   };
 }

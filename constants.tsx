@@ -2,12 +2,18 @@ import React from 'react';
 import type { LetterStatus, LetterTemplate } from './types';
 
 export const LETTER_TEMPLATES: LetterTemplate[] = [
-    {
-        value: 'general_demand_letter',
-        label: 'General Demand Letter',
-        description: 'A formal request for a specific action, usually payment of a debt.',
-        requiredFields: ["Recipient's Full Name", "Amount Owed", "Reason for Debt", "Deadline for Action"],
-        body: `Dear [Recipient's Full Name],
+  {
+    value: 'general_demand_letter',
+    label: 'General Demand Letter',
+    description:
+      'A formal request for a specific action, usually payment of a debt.',
+    requiredFields: [
+      "Recipient's Full Name",
+      'Amount Owed',
+      'Reason for Debt',
+      'Deadline for Action',
+    ],
+    body: `Dear [Recipient's Full Name],
 
 This letter serves as a formal demand for payment in the amount of $[Amount Owed]. This debt is in relation to [Reason for Debt].
 
@@ -24,14 +30,20 @@ Sincerely,
 [Your Company Name, if applicable]
 [Your Address]
 [Your Phone Number]
-[Your Email]`
-    },
-    {
-        value: 'cease_and_desist_harassment',
-        label: 'Cease and Desist (Harassment)',
-        description: 'A letter demanding that an individual or group stop a specified unwanted action.',
-        requiredFields: ["Recipient's Full Name", "Description of Harassing Conduct", "Date(s) of Incidents", "Demanded Action"],
-        body: `Dear [Recipient's Full Name],
+[Your Email]`,
+  },
+  {
+    value: 'cease_and_desist_harassment',
+    label: 'Cease and Desist (Harassment)',
+    description:
+      'A letter demanding that an individual or group stop a specified unwanted action.',
+    requiredFields: [
+      "Recipient's Full Name",
+      'Description of Harassing Conduct',
+      'Date(s) of Incidents',
+      'Demanded Action',
+    ],
+    body: `Dear [Recipient's Full Name],
 
 This letter is a formal demand that you immediately CEASE AND DESIST all forms of harassment directed towards me, [Your Name].
 
@@ -44,14 +56,22 @@ Failure to comply with this demand immediately will result in me seeking all ava
 This letter is formal notice to you that your actions are not welcome and must stop. Governed by the laws of [Your State/Jurisdiction].
 
 Sincerely,
-[Your Name]`
-    },
-    {
-        value: 'academic_recommendation',
-        label: 'Academic Letter of Recommendation',
-        description: 'A letter written to recommend a student for an academic program or scholarship.',
-        requiredFields: ["Student's Full Name", "Your Name and Title", "Your Relationship to Student", "Specific Course/Project", "Key Strengths (e.g., critical thinking, research skills)", "University/Program Applying To"],
-        body: `To Whom It May Concern,
+[Your Name]`,
+  },
+  {
+    value: 'academic_recommendation',
+    label: 'Academic Letter of Recommendation',
+    description:
+      'A letter written to recommend a student for an academic program or scholarship.',
+    requiredFields: [
+      "Student's Full Name",
+      'Your Name and Title',
+      'Your Relationship to Student',
+      'Specific Course/Project',
+      'Key Strengths (e.g., critical thinking, research skills)',
+      'University/Program Applying To',
+    ],
+    body: `To Whom It May Concern,
 
 It is with great pleasure that I recommend [Student's Full Name] for admission to the [University/Program Applying To]. As their [Your Name and Title], I have had the opportunity to observe [Student's Full Name]'s academic and personal development during their time in my [Specific Course/Project].
 
@@ -62,14 +82,22 @@ I am confident that [Student's Full Name] possesses the necessary skills, determ
 Please feel free to contact me if you require any further information.
 
 Sincerely,
-[Your Name and Title]`
-    },
-    {
-        value: 'acknowledgment_of_complaint',
-        label: 'Acknowledgment of Customer Complaint',
-        description: 'A formal acknowledgment to a customer that their complaint has been received and is being addressed.',
-        requiredFields: ["Customer Name", "Complaint Reference Number", "Date of Complaint", "Brief Summary of Complaint", "Your Name and Title", "Expected Resolution Timeframe"],
-        body: `Dear [Customer Name],
+[Your Name and Title]`,
+  },
+  {
+    value: 'acknowledgment_of_complaint',
+    label: 'Acknowledgment of Customer Complaint',
+    description:
+      'A formal acknowledgment to a customer that their complaint has been received and is being addressed.',
+    requiredFields: [
+      'Customer Name',
+      'Complaint Reference Number',
+      'Date of Complaint',
+      'Brief Summary of Complaint',
+      'Your Name and Title',
+      'Expected Resolution Timeframe',
+    ],
+    body: `Dear [Customer Name],
 
 This letter is to confirm that we have received your complaint, reference number [Complaint Reference Number], which was submitted on [Date of Complaint].
 
@@ -82,14 +110,21 @@ We will conduct a thorough review and aim to provide you with a substantive resp
 Thank you for bringing this to our attention.
 
 Sincerely,
-[Your Name and Title]`
-    },
-    {
-        value: 'notice_to_quit',
-        label: 'Notice to Quit (Landlord-Tenant)',
-        description: 'A formal notice from a landlord to a tenant to vacate the rental property.',
-        requiredFields: ["Tenant(s) Name(s)", "Rental Property Address", "Reason for Notice (e.g., non-payment of rent, lease violation)", "Date to Vacate By", "Landlord/Property Manager Name"],
-        body: `NOTICE TO QUIT
+[Your Name and Title]`,
+  },
+  {
+    value: 'notice_to_quit',
+    label: 'Notice to Quit (Landlord-Tenant)',
+    description:
+      'A formal notice from a landlord to a tenant to vacate the rental property.',
+    requiredFields: [
+      'Tenant(s) Name(s)',
+      'Rental Property Address',
+      'Reason for Notice (e.g., non-payment of rent, lease violation)',
+      'Date to Vacate By',
+      'Landlord/Property Manager Name',
+    ],
+    body: `NOTICE TO QUIT
 
 To: [Tenant(s) Name(s)]
 Address of Premises: [Rental Property Address]
@@ -105,59 +140,209 @@ This notice is intended as a formal demand for possession of the property.
 Dated this day: [Current Date]
 
 Sincerely,
-[Landlord/Property Manager Name]`
-    }
+[Landlord/Property Manager Name]`,
+  },
 ];
 
 export const getTemplateLabel = (value: string): string => {
-    const template = LETTER_TEMPLATES.find(t => t.value === value);
-    return template ? template.label : value.replace(/_/g, ' ');
+  const template = LETTER_TEMPLATES.find(t => t.value === value);
+  return template ? template.label : value.replace(/_/g, ' ');
 };
 
-export const STATUS_STYLES: Record<LetterStatus, { bg: string, text: string }> = {
-  draft: { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-600 dark:text-gray-300' },
-  submitted: { bg: 'bg-blue-100 dark:bg-blue-900/50', text: 'text-blue-600 dark:text-blue-400' },
-  in_review: { bg: 'bg-yellow-100 dark:bg-yellow-900/50', text: 'text-yellow-600 dark:text-yellow-400' },
-  approved: { bg: 'bg-purple-100 dark:bg-purple-900/50', text: 'text-purple-600 dark:text-purple-400' },
-  completed: { bg: 'bg-green-100 dark:bg-green-900/50', text: 'text-green-600 dark:text-green-400' },
-  cancelled: { bg: 'bg-red-100 dark:bg-red-900/50', text: 'text-red-600 dark:text-red-400' },
-};
+export const STATUS_STYLES: Record<LetterStatus, { bg: string; text: string }> =
+  {
+    draft: {
+      bg: 'bg-gray-100 dark:bg-gray-700',
+      text: 'text-gray-600 dark:text-gray-300',
+    },
+    submitted: {
+      bg: 'bg-blue-100 dark:bg-blue-900/50',
+      text: 'text-blue-600 dark:text-blue-400',
+    },
+    in_review: {
+      bg: 'bg-yellow-100 dark:bg-yellow-900/50',
+      text: 'text-yellow-600 dark:text-yellow-400',
+    },
+    approved: {
+      bg: 'bg-purple-100 dark:bg-purple-900/50',
+      text: 'text-purple-600 dark:text-purple-400',
+    },
+    completed: {
+      bg: 'bg-green-100 dark:bg-green-900/50',
+      text: 'text-green-600 dark:text-green-400',
+    },
+    cancelled: {
+      bg: 'bg-red-100 dark:bg-red-900/50',
+      text: 'text-red-600 dark:text-red-400',
+    },
+  };
 
 // Icons
-export const IconFilePlus: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+export const IconFilePlus: React.FC<React.SVGProps<SVGSVGElement>> = props => (
+  <svg
+    {...props}
+    xmlns='http://www.w3.org/2000/svg'
+    width='24'
+    height='24'
+    viewBox='0 0 24 24'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth='2'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+  >
+    <path d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z'></path>
+    <polyline points='14 2 14 8 20 8'></polyline>
+    <line x1='12' y1='18' x2='12' y2='12'></line>
+    <line x1='9' y1='15' x2='15' y2='15'></line>
+  </svg>
 );
 
-export const IconLogo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path><rect x="2" y="10" width="4" height="10"></rect><rect x="18" y="10" width="4" height="10"></rect></svg>
+export const IconLogo: React.FC<React.SVGProps<SVGSVGElement>> = props => (
+  <svg
+    {...props}
+    xmlns='http://www.w3.org/2000/svg'
+    width='24'
+    height='24'
+    viewBox='0 0 24 24'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth='2'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+  >
+    <path d='M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16'></path>
+    <rect x='2' y='10' width='4' height='10'></rect>
+    <rect x='18' y='10' width='4' height='10'></rect>
+  </svg>
 );
 
-export const IconUser: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+export const IconUser: React.FC<React.SVGProps<SVGSVGElement>> = props => (
+  <svg
+    {...props}
+    xmlns='http://www.w3.org/2000/svg'
+    width='24'
+    height='24'
+    viewBox='0 0 24 24'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth='2'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+  >
+    <path d='M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2'></path>
+    <circle cx='12' cy='7' r='4'></circle>
+  </svg>
 );
 
-export const IconEdit: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+export const IconEdit: React.FC<React.SVGProps<SVGSVGElement>> = props => (
+  <svg
+    {...props}
+    xmlns='http://www.w3.org/2000/svg'
+    width='24'
+    height='24'
+    viewBox='0 0 24 24'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth='2'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+  >
+    <path d='M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z' />
+    <path d='m15 5 4 4' />
+  </svg>
 );
 
-export const IconDollarSign: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+export const IconDollarSign: React.FC<
+  React.SVGProps<SVGSVGElement>
+> = props => (
+  <svg
+    {...props}
+    xmlns='http://www.w3.org/2000/svg'
+    width='24'
+    height='24'
+    viewBox='0 0 24 24'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth='2'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+  >
+    <line x1='12' x2='12' y1='2' y2='22'></line>
+    <path d='M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'></path>
+  </svg>
 );
 
-export const IconUsers: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+export const IconUsers: React.FC<React.SVGProps<SVGSVGElement>> = props => (
+  <svg
+    {...props}
+    xmlns='http://www.w3.org/2000/svg'
+    width='24'
+    height='24'
+    viewBox='0 0 24 24'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth='2'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+  >
+    <path d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'></path>
+    <circle cx='9' cy='7' r='4'></circle>
+    <path d='M22 21v-2a4 4 0 0 0-3-3.87'></path>
+    <path d='M16 3.13a4 4 0 0 1 0 7.75'></path>
+  </svg>
 );
 
-export const IconStar: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+export const IconStar: React.FC<React.SVGProps<SVGSVGElement>> = props => (
+  <svg
+    {...props}
+    xmlns='http://www.w3.org/2000/svg'
+    width='24'
+    height='24'
+    viewBox='0 0 24 24'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth='2'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+  >
+    <polygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2'></polygon>
+  </svg>
 );
 
-export const IconTrash: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+export const IconTrash: React.FC<React.SVGProps<SVGSVGElement>> = props => (
+  <svg
+    {...props}
+    xmlns='http://www.w3.org/2000/svg'
+    width='24'
+    height='24'
+    viewBox='0 0 24 24'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth='2'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+  >
+    <path d='M3 6h18' />
+    <path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' />
+    <line x1='10' y1='11' x2='10' y2='17' />
+    <line x1='14' y1='11' x2='14' y2='17' />
+  </svg>
 );
 
-export const IconSpinner: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-    </svg>
+export const IconSpinner: React.FC<React.SVGProps<SVGSVGElement>> = props => (
+  <svg
+    {...props}
+    xmlns='http://www.w3.org/2000/svg'
+    width='24'
+    height='24'
+    viewBox='0 0 24 24'
+    fill='none'
+    stroke='currentColor'
+    strokeWidth='2'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+  >
+    <path d='M21 12a9 9 0 1 1-6.219-8.56' />
+  </svg>
 );

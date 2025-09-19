@@ -1,13 +1,17 @@
-import React, { MouseEvent as ReactMouseEvent } from "react";
-import { motion, useMotionTemplate, useMotionValue } from "framer-motion";
-import { cn } from "../../lib/utils";
+import React, { MouseEvent as ReactMouseEvent } from 'react';
+import { motion, useMotionTemplate, useMotionValue } from 'framer-motion';
+import { cn } from '../../lib/utils';
 
 interface SpotlightProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   className?: string;
 }
 
-export const Spotlight = ({ children, className, ...props }: SpotlightProps) => {
+export const Spotlight = ({
+  children,
+  className,
+  ...props
+}: SpotlightProps) => {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
@@ -23,12 +27,12 @@ export const Spotlight = ({ children, className, ...props }: SpotlightProps) => 
 
   return (
     <div
-      className={cn("relative", className)}
+      className={cn('relative', className)}
       onMouseMove={handleMouseMove}
       {...props}
     >
       <motion.div
-        className="pointer-events-none absolute -inset-px"
+        className='pointer-events-none absolute -inset-px'
         style={{
           background: useMotionTemplate`
             radial-gradient(

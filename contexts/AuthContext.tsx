@@ -1,13 +1,28 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  ReactNode,
+} from 'react';
 import supabase from '../services/supabase';
 import type { User, UserRole } from '../types';
-import type { AuthChangeEvent, Session, User as SupabaseUser } from '@supabase/supabase-js';
+import type {
+  AuthChangeEvent,
+  Session,
+  User as SupabaseUser,
+} from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, role: UserRole, affiliateCode?: string) => Promise<void>;
+  signup: (
+    email: string,
+    password: string,
+    role: UserRole,
+    affiliateCode?: string
+  ) => Promise<void>;
   logout: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   updateUserPassword: (password: string) => Promise<void>;
@@ -16,7 +31,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
@@ -24,7 +41,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const getInitialSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session) {
           await handleAuthSession(session);
         }
@@ -73,10 +92,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .select('role')
         .eq('id', supabaseUser.id)
         .single();
-      
+
       if (error) {
         console.error('Error fetching user profile:', error);
-        
+
         // If profile doesn't exist, try to create it
         if (error.code === 'PGRST116') {
           const { data: newProfile, error: createError } = await supabase
@@ -85,12 +104,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               {
                 id: supabaseUser.id,
                 email: supabaseUser.email,
-                role: 'user'
-              }
+                role: 'user',
+              },
             ])
             .select('role')
             .single();
-            
+
           if (createError) {
             console.error('Error creating user profile:', createError);
             return null;
@@ -107,29 +126,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (error) throw error;
   };
 
-  const signup = async (email: string, password: string, role: UserRole, affiliateCode?: string) => {
+  const signup = async (
+    email: string,
+    password: string,
+    role: UserRole,
+    affiliateCode?: string
+  ) => {
     // The database is configured with a trigger that automatically creates a
     // 'profiles' row for each new user in the 'auth.users' table.
     // We pass the role in the metadata so the trigger can access it.
-    const { data, error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-            data: {
-                role: role,
-                affiliate_code: affiliateCode
-            },
-            emailRedirectTo: `${window.location.origin}/#verified`
-        }
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          role: role,
+          affiliate_code: affiliateCode,
+        },
+        emailRedirectTo: `${window.location.origin}/#verified`,
+      },
     });
     if (error) throw error;
-    
+
     // Supabase will automatically send verification email using configured templates
-    
+
     // The user will be signed in after confirming their email.
     // The onAuthStateChange listener will handle the session and profile fetching.
   };
@@ -152,7 +179,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout, requestPasswordReset, updateUserPassword, authEvent }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        login,
+        signup,
+        logout,
+        requestPasswordReset,
+        updateUserPassword,
+        authEvent,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
