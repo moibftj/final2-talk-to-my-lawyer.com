@@ -69,3 +69,52 @@ export interface SendEmailRequest extends EmailRequest {
   templateId?: string;
   templateData?: Record<string, any>;
 }
+
+// Discount code interfaces
+export interface DiscountCode {
+  id: string;
+  code: string;
+  employeeId: string;
+  discountPercentage: number;
+  isActive: boolean;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DiscountUsage {
+  id: string;
+  discountCodeId: string;
+  userId: string;
+  employeeId: string;
+  subscriptionAmount: number;
+  discountAmount: number;
+  commissionAmount: number;
+  usedAt: string;
+}
+
+// Subscription interfaces
+export interface Subscription {
+  id: string;
+  userId: string;
+  planType: 'one_letter' | 'four_monthly' | 'eight_yearly';
+  amount: number;
+  status: SubscriptionStatus;
+  discountCodeId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Employee analytics interfaces
+export interface EmployeeAnalytics {
+  totalReferrals: number;
+  totalCommissions: number;
+  activeDiscountCodes: number;
+  monthlyEarnings: number;
+  codeUsageStats: {
+    code: string;
+    usageCount: number;
+    totalRevenue: number;
+    totalCommissions: number;
+  }[];
+}
