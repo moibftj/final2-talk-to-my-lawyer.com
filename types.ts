@@ -56,3 +56,16 @@ export interface LetterRequest {
   createdAt: string; // TIMESTAMPTZ
   updatedAt: string; // TIMESTAMPTZ
 }
+
+// Email service interfaces
+export interface EmailRequest {
+  to: string;
+  subject: string;
+  body: string;
+  from?: string;
+}
+
+export interface SendEmailRequest extends EmailRequest {
+  templateId?: string;
+  templateData?: Record<string, any>;
+}
