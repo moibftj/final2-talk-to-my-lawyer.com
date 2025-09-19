@@ -1,10 +1,26 @@
 // Based on ENUMs in the database schema
 export type UserRole = 'user' | 'employee' | 'admin';
-export type LetterStatus = 'draft' | 'submitted' | 'in_review' | 'approved' | 'completed' | 'cancelled';
+export type LetterStatus =
+  | 'draft'
+  | 'submitted'
+  | 'in_review'
+  | 'approved'
+  | 'completed'
+  | 'cancelled';
 export type PriorityLevel = 'low' | 'medium' | 'high' | 'urgent';
-export type SubscriptionStatus = 'inactive' | 'active' | 'past_due' | 'cancelled' | 'unpaid';
+export type SubscriptionStatus =
+  | 'inactive'
+  | 'active'
+  | 'past_due'
+  | 'cancelled'
+  | 'unpaid';
 export type MessageType = 'text' | 'system' | 'file';
-export type PaymentStatus = 'pending' | 'succeeded' | 'failed' | 'cancelled' | 'refunded';
+export type PaymentStatus =
+  | 'pending'
+  | 'succeeded'
+  | 'failed'
+  | 'cancelled'
+  | 'refunded';
 
 // User interface
 export interface User {

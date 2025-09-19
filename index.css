@@ -40,8 +40,6 @@ form .inline-flex {
   display: block !important;
 }
 
-
-
 /* Dark mode scrollbar */
 @media (prefers-color-scheme: dark) {
   ::-webkit-scrollbar-thumb {
@@ -55,7 +53,10 @@ form .inline-flex {
 
 /* Ensure smooth transitions for dark mode */
 * {
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 /* Gradient Button Styles */
@@ -202,7 +203,9 @@ form .inline-flex {
     var(--border-color-1),
     var(--border-color-2)
   );
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   mask-composite: exclude;
   pointer-events: none;
 }
