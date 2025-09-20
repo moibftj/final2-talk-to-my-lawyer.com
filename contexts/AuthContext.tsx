@@ -6,6 +6,7 @@ import React, {
   ReactNode,
 } from 'react';
 import supabase from '../services/supabase';
+import { discountService } from '../services/discountService';
 import type { User, UserRole } from '../types';
 import type {
   AuthChangeEvent,
@@ -77,10 +78,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const handleAuthSession = async (session: Session) => {
     if (session.user) {
       const profile = await fetchUserProfile(session.user);
+      const userRole = profile?.role || 'user';
+
       setUser({
         email: session.user.email!,
-        role: profile?.role || 'user',
+        role: userRole,
       });
+
+      // Auto-generate discount code for new employees
+      if (userRole === 'employee') {
+        try {
+          const existingCodes = await discountService.getEmployeeDiscountCodes(session.user.email!);
+          if (existingCodes.length === 0) {
+            console.log('Generating initial discount code for new employee...');
+            await discountService.generateDiscountCode(session.user.email!);
+          }
+        } catch (error) {
+          console.error('Failed to generate initial discount code:', error);
+        }
+      }
     }
   };
 

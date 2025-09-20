@@ -1,5 +1,5 @@
 import supabase from './supabase';
-import type { LetterRequest } from '../types';
+import type { LetterRequest, Subscription, User } from '../types';
 import type { LetterTone, LetterLength } from './aiService';
 
 // This file is the single source of truth for all frontend-to-backend communication.
@@ -133,19 +133,55 @@ const generateDraft = async (
 
 // --- ADMIN API (EDGE FUNCTIONS) ---
 
-const fetchAllUsers = async (): Promise<
-  { id: string; email: string | undefined; role: string | undefined }[]
-> => {
+// --- USER SUBSCRIPTION API ---
+
+const getUserSubscription = async (): Promise<Subscription | null> => {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null; // No subscription found
+    handleSupabaseError(error, 'getUserSubscription');
+  }
+
+  return data ? {
+    id: data.id,
+    userId: data.user_id,
+    planType: data.plan_type,
+    amount: data.amount,
+    status: data.status,
+    discountCodeId: data.discount_code_id,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  } : null;
+};
+
+// --- ADMIN API (EDGE FUNCTIONS) ---
+
+const getAllUsers = async (): Promise<User[]> => {
   const { data, error } = await supabase.functions.invoke('get-all-users');
-  if (error) handleSupabaseError(error, 'fetchAllUsers function');
+  if (error) handleSupabaseError(error, 'getAllUsers function');
   return data.users;
 };
 
-const fetchAllLetters = async (): Promise<any[]> => {
+const getAllLetters = async (): Promise<LetterRequest[]> => {
   const { data, error } = await supabase.functions.invoke('get-all-letters');
-  if (error) handleSupabaseError(error, 'fetchAllLetters function');
-  return data.letters;
+  if (error) handleSupabaseError(error, 'getAllLetters function');
+  return data.letters.map(mapLetterFromSupabase);
 };
+
+// Legacy aliases for backward compatibility
+const fetchAllUsers = getAllUsers;
+const fetchAllLetters = getAllLetters;
 
 export const apiClient = {
   // Letters (Database)
@@ -154,10 +190,15 @@ export const apiClient = {
   updateLetter,
   deleteLetter,
 
+  // User Subscription
+  getUserSubscription,
+
   // AI Service (Edge Function)
   generateDraft,
 
   // Admin (Edge Functions)
-  fetchAllUsers,
-  fetchAllLetters,
+  getAllUsers,
+  getAllLetters,
+  fetchAllUsers, // Legacy alias
+  fetchAllLetters, // Legacy alias
 };

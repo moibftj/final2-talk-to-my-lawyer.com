@@ -14,12 +14,12 @@ const UserDashboard = lazy(() =>
   }))
 );
 const EmployeeDashboard = lazy(() =>
-  import('./components/ProjectRoadmap').then(module => ({
+  import('./components/EmployeeDashboard').then(module => ({
     default: module.EmployeeDashboard,
   }))
 );
 const AdminDashboard = lazy(() =>
-  import('./components/DatabasePlan').then(module => ({
+  import('./components/AdminDashboard').then(module => ({
     default: module.AdminDashboard,
   }))
 );
