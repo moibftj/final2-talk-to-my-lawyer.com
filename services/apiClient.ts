@@ -63,7 +63,7 @@ const createLetter = async (
     description: letterData.description,
     template_data: letterData.templateData,
     ai_generated_content: letterData.aiGeneratedContent,
-    status: letterData.status || 'draft',
+    status: letterData.status || 'submitted',
     priority: letterData.priority || 'medium',
     recipient_info: letterData.recipientInfo || {},
     sender_info: letterData.senderInfo || {},
@@ -118,6 +118,7 @@ interface GenerateDraftPayload {
   additionalContext: string;
   tone?: LetterTone;
   length?: LetterLength;
+  letterId?: string;
 }
 const generateDraft = async (
   payload: GenerateDraftPayload

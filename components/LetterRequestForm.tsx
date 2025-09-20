@@ -190,6 +190,21 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({
       'AI is analyzing your inputs and creating a professional letter...'
     );
     try {
+      let letterId = letterToEdit?.id;
+
+      // If this is a new letter, save it first to get an ID
+      if (!letterId) {
+        const letterData = {
+          title,
+          letterType: selectedTemplate.value,
+          description: additionalContext,
+          templateData: formData,
+          status: 'submitted' as const,
+        };
+        const savedLetter = await onFormSubmit(letterData);
+        letterId = (savedLetter as LetterRequest).id;
+      }
+
       const draft = await generateLetterDraft({
         title,
         templateBody: selectedTemplate.body,
@@ -197,6 +212,7 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({
         additionalContext,
         tone,
         length,
+        letterId, // Pass the letter ID
       });
       setAiDraft(draft);
       showSuccess(
@@ -243,30 +259,42 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({
     }
   };
 
-  const handleSendEmail = (e: React.FormEvent) => {
+  const handleSendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSending(true);
     showInfo(
       'Sending Email',
       `Sending your letter draft to ${attorneyEmail}...`
     );
-    console.log(
-      `Simulating sending email to: ${attorneyEmail} with content: ${aiDraft}`
-    );
-    // Simulate API call
-    setTimeout(() => {
+
+    try {
+      // For now, create a mailto link with the letter content
+      const subject = encodeURIComponent(`Legal Letter Draft: ${title}`);
+      const body = encodeURIComponent(
+        `Dear Attorney,\n\nPlease find below a draft legal letter for review:\n\n${aiDraft}\n\nBest regards,\n${formData['Your Name'] || 'Client'}`
+      );
+      const mailtoLink = `mailto:${attorneyEmail}?subject=${subject}&body=${body}`;
+
+      // Open the email client
+      window.open(mailtoLink, '_blank');
+
       setSendSuccess(true);
       setIsSending(false);
       showSuccess(
-        'Email Sent!',
-        `Your letter draft has been successfully sent to ${attorneyEmail}`
+        'Email Client Opened!',
+        `Your email client has been opened with the letter draft. Please send it to ${attorneyEmail}`
       );
+
       setTimeout(() => {
         setShowSendForm(false);
         setSendSuccess(false);
         setAttorneyEmail('');
       }, 3000);
-    }, 1000);
+    } catch (error) {
+      console.error('Error sending email:', error);
+      setIsSending(false);
+      showError('Email Error', 'Failed to open email client. Please try again.');
+    }
   };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {

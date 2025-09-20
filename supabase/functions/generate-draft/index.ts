@@ -14,6 +14,7 @@ interface GenerateDraftPayload {
   additionalContext: string;
   tone?: 'Formal' | 'Aggressive' | 'Conciliatory' | 'Neutral';
   length?: 'Short' | 'Medium' | 'Long';
+  letterId?: string; // Add letter ID to update status
 }
 
 Deno.serve(async req => {
@@ -91,7 +92,24 @@ Deno.serve(async req => {
     const response = await model.generateContent(prompt);
     const draft = response.response.text();
 
-    // 6. Return the successful response
+    // 6. Update letter status and save AI content if letterId provided
+    if (payload.letterId) {
+      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      await supabase
+        .from('letters')
+        .update({
+          status: 'in_review',
+          ai_generated_content: draft,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', payload.letterId);
+    }
+
+    // 7. Return the successful response
     return new Response(JSON.stringify({ draft }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,

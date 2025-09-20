@@ -10,6 +10,7 @@ interface LetterDetails {
   additionalContext: string;
   tone?: LetterTone;
   length?: LetterLength;
+  letterId?: string;
 }
 
 /**
