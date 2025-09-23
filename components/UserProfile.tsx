@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, CreditCard, Bell, Save } from 'lucide-react';
+import { User, Mail, Phone, MapPin, CreditCard, Bell, Shield, Save } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { apiClient } from '../services/apiClient';
 import { ShinyButton } from './magicui/shiny-button';
 import { CompletionBanner, useBanners } from './CompletionBanner';
 
@@ -122,11 +123,10 @@ export const UserProfile: React.FC = () => {
     setProfileData(prev => {
       if (field.includes('.')) {
         const [parent, child] = field.split('.');
-        const parentObj = prev[parent as keyof UserProfileData];
         return {
           ...prev,
           [parent]: {
-            ...(typeof parentObj === 'object' && parentObj ? parentObj : {}),
+            ...prev[parent as keyof UserProfileData],
             [child]: value
           }
         };

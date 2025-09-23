@@ -1,5 +1,5 @@
 import supabase from './supabase';
-import type { DiscountCode, Employee, EmployeeAnalytics, AdminStats, DiscountUsage } from '../types/index';
+import type { DiscountCode, Employee, EmployeeAnalytics, AdminStats, DiscountUsage } from '../types';
 
 class DiscountService {
   // Discount Code Management

@@ -201,8 +201,8 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({
           templateData: formData,
           status: 'submitted' as const,
         };
-        await onFormSubmit(letterData);
-        letterId = crypto.randomUUID();
+        const savedLetter = await onFormSubmit(letterData);
+        letterId = (savedLetter as LetterRequest).id;
       }
 
       const draft = await generateLetterDraft({

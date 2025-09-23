@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, Clock } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import type { LetterStatus } from '../types';
 
 interface TimelineStep {
@@ -77,7 +77,7 @@ export const LetterTimeline: React.FC<LetterTimelineProps> = ({ currentStatus })
 
         {/* Steps */}
         <div className="relative flex justify-between">
-          {steps.map((step) => (
+          {steps.map((step, index) => (
             <div key={step.status} className="flex flex-col items-center">
               {/* Step circle */}
               <div
