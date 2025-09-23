@@ -86,7 +86,7 @@ serve(async (req) => {
         .from('discount_codes')
         .select(`
           *,
-          profiles:employee_id (email, raw_user_meta_data)
+          profiles:employee_id (email)
         `)
         .eq('code', discountCode.toUpperCase())
         .eq('is_active', true)
