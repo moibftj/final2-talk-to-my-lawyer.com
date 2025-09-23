@@ -136,7 +136,7 @@ interface LegalBrandHeaderProps {
 }
 
 export const LegalBrandHeader: React.FC<LegalBrandHeaderProps> = ({
-  brandName = 'LegalDraft Pro',
+  brandName = 'talk-to-my-lawyer',
   tagline = 'Professional Legal Correspondence',
   variant = 'full',
   className
