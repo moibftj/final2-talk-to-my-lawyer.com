@@ -293,7 +293,10 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({
     } catch (error) {
       console.error('Error sending email:', error);
       setIsSending(false);
-      showError('Email Error', 'Failed to open email client. Please try again.');
+      showError(
+        'Email Error',
+        'Failed to open email client. Please try again.'
+      );
     }
   };
 

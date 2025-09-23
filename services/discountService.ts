@@ -1,5 +1,11 @@
 import supabase from './supabase';
-import type { DiscountCode, Employee, EmployeeAnalytics, AdminStats, DiscountUsage } from '../types';
+import type {
+  DiscountCode,
+  Employee,
+  EmployeeAnalytics,
+  AdminStats,
+  DiscountUsage,
+} from '../types';
 
 class DiscountService {
   // Discount Code Management
@@ -36,7 +42,7 @@ class DiscountService {
         maxUses: data.max_uses,
         expiresAt: data.expires_at,
         createdAt: data.created_at,
-        updatedAt: data.updated_at
+        updatedAt: data.updated_at,
       };
     } catch (error) {
       console.error('Error validating discount code:', error);
@@ -44,7 +50,10 @@ class DiscountService {
     }
   }
 
-  async generateDiscountCode(employeeId: string, discountPercentage: number = 10): Promise<DiscountCode | null> {
+  async generateDiscountCode(
+    employeeId: string,
+    discountPercentage: number = 10
+  ): Promise<DiscountCode | null> {
     try {
       // Generate a unique code
       const code = this.generateUniqueCode();
@@ -56,7 +65,7 @@ class DiscountService {
           employee_id: employeeId,
           discount_percentage: discountPercentage,
           is_active: true,
-          usage_count: 0
+          usage_count: 0,
         })
         .select()
         .single();
@@ -76,7 +85,7 @@ class DiscountService {
         maxUses: data.max_uses,
         expiresAt: data.expires_at,
         createdAt: data.created_at,
-        updatedAt: data.updated_at
+        updatedAt: data.updated_at,
       };
     } catch (error) {
       console.error('Error generating discount code:', error);
@@ -107,7 +116,7 @@ class DiscountService {
         maxUses: item.max_uses,
         expiresAt: item.expires_at,
         createdAt: item.created_at,
-        updatedAt: item.updated_at
+        updatedAt: item.updated_at,
       }));
     } catch (error) {
       console.error('Error fetching employee discount codes:', error);
@@ -115,13 +124,16 @@ class DiscountService {
     }
   }
 
-  async toggleDiscountCodeStatus(codeId: string, isActive: boolean): Promise<boolean> {
+  async toggleDiscountCodeStatus(
+    codeId: string,
+    isActive: boolean
+  ): Promise<boolean> {
     try {
       const { error } = await supabase
         .from('discount_codes')
         .update({
           is_active: isActive,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', codeId);
 
@@ -135,8 +147,10 @@ class DiscountService {
   // Employee Management
   async getEmployeeAnalytics(employeeId: string): Promise<EmployeeAnalytics> {
     try {
-      const { data, error } = await supabase
-        .rpc('get_employee_analytics_with_points', { employee_uuid: employeeId });
+      const { data, error } = await supabase.rpc(
+        'get_employee_analytics_with_points',
+        { employee_uuid: employeeId }
+      );
 
       if (error || !data || data.length === 0) {
         console.error('Error fetching employee analytics:', error);
@@ -145,7 +159,7 @@ class DiscountService {
           totalCommissions: 0,
           monthlyEarnings: 0,
           activeDiscountCodes: 0,
-          codeUsageStats: []
+          codeUsageStats: [],
         };
       }
 
@@ -155,7 +169,7 @@ class DiscountService {
         totalCommissions: result.total_commissions || 0,
         monthlyEarnings: result.monthly_earnings || 0,
         activeDiscountCodes: result.active_discount_codes || 0,
-        codeUsageStats: result.code_usage_stats || []
+        codeUsageStats: result.code_usage_stats || [],
       };
     } catch (error) {
       console.error('Error fetching employee analytics:', error);
@@ -164,7 +178,7 @@ class DiscountService {
         totalCommissions: 0,
         monthlyEarnings: 0,
         activeDiscountCodes: 0,
-        codeUsageStats: []
+        codeUsageStats: [],
       };
     }
   }
@@ -190,7 +204,7 @@ class DiscountService {
         isActive: item.is_active !== false, // Default to true if not set
         role: item.role,
         createdAt: item.created_at,
-        updatedAt: item.updated_at
+        updatedAt: item.updated_at,
       }));
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -198,13 +212,16 @@ class DiscountService {
     }
   }
 
-  async toggleEmployeeStatus(employeeId: string, isActive: boolean): Promise<boolean> {
+  async toggleEmployeeStatus(
+    employeeId: string,
+    isActive: boolean
+  ): Promise<boolean> {
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
           is_active: isActive,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', employeeId);
 
@@ -214,7 +231,7 @@ class DiscountService {
           .from('discount_codes')
           .update({
             is_active: false,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq('employee_id', employeeId);
       }
@@ -228,33 +245,39 @@ class DiscountService {
 
   async getAdminStats(): Promise<AdminStats> {
     try {
-      const [employeesResult, codesResult, commissionsResult] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('*', { count: 'exact' })
-          .eq('role', 'employee'),
-        supabase
-          .from('discount_codes')
-          .select('*', { count: 'exact' }),
-        supabase
-          .from('discount_usage')
-          .select('commission_amount, used_at')
-      ]);
+      const [employeesResult, codesResult, commissionsResult] =
+        await Promise.all([
+          supabase
+            .from('profiles')
+            .select('*', { count: 'exact' })
+            .eq('role', 'employee'),
+          supabase.from('discount_codes').select('*', { count: 'exact' }),
+          supabase.from('discount_usage').select('commission_amount, used_at'),
+        ]);
 
       const totalEmployees = employeesResult.count || 0;
-      const activeEmployees = employeesResult.data?.filter(emp => emp.is_active !== false).length || 0;
+      const activeEmployees =
+        employeesResult.data?.filter(emp => emp.is_active !== false).length ||
+        0;
       const totalDiscountCodes = codesResult.count || 0;
-      const activeDiscountCodes = codesResult.data?.filter(code => code.is_active).length || 0;
+      const activeDiscountCodes =
+        codesResult.data?.filter(code => code.is_active).length || 0;
 
       const commissions = commissionsResult.data || [];
-      const totalCommissionsGenerated = commissions.reduce((sum, usage) => sum + (usage.commission_amount || 0), 0);
+      const totalCommissionsGenerated = commissions.reduce(
+        (sum, usage) => sum + (usage.commission_amount || 0),
+        0
+      );
 
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
       const monthlyCommissions = commissions
         .filter(usage => {
           const usageDate = new Date(usage.used_at);
-          return usageDate.getMonth() === currentMonth && usageDate.getFullYear() === currentYear;
+          return (
+            usageDate.getMonth() === currentMonth &&
+            usageDate.getFullYear() === currentYear
+          );
         })
         .reduce((sum, usage) => sum + (usage.commission_amount || 0), 0);
 
@@ -264,7 +287,7 @@ class DiscountService {
         totalDiscountCodes,
         activeDiscountCodes,
         totalCommissionsGenerated,
-        monthlyCommissions
+        monthlyCommissions,
       };
     } catch (error) {
       console.error('Error fetching admin stats:', error);
@@ -274,7 +297,7 @@ class DiscountService {
         totalDiscountCodes: 0,
         activeDiscountCodes: 0,
         totalCommissionsGenerated: 0,
-        monthlyCommissions: 0
+        monthlyCommissions: 0,
       };
     }
   }
@@ -283,12 +306,14 @@ class DiscountService {
     try {
       const { data, error } = await supabase
         .from('discount_usage')
-        .select(`
+        .select(
+          `
           *,
           discount_codes (code),
           profiles:user_id (email),
           employee_profiles:employee_id (email)
-        `)
+        `
+        )
         .order('used_at', { ascending: false });
 
       if (error) {
@@ -304,7 +329,7 @@ class DiscountService {
         subscriptionAmount: item.subscription_amount,
         discountAmount: item.discount_amount,
         commissionAmount: item.commission_amount,
-        usedAt: item.used_at
+        usedAt: item.used_at,
       }));
     } catch (error) {
       console.error('Error fetching discount usage:', error);

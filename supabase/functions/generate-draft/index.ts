@@ -94,7 +94,9 @@ Deno.serve(async req => {
 
     // 6. Update letter status and save AI content if letterId provided
     if (payload.letterId) {
-      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+      const { createClient } = await import(
+        'https://esm.sh/@supabase/supabase-js@2'
+      );
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
       const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -104,7 +106,7 @@ Deno.serve(async req => {
         .update({
           status: 'in_review',
           ai_generated_content: draft,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', payload.letterId);
     }
