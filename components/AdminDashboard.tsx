@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { discountService } from '../services/discountService';
-import type { Employee, AdminStats, DiscountUsage } from '../types';
+import type { Employee, DiscountUsage } from '../types/index';
 import { CompletionBanner, useBanners } from './CompletionBanner';
 import {
   Users,
@@ -20,7 +20,7 @@ import {
 export const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [adminStats, setAdminStats] = useState<AdminStats>({
+  const [adminStats, setAdminStats] = useState({
     totalEmployees: 0,
     activeEmployees: 0,
     totalDiscountCodes: 0,

@@ -146,13 +146,16 @@ export const UserProfile: React.FC = () => {
     setProfileData(prev => {
       if (field.includes('.')) {
         const [parent, child] = field.split('.');
-        return {
-          ...prev,
-          [parent]: {
-            ...prev[parent as keyof UserProfileData],
-            [child]: value,
-          },
-        };
+        // Only allow nested updates for object properties
+        if (parent === 'address' || parent === 'preferences') {
+          return {
+            ...prev,
+            [parent]: {
+              ...(prev[parent as keyof UserProfileData] as Record<string, any>),
+              [child]: value,
+            },
+          };
+        }
       }
       return { ...prev, [field]: value };
     });
@@ -226,6 +229,7 @@ export const UserProfile: React.FC = () => {
                       onChange={e =>
                         updateProfileField('firstName', e.target.value)
                       }
+                      aria-label='First Name'
                       className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                     />
                   </div>
@@ -240,6 +244,8 @@ export const UserProfile: React.FC = () => {
                       onChange={e =>
                         updateProfileField('lastName', e.target.value)
                       }
+                      aria-label='Last Name'
+                      title='Last Name'
                       className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                     />
                   </div>
@@ -253,6 +259,8 @@ export const UserProfile: React.FC = () => {
                       value={profileData.email}
                       disabled
                       className='w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500'
+                      placeholder='Your email address'
+                      title='Email Address'
                     />
                     <p className='text-xs text-gray-500 mt-1'>
                       Email cannot be changed
@@ -270,6 +278,8 @@ export const UserProfile: React.FC = () => {
                         updateProfileField('phone', e.target.value)
                       }
                       className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                      placeholder='Enter your phone number'
+                      title='Phone Number'
                     />
                   </div>
                 </div>
@@ -288,6 +298,9 @@ export const UserProfile: React.FC = () => {
                         onChange={e =>
                           updateProfileField('address.street', e.target.value)
                         }
+                        placeholder='Enter your street address'
+                        title='Street Address'
+                        aria-label='Street Address'
                         className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                       />
                     </div>
@@ -303,6 +316,9 @@ export const UserProfile: React.FC = () => {
                           onChange={e =>
                             updateProfileField('address.city', e.target.value)
                           }
+                          placeholder='Enter your city'
+                          title='City'
+                          aria-label='City'
                           className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                         />
                       </div>
@@ -317,6 +333,9 @@ export const UserProfile: React.FC = () => {
                           onChange={e =>
                             updateProfileField('address.state', e.target.value)
                           }
+                          placeholder='Enter your state'
+                          title='State'
+                          aria-label='State'
                           className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                         />
                       </div>
@@ -334,6 +353,9 @@ export const UserProfile: React.FC = () => {
                               e.target.value
                             )
                           }
+                          placeholder='Enter your ZIP code'
+                          title='ZIP Code'
+                          aria-label='ZIP Code'
                           className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                         />
                       </div>
@@ -370,6 +392,8 @@ export const UserProfile: React.FC = () => {
                             e.target.checked
                           )
                         }
+                        title='Email Notifications'
+                        aria-label='Email Notifications'
                         className='sr-only peer'
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -395,6 +419,8 @@ export const UserProfile: React.FC = () => {
                             e.target.checked
                           )
                         }
+                        title='SMS Notifications'
+                        aria-label='SMS Notifications'
                         className='sr-only peer'
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -420,6 +446,8 @@ export const UserProfile: React.FC = () => {
                             e.target.checked
                           )
                         }
+                        title='Marketing Emails'
+                        aria-label='Marketing Emails'
                         className='sr-only peer'
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -440,6 +468,8 @@ export const UserProfile: React.FC = () => {
                       onChange={e =>
                         updateProfileField('preferences.theme', e.target.value)
                       }
+                      title='Theme Selection'
+                      aria-label='Theme Selection'
                       className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                     >
                       <option value='light'>Light</option>

@@ -35,16 +35,25 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
 
   useEffect(() => {
     // Subscribe to real-time status updates
-    const unsubscribe = letterStatusService.subscribeToStatusUpdates((payload) => {
-      setLetters(prev =>
-        prev.map(letter =>
-          letter.id === payload.letterId
-            ? { ...letter, status: payload.newStatus, updatedAt: payload.timestamp }
-            : letter
-        )
-      );
-      showInfo('Status Update', `Letter status updated to ${payload.newStatus.replace('_', ' ')}`);
-    });
+    const unsubscribe = letterStatusService.subscribeToStatusUpdates(
+      payload => {
+        setLetters(prev =>
+          prev.map(letter =>
+            letter.id === payload.letterId
+              ? {
+                  ...letter,
+                  status: payload.newStatus,
+                  updatedAt: payload.timestamp,
+                }
+              : letter
+          )
+        );
+        showInfo(
+          'Status Update',
+          `Letter status updated to ${payload.newStatus.replace('_', ' ')}`
+        );
+      }
+    );
 
     const loadUserData = async () => {
       setIsLoading(true);
@@ -53,7 +62,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
         // Load letters and subscription data in parallel
         const [fetchedLetters, userSubscription] = await Promise.all([
           apiClient.fetchLetters(),
-          apiClient.getUserSubscription()
+          apiClient.getUserSubscription(),
         ]);
 
         setLetters(fetchedLetters);
@@ -61,12 +70,20 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
 
         // Calculate remaining letters based on subscription
         if (userSubscription) {
-          const usedLetters = fetchedLetters.filter(l => l.status === 'completed').length;
+          const usedLetters = fetchedLetters.filter(
+            l => l.status === 'completed'
+          ).length;
           let totalAllowed = 0;
           switch (userSubscription.planType) {
-            case 'one_letter': totalAllowed = 1; break;
-            case 'four_monthly': totalAllowed = 4; break;
-            case 'eight_yearly': totalAllowed = 8; break;
+            case 'one_letter':
+              totalAllowed = 1;
+              break;
+            case 'four_monthly':
+              totalAllowed = 4;
+              break;
+            case 'eight_yearly':
+              totalAllowed = 8;
+              break;
           }
           setRemainingLetters(Math.max(0, totalAllowed - usedLetters));
         }
@@ -203,7 +220,11 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     setLetters(prev =>
       prev.map(letter =>
         letter.id === letterId
-          ? { ...letter, status: newStatus as any, updatedAt: new Date().toISOString() }
+          ? {
+              ...letter,
+              status: newStatus as any,
+              updatedAt: new Date().toISOString(),
+            }
           : letter
       )
     );
@@ -226,38 +247,43 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
       navigateTo('dashboard');
     } catch (error) {
       console.error('Subscription error:', error);
-      showError('Subscription Failed', 'Unable to process subscription. Please try again.');
+      showError(
+        'Subscription Failed',
+        'Unable to process subscription. Please try again.'
+      );
     }
   };
 
-
   if (currentView === 'subscription') {
-    return (
-      <SubscriptionForm
-        onSubscribe={handleSubscribe}
-      />
-    );
+    return <SubscriptionForm onSubscribe={handleSubscribe} />;
   }
 
   return (
     <>
       {/* User Stats Header */}
-      <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border">
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">Your Dashboard</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{letters.length}</div>
-            <div className="text-sm text-gray-600">Total Letters</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{remainingLetters}</div>
-            <div className="text-sm text-gray-600">Credits Remaining</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {subscription?.planType.replace('_', ' ').toUpperCase() || 'No Plan'}
+      <div className='mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border'>
+        <h2 className='text-xl font-semibold text-gray-800 mb-2'>
+          Your Dashboard
+        </h2>
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+          <div className='text-center'>
+            <div className='text-2xl font-bold text-blue-600'>
+              {letters.length}
             </div>
-            <div className="text-sm text-gray-600">Current Plan</div>
+            <div className='text-sm text-gray-600'>Total Letters</div>
+          </div>
+          <div className='text-center'>
+            <div className='text-2xl font-bold text-green-600'>
+              {remainingLetters}
+            </div>
+            <div className='text-sm text-gray-600'>Credits Remaining</div>
+          </div>
+          <div className='text-center'>
+            <div className='text-2xl font-bold text-purple-600'>
+              {subscription?.planType.replace('_', ' ').toUpperCase() ||
+                'No Plan'}
+            </div>
+            <div className='text-sm text-gray-600'>Current Plan</div>
           </div>
         </div>
       </div>

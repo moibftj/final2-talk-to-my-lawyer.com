@@ -1,0 +1,6 @@
+.progress-bar-fill {
+  background-color: #2563eb; /* Tailwind blue-600 */
+  height: 0.75rem;
+  border-radius: 9999px;
+  transition: width 0.5s;
+}

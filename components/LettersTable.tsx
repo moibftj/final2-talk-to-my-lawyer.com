@@ -74,7 +74,8 @@ const getStatusIcon = (status: string) => {
       return <XCircle className='w-4 h-4 text-red-500' />;
     default:
       return <Clock className='w-4 h-4 text-gray-500' />;
-  };
+  }
+};
 
 const LettersTableSkeleton = () => (
   <div className='container my-4 space-y-4 p-6 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow-sm'>
@@ -111,7 +112,9 @@ export function LettersTable({
   ]);
   const [statusFilter, setStatusFilter] = useState('');
   const [titleFilter, setTitleFilter] = useState('');
-  const [previewLetter, setPreviewLetter] = useState<LetterRequest | null>(null);
+  const [previewLetter, setPreviewLetter] = useState<LetterRequest | null>(
+    null
+  );
 
   if (isLoading) {
     return <LettersTableSkeleton />;
@@ -286,26 +289,28 @@ export function LettersTable({
                   {visibleColumns.includes('Actions') && (
                     <TableCell>
                       <div className='flex items-center gap-2'>
-                        {(letter.status === 'approved' || letter.status === 'completed') && letter.aiGeneratedContent && (
-                          <TooltipProvider>
-                            <TooltipEnhanced>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant='ghost'
-                                  size='sm'
-                                  onClick={() => setPreviewLetter(letter)}
-                                  disabled={isDeletingId === letter.id}
-                                  className='h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50'
-                                >
-                                  <Eye className='h-4 w-4' />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Preview & Download</p>
-                              </TooltipContent>
-                            </TooltipEnhanced>
-                          </TooltipProvider>
-                        )}
+                        {(letter.status === 'approved' ||
+                          letter.status === 'completed') &&
+                          letter.aiGeneratedContent && (
+                            <TooltipProvider>
+                              <TooltipEnhanced>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    onClick={() => setPreviewLetter(letter)}
+                                    disabled={isDeletingId === letter.id}
+                                    className='h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50'
+                                  >
+                                    <Eye className='h-4 w-4' />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Preview & Download</p>
+                                </TooltipContent>
+                              </TooltipEnhanced>
+                            </TooltipProvider>
+                          )}
 
                         <TooltipProvider>
                           <TooltipEnhanced>
@@ -413,7 +418,7 @@ export function LettersTable({
           isOpen={true}
           onClose={() => setPreviewLetter(null)}
           letter={previewLetter}
-          onStatusUpdate={(newStatus) => {
+          onStatusUpdate={newStatus => {
             if (onStatusUpdate) {
               onStatusUpdate(previewLetter.id, newStatus);
             }

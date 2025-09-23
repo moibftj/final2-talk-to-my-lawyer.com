@@ -4,7 +4,9 @@ import { IconLogo, IconUser } from '../constants';
 
 interface HeaderProps {
   userDashboardView?: 'dashboard' | 'new_letter_form' | 'subscription';
-  setUserDashboardView?: (view: 'dashboard' | 'new_letter_form' | 'subscription') => void;
+  setUserDashboardView?: (
+    view: 'dashboard' | 'new_letter_form' | 'subscription'
+  ) => void;
   onBackToLanding?: () => void;
 }
 
@@ -28,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div className='flex items-center gap-2 sm:gap-4'>
             {user && user.role === 'user' && setUserDashboardView && (
-              <div className="hidden sm:flex items-center gap-2">
+              <div className='hidden sm:flex items-center gap-2'>
                 {userDashboardView !== 'dashboard' && (
                   <button
                     onClick={() => setUserDashboardView('dashboard')}
