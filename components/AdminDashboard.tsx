@@ -1,39 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { apiClient } from '../services/apiClient';
+import { useAuth } from '../contexts/AuthContext';
 import { discountService } from '../services/discountService';
-import type { User, LetterRequest, DiscountUsage, Subscription } from '../types';
+import type { Employee, AdminStats, DiscountUsage } from '../types';
 import { CompletionBanner, useBanners } from './CompletionBanner';
-
-interface AdminStats {
-  totalUsers: number;
-  totalEmployees: number;
-  totalLetters: number;
-  totalRevenue: number;
-  totalCommissions: number;
-  activeSubscriptions: number;
-}
-
-interface UserWithStats extends User {
-  id: string;
-  letterCount: number;
-  subscriptionStatus?: string;
-  lastActive?: string;
-}
+import {
+  Users,
+  DollarSign,
+  Gift,
+  TrendingUp,
+  UserCheck,
+  UserX,
+  BarChart3,
+  Settings,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
-  const [stats, setStats] = useState<AdminStats>({
-    totalUsers: 0,
+  const { user } = useAuth();
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [adminStats, setAdminStats] = useState<AdminStats>({
     totalEmployees: 0,
-    totalLetters: 0,
-    totalRevenue: 0,
-    totalCommissions: 0,
-    activeSubscriptions: 0
+    activeEmployees: 0,
+    totalDiscountCodes: 0,
+    activeDiscountCodes: 0,
+    totalCommissionsGenerated: 0,
+    monthlyCommissions: 0,
   });
-  const [users, setUsers] = useState<UserWithStats[]>([]);
-  const [letters, setLetters] = useState<LetterRequest[]>([]);
-  const [discountUsages, setDiscountUsages] = useState<DiscountUsage[]>([]);
+  const [discountUsage, setDiscountUsage] = useState<DiscountUsage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'letters' | 'revenue'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'employees' | 'usage'
+  >('overview');
   const { banners, showSuccess, showError, showInfo } = useBanners();
 
   useEffect(() => {
@@ -42,48 +41,22 @@ export const AdminDashboard: React.FC = () => {
 
   const loadAdminData = async () => {
     setIsLoading(true);
-    showInfo('Loading Admin Dashboard', 'Fetching system data...');
+    showInfo('Loading Admin Data', 'Fetching administrative dashboard data...');
 
     try {
-      // In a real implementation, these would be admin-specific API calls
-      const [allUsers, allLetters] = await Promise.all([
-        apiClient.getAllUsers(), // You'd need to implement this
-        apiClient.getAllLetters() // You'd need to implement this
+      const [statsData, employeesData, usageData] = await Promise.all([
+        discountService.getAdminStats(),
+        discountService.getAllEmployees(),
+        discountService.getAllDiscountUsage(),
       ]);
 
-      // Calculate stats
-      const employees = allUsers.filter(u => u.role === 'employee');
-      const regularUsers = allUsers.filter(u => u.role === 'user');
-
-      // Mock subscription and revenue data (in real app, fetch from database)
-      const mockRevenue = 15420.50;
-      const mockCommissions = 771.03;
-      const activeSubscriptions = regularUsers.length * 0.7; // 70% subscription rate
-
-      setStats({
-        totalUsers: regularUsers.length,
-        totalEmployees: employees.length,
-        totalLetters: allLetters.length,
-        totalRevenue: mockRevenue,
-        totalCommissions: mockCommissions,
-        activeSubscriptions: Math.floor(activeSubscriptions)
-      });
-
-      // Add stats to users
-      const usersWithStats: UserWithStats[] = allUsers.map(user => ({
-        ...user,
-        id: user.email, // Using email as ID for demo
-        letterCount: allLetters.filter(l => l.userId === user.email).length,
-        subscriptionStatus: user.role === 'user' ? 'active' : 'N/A',
-        lastActive: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
-      }));
-
-      setUsers(usersWithStats);
-      setLetters(allLetters);
+      setAdminStats(statsData);
+      setEmployees(employeesData);
+      setDiscountUsage(usageData);
 
       showSuccess(
         'Dashboard Loaded',
-        `Found ${allUsers.length} users, ${allLetters.length} letters, and $${mockRevenue.toFixed(2)} in revenue.`
+        `Found ${employeesData.length} employees and $${statsData.totalCommissionsGenerated.toFixed(2)} in total commissions.`
       );
     } catch (error) {
       console.error('Failed to load admin data:', error);
@@ -96,332 +69,397 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleUserRoleChange = async (userId: string, newRole: 'user' | 'employee' | 'admin') => {
-    showInfo('Updating User Role', `Changing user role to ${newRole}...`);
+  const handleToggleEmployee = async (
+    employeeId: string,
+    isActive: boolean
+  ) => {
+    const action = isActive ? 'activate' : 'deactivate';
+    showInfo(
+      `${action.charAt(0).toUpperCase() + action.slice(1)} Employee`,
+      `${action.charAt(0).toUpperCase() + action.slice(1)}ing employee account...`
+    );
 
     try {
-      // Mock API call (implement in real app)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setUsers(prev =>
-        prev.map(user =>
-          user.id === userId ? { ...user, role: newRole } : user
-        )
+      const success = await discountService.toggleEmployeeStatus(
+        employeeId,
+        isActive
       );
 
-      // Update stats if role changed to/from employee
-      const updatedUser = users.find(u => u.id === userId);
-      if (updatedUser) {
-        if (updatedUser.role === 'employee' && newRole !== 'employee') {
-          setStats(prev => ({ ...prev, totalEmployees: prev.totalEmployees - 1 }));
-        } else if (updatedUser.role !== 'employee' && newRole === 'employee') {
-          setStats(prev => ({ ...prev, totalEmployees: prev.totalEmployees + 1 }));
-        }
+      if (success) {
+        setEmployees(prev =>
+          prev.map(emp => (emp.id === employeeId ? { ...emp, isActive } : emp))
+        );
+
+        // Update stats
+        setAdminStats(prev => ({
+          ...prev,
+          activeEmployees: isActive
+            ? prev.activeEmployees + 1
+            : Math.max(0, prev.activeEmployees - 1),
+        }));
+
+        showSuccess(
+          'Employee Updated',
+          `Employee ${isActive ? 'activated' : 'deactivated'} successfully. ${!isActive ? 'All their discount codes have been deactivated.' : ''}`
+        );
+      } else {
+        showError('Update Failed', `Unable to ${action} employee.`);
       }
-
-      showSuccess(
-        'Role Updated',
-        `User role successfully changed to ${newRole}.`
-      );
     } catch (error) {
-      console.error('Failed to update user role:', error);
-      showError('Update Failed', 'Unable to update user role.');
+      console.error(`Failed to ${action} employee:`, error);
+      showError('Update Failed', `Unable to ${action} employee.`);
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className='flex justify-center items-center h-64'>
+        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
       </div>
     );
   }
 
   return (
     <>
-      <div className="space-y-6">
-        {/* Admin Stats Header */}
-        <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Admin Dashboard</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{stats.totalUsers}</div>
-              <div className="text-sm text-gray-600">Total Users</div>
+      <div className='space-y-6'>
+        {/* Admin Header */}
+        <div className='bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border p-6'>
+          <div className='flex items-center justify-between mb-4'>
+            <h2 className='text-2xl font-bold text-gray-800'>
+              Admin Dashboard
+            </h2>
+            <div className='flex items-center space-x-2 text-purple-600'>
+              <Settings className='w-5 h-5' />
+              <span className='text-sm font-medium'>
+                Administrative Controls
+              </span>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{stats.totalEmployees}</div>
-              <div className="text-sm text-gray-600">Employees</div>
+          </div>
+
+          {/* Stats Overview */}
+          <div className='grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4'>
+            <div className='text-center'>
+              <div className='text-2xl font-bold text-blue-600'>
+                {adminStats.totalEmployees}
+              </div>
+              <div className='text-xs text-gray-600'>Total Employees</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{stats.totalLetters}</div>
-              <div className="text-sm text-gray-600">Total Letters</div>
+            <div className='text-center'>
+              <div className='text-2xl font-bold text-green-600'>
+                {adminStats.activeEmployees}
+              </div>
+              <div className='text-xs text-gray-600'>Active Employees</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-emerald-600">${stats.totalRevenue.toFixed(0)}</div>
-              <div className="text-sm text-gray-600">Total Revenue</div>
+            <div className='text-center'>
+              <div className='text-2xl font-bold text-orange-600'>
+                {adminStats.totalDiscountCodes}
+              </div>
+              <div className='text-xs text-gray-600'>Total Codes</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">${stats.totalCommissions.toFixed(0)}</div>
-              <div className="text-sm text-gray-600">Commissions</div>
+            <div className='text-center'>
+              <div className='text-2xl font-bold text-purple-600'>
+                {adminStats.activeDiscountCodes}
+              </div>
+              <div className='text-xs text-gray-600'>Active Codes</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-indigo-600">{stats.activeSubscriptions}</div>
-              <div className="text-sm text-gray-600">Active Subs</div>
+            <div className='text-center'>
+              <div className='text-2xl font-bold text-emerald-600'>
+                ${adminStats.totalCommissionsGenerated.toFixed(2)}
+              </div>
+              <div className='text-xs text-gray-600'>Total Commissions</div>
+            </div>
+            <div className='text-center'>
+              <div className='text-2xl font-bold text-indigo-600'>
+                ${adminStats.monthlyCommissions.toFixed(2)}
+              </div>
+              <div className='text-xs text-gray-600'>This Month</div>
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg border">
-          <div className="border-b">
-            <nav className="flex space-x-8 px-6">
-              {[
-                { id: 'overview', label: 'Overview' },
-                { id: 'users', label: 'Users' },
-                { id: 'letters', label: 'Letters' },
-                { id: 'revenue', label: 'Revenue' }
-              ].map(tab => (
+        <div className='border-b border-gray-200'>
+          <nav className='-mb-px flex space-x-8'>
+            {[
+              { id: 'overview', label: 'Overview', icon: BarChart3 },
+              { id: 'employees', label: 'Employee Management', icon: Users },
+              { id: 'usage', label: 'Discount Usage', icon: Gift },
+            ].map(tab => {
+              const Icon = tab.icon;
+              return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
+                  <Icon className='w-4 h-4 mr-2' />
                   {tab.label}
                 </button>
-              ))}
-            </nav>
-          </div>
-
-          <div className="p-6">
-            {/* Overview Tab */}
-            {activeTab === 'overview' && (
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-800">System Overview</h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-700 mb-2">User Distribution</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Regular Users:</span>
-                        <span className="font-medium">{stats.totalUsers}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Employees:</span>
-                        <span className="font-medium">{stats.totalEmployees}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Subscription Rate:</span>
-                        <span className="font-medium">
-                          {((stats.activeSubscriptions / stats.totalUsers) * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-700 mb-2">Financial Summary</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Total Revenue:</span>
-                        <span className="font-medium">${stats.totalRevenue.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Employee Commissions:</span>
-                        <span className="font-medium">${stats.totalCommissions.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Net Revenue:</span>
-                        <span className="font-medium text-green-600">
-                          ${(stats.totalRevenue - stats.totalCommissions).toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Users Tab */}
-            {activeTab === 'users' && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">User Management</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full table-auto">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="px-4 py-2 text-left font-medium text-gray-700">Email</th>
-                        <th className="px-4 py-2 text-left font-medium text-gray-700">Role</th>
-                        <th className="px-4 py-2 text-left font-medium text-gray-700">Letters</th>
-                        <th className="px-4 py-2 text-left font-medium text-gray-700">Subscription</th>
-                        <th className="px-4 py-2 text-left font-medium text-gray-700">Last Active</th>
-                        <th className="px-4 py-2 text-left font-medium text-gray-700">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map((user) => (
-                        <tr key={user.id} className="border-t">
-                          <td className="px-4 py-2">{user.email}</td>
-                          <td className="px-4 py-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              user.role === 'admin'
-                                ? 'bg-red-100 text-red-800'
-                                : user.role === 'employee'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-green-100 text-green-800'
-                            }`}>
-                              {user.role}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2">{user.letterCount}</td>
-                          <td className="px-4 py-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              user.subscriptionStatus === 'active'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {user.subscriptionStatus}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2">
-                            {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : 'Never'}
-                          </td>
-                          <td className="px-4 py-2">
-                            <select
-                              value={user.role}
-                              onChange={(e) => handleUserRoleChange(user.id, e.target.value as any)}
-                              className="text-xs border rounded px-2 py-1"
-                            >
-                              <option value="user">User</option>
-                              <option value="employee">Employee</option>
-                              <option value="admin">Admin</option>
-                            </select>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Letters Tab */}
-            {activeTab === 'letters' && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">All Letters</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full table-auto">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="px-4 py-2 text-left font-medium text-gray-700">Title</th>
-                        <th className="px-4 py-2 text-left font-medium text-gray-700">User</th>
-                        <th className="px-4 py-2 text-left font-medium text-gray-700">Type</th>
-                        <th className="px-4 py-2 text-left font-medium text-gray-700">Status</th>
-                        <th className="px-4 py-2 text-left font-medium text-gray-700">Priority</th>
-                        <th className="px-4 py-2 text-left font-medium text-gray-700">Created</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {letters.map((letter) => (
-                        <tr key={letter.id} className="border-t">
-                          <td className="px-4 py-2 font-medium">{letter.title}</td>
-                          <td className="px-4 py-2">{letter.userId}</td>
-                          <td className="px-4 py-2">{letter.letterType}</td>
-                          <td className="px-4 py-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              letter.status === 'completed'
-                                ? 'bg-green-100 text-green-800'
-                                : letter.status === 'in_review'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {letter.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              letter.priority === 'urgent'
-                                ? 'bg-red-100 text-red-800'
-                                : letter.priority === 'high'
-                                ? 'bg-orange-100 text-orange-800'
-                                : 'bg-blue-100 text-blue-800'
-                            }`}>
-                              {letter.priority}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2">
-                            {new Date(letter.createdAt).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Revenue Tab */}
-            {activeTab === 'revenue' && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Revenue Analytics</h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  <div className="bg-green-50 rounded-lg p-4 border">
-                    <h4 className="font-medium text-green-800 mb-2">Total Revenue</h4>
-                    <div className="text-2xl font-bold text-green-600">
-                      ${stats.totalRevenue.toFixed(2)}
-                    </div>
-                    <div className="text-sm text-green-600">All time</div>
-                  </div>
-
-                  <div className="bg-blue-50 rounded-lg p-4 border">
-                    <h4 className="font-medium text-blue-800 mb-2">Employee Commissions</h4>
-                    <div className="text-2xl font-bold text-blue-600">
-                      ${stats.totalCommissions.toFixed(2)}
-                    </div>
-                    <div className="text-sm text-blue-600">
-                      {((stats.totalCommissions / stats.totalRevenue) * 100).toFixed(1)}% of revenue
-                    </div>
-                  </div>
-
-                  <div className="bg-purple-50 rounded-lg p-4 border">
-                    <h4 className="font-medium text-purple-800 mb-2">Net Profit</h4>
-                    <div className="text-2xl font-bold text-purple-600">
-                      ${(stats.totalRevenue - stats.totalCommissions).toFixed(2)}
-                    </div>
-                    <div className="text-sm text-purple-600">After commissions</div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-700 mb-4">Revenue Breakdown</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Subscription Revenue:</span>
-                      <span className="font-medium">${(stats.totalRevenue * 0.85).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>One-time Purchases:</span>
-                      <span className="font-medium">${(stats.totalRevenue * 0.15).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between pt-2 border-t">
-                      <span>Employee Commissions:</span>
-                      <span className="font-medium text-red-600">-${stats.totalCommissions.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                      <span>Net Revenue:</span>
-                      <span className="text-green-600">${(stats.totalRevenue - stats.totalCommissions).toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+              );
+            })}
+          </nav>
         </div>
+
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+            {/* Employee Status Overview */}
+            <div className='bg-white rounded-lg border p-6'>
+              <h3 className='text-lg font-semibold text-gray-800 mb-4 flex items-center'>
+                <Users className='w-5 h-5 mr-2 text-blue-600' />
+                Employee Status
+              </h3>
+              <div className='space-y-3'>
+                <div className='flex justify-between items-center'>
+                  <span className='text-gray-700'>Active Employees:</span>
+                  <div className='flex items-center'>
+                    <CheckCircle className='w-4 h-4 text-green-500 mr-1' />
+                    <span className='font-semibold text-green-600'>
+                      {adminStats.activeEmployees}
+                    </span>
+                  </div>
+                </div>
+                <div className='flex justify-between items-center'>
+                  <span className='text-gray-700'>Inactive Employees:</span>
+                  <div className='flex items-center'>
+                    <XCircle className='w-4 h-4 text-red-500 mr-1' />
+                    <span className='font-semibold text-red-600'>
+                      {adminStats.totalEmployees - adminStats.activeEmployees}
+                    </span>
+                  </div>
+                </div>
+                <div className='pt-2 border-t'>
+                  <div className='flex justify-between items-center'>
+                    <span className='text-gray-700 font-medium'>Total:</span>
+                    <span className='font-bold text-gray-800'>
+                      {adminStats.totalEmployees}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Commission Overview */}
+            <div className='bg-white rounded-lg border p-6'>
+              <h3 className='text-lg font-semibold text-gray-800 mb-4 flex items-center'>
+                <DollarSign className='w-5 h-5 mr-2 text-green-600' />
+                Commission Overview
+              </h3>
+              <div className='space-y-3'>
+                <div className='flex justify-between items-center'>
+                  <span className='text-gray-700'>Total Generated:</span>
+                  <span className='font-bold text-green-600'>
+                    ${adminStats.totalCommissionsGenerated.toFixed(2)}
+                  </span>
+                </div>
+                <div className='flex justify-between items-center'>
+                  <span className='text-gray-700'>This Month:</span>
+                  <span className='font-bold text-blue-600'>
+                    ${adminStats.monthlyCommissions.toFixed(2)}
+                  </span>
+                </div>
+                <div className='pt-2 border-t'>
+                  <div className='flex justify-between items-center'>
+                    <span className='text-gray-700'>Avg per Employee:</span>
+                    <span className='font-medium text-gray-800'>
+                      $
+                      {adminStats.activeEmployees > 0
+                        ? (
+                            adminStats.totalCommissionsGenerated /
+                            adminStats.activeEmployees
+                          ).toFixed(2)
+                        : '0.00'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'employees' && (
+          <div className='bg-white rounded-lg border p-6'>
+            <div className='flex justify-between items-center mb-6'>
+              <h3 className='text-xl font-semibold text-gray-800'>
+                Employee Management
+              </h3>
+              <div className='flex items-center space-x-4'>
+                <div className='flex items-center space-x-2 text-sm text-gray-600'>
+                  <CheckCircle className='w-4 h-4 text-green-500' />
+                  <span>Active: {adminStats.activeEmployees}</span>
+                </div>
+                <div className='flex items-center space-x-2 text-sm text-gray-600'>
+                  <XCircle className='w-4 h-4 text-red-500' />
+                  <span>
+                    Inactive:{' '}
+                    {adminStats.totalEmployees - adminStats.activeEmployees}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className='overflow-x-auto'>
+              <table className='w-full table-auto'>
+                <thead>
+                  <tr className='bg-gray-50'>
+                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
+                      Employee
+                    </th>
+                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
+                      Email
+                    </th>
+                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
+                      Status
+                    </th>
+                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
+                      Joined
+                    </th>
+                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {employees.map(employee => (
+                    <tr key={employee.id} className='border-t'>
+                      <td className='px-4 py-2'>
+                        <div className='flex items-center'>
+                          <div
+                            className={`w-3 h-3 rounded-full mr-3 ${
+                              employee.isActive ? 'bg-green-500' : 'bg-red-500'
+                            }`}
+                          ></div>
+                          <span className='font-medium'>
+                            {employee.name || 'No Name'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className='px-4 py-2 text-gray-600'>
+                        {employee.email}
+                      </td>
+                      <td className='px-4 py-2'>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            employee.isActive
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {employee.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className='px-4 py-2 text-gray-600'>
+                        {new Date(employee.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className='px-4 py-2'>
+                        <button
+                          onClick={() =>
+                            handleToggleEmployee(
+                              employee.id,
+                              !employee.isActive
+                            )
+                          }
+                          className={`flex items-center px-3 py-1 rounded text-xs font-medium transition-colors ${
+                            employee.isActive
+                              ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                              : 'bg-green-100 text-green-700 hover:bg-green-200'
+                          }`}
+                        >
+                          {employee.isActive ? (
+                            <>
+                              <UserX className='w-3 h-3 mr-1' />
+                              Deactivate
+                            </>
+                          ) : (
+                            <>
+                              <UserCheck className='w-3 h-3 mr-1' />
+                              Activate
+                            </>
+                          )}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {employees.length === 0 && (
+              <div className='text-center py-8 text-gray-500'>
+                No employees found.
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'usage' && (
+          <div className='bg-white rounded-lg border p-6'>
+            <h3 className='text-xl font-semibold text-gray-800 mb-6'>
+              Recent Discount Code Usage
+            </h3>
+
+            <div className='overflow-x-auto'>
+              <table className='w-full table-auto'>
+                <thead>
+                  <tr className='bg-gray-50'>
+                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
+                      Date
+                    </th>
+                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
+                      Code
+                    </th>
+                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
+                      Subscription
+                    </th>
+                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
+                      Discount
+                    </th>
+                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
+                      Commission
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {discountUsage.slice(0, 20).map(usage => (
+                    <tr key={usage.id} className='border-t'>
+                      <td className='px-4 py-2 text-gray-600'>
+                        {new Date(usage.usedAt).toLocaleDateString()}
+                      </td>
+                      <td className='px-4 py-2 font-mono font-bold text-blue-600'>
+                        {usage.discountCodeId}
+                      </td>
+                      <td className='px-4 py-2'>
+                        ${usage.subscriptionAmount.toFixed(2)}
+                      </td>
+                      <td className='px-4 py-2 text-orange-600'>
+                        -${usage.discountAmount.toFixed(2)}
+                      </td>
+                      <td className='px-4 py-2 font-bold text-green-600'>
+                        ${usage.commissionAmount.toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {discountUsage.length === 0 && (
+              <div className='text-center py-8 text-gray-500'>
+                No discount code usage found.
+              </div>
+            )}
+
+            {discountUsage.length > 20 && (
+              <div className='text-center py-4 text-gray-500 text-sm'>
+                Showing latest 20 entries of {discountUsage.length} total uses
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Render all banners */}

@@ -15,7 +15,7 @@ create table if not exists public.letters (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users on delete cascade not null,
   title text not null,
-  type text not null,
+  letter_type text not null,
   content text,
   ai_draft text,
   status text check (status in ('draft', 'completed', 'sent')) not null default 'draft',
