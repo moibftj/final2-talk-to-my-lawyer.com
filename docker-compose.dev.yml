@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # Development Frontend with Hot Reload
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: talk-to-my-lawyer-frontend-dev
+    ports:
+      - "5173:5173"  # Vite default dev port
+    environment:
+      - NODE_ENV=development
+      - VITE_SUPABASE_URL=http://localhost:54323
+      - VITE_SUPABASE_ANON_KEY=your-anon-key-here
+    volumes:
+      - .:/app
+      - /app/node_modules  # Prevent overwriting node_modules
+    depends_on:
+      - supabase-dev
+    networks:
+      - dev-network
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+  # Supabase for Development
+  supabase-dev:
+    image: supabase/supabase:latest
+    container_name: talk-to-my-lawyer-supabase-dev
+    ports:
+      - "54321:8000"  # Supabase Studio
+      - "54322:5432"  # PostgreSQL
+      - "54323:3000"  # REST API
+      - "54324:8443"  # Auth
+      - "54325:5555"  # Edge Functions
+    environment:
+      - POSTGRES_PASSWORD=dev-password
+      - JWT_SECRET=your-super-secret-jwt-token-with-at-least-32-characters-long-dev
+      - ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRldmVsb3BtZW50IiwiaWF0IjoxNjc5NzYwMDAwLCJleHAiOjE4Mzc0NDAwMDB9
+      - SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRldmVsb3BtZW50Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY3OTc2MDAwMCwiZXhwIjoxODM3NDQwMDAwfQ
+    volumes:
+      - supabase_dev_data:/var/lib/postgresql/data
+      - ./supabase:/docker-entrypoint-initdb.d:ro
+    networks:
+      - dev-network
+    restart: unless-stopped
+
+  # Redis for Development
+  redis-dev:
+    image: redis:7-alpine
+    container_name: talk-to-my-lawyer-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - dev-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+volumes:
+  supabase_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+
+networks:
+  dev-network:
+    driver: bridge
+    name: talk-to-my-lawyer-dev-network
