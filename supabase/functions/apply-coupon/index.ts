@@ -3,7 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type',
 };
 
 interface ApplyCouponRequest {
@@ -28,7 +29,7 @@ interface SubscriptionResponse {
   error?: string;
 }
 
-serve(async (req) => {
+serve(async req => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -44,20 +45,23 @@ serve(async (req) => {
     // Verify user authentication
     const authHeader = req.headers.get('Authorization')!;
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseClient.auth.getUser(token);
 
     if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     if (req.method !== 'POST') {
-      return new Response(
-        JSON.stringify({ error: 'Method not allowed' }),
-        { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+        status: 405,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const {
@@ -65,13 +69,18 @@ serve(async (req) => {
       planType,
       subscriptionAmount,
       paymentMethodId,
-      billingDetails
+      billingDetails,
     }: ApplyCouponRequest = await req.json();
 
     if (!planType || !subscriptionAmount) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: planType, subscriptionAmount' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          error: 'Missing required fields: planType, subscriptionAmount',
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
       );
     }
 
@@ -84,10 +93,12 @@ serve(async (req) => {
       // Get discount code details
       const { data: discountData, error: discountError } = await supabaseClient
         .from('discount_codes')
-        .select(`
+        .select(
+          `
           *,
           profiles:employee_id (email)
-        `)
+        `
+        )
         .eq('code', discountCode.toUpperCase())
         .eq('is_active', true)
         .single();
@@ -99,14 +110,18 @@ serve(async (req) => {
             error: 'Invalid or expired discount code',
             totalAmount: subscriptionAmount,
             discountAmount: 0,
-            finalAmount: subscriptionAmount
+            finalAmount: subscriptionAmount,
           }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
         );
       }
 
       validatedDiscount = discountData;
-      discountAmount = (subscriptionAmount * discountData.discount_percentage) / 100;
+      discountAmount =
+        (subscriptionAmount * discountData.discount_percentage) / 100;
 
       // Calculate employee commission (5% of original subscription amount)
       const commissionAmount = (subscriptionAmount * 5) / 100;
@@ -120,7 +135,7 @@ serve(async (req) => {
           employee_id: discountData.employee_id,
           subscription_amount: subscriptionAmount,
           discount_amount: discountAmount,
-          commission_amount: commissionAmount
+          commission_amount: commissionAmount,
         })
         .select()
         .single();
@@ -129,7 +144,10 @@ serve(async (req) => {
         console.error('Error recording discount usage:', usageError);
         return new Response(
           JSON.stringify({ error: 'Failed to apply discount code' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
         );
       }
 
@@ -140,41 +158,40 @@ serve(async (req) => {
         .from('discount_codes')
         .update({
           usage_count: discountData.usage_count + 1,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', discountData.id);
 
       // Add points to employee (1 point per successful referral)
-      await supabaseClient
-        .from('employee_points')
-        .insert({
-          employee_id: discountData.employee_id,
-          points_earned: 1,
-          source: 'referral',
-          reference_id: usageData.id,
-          description: `Referral bonus for discount code ${discountCode}`,
-          earned_at: new Date().toISOString()
-        });
+      await supabaseClient.from('employee_points').insert({
+        employee_id: discountData.employee_id,
+        points_earned: 1,
+        source: 'referral',
+        reference_id: usageData.id,
+        description: `Referral bonus for discount code ${discountCode}`,
+        earned_at: new Date().toISOString(),
+      });
     }
 
     const finalAmount = subscriptionAmount - discountAmount;
 
     // Create subscription record
-    const { data: subscription, error: subscriptionError } = await supabaseClient
-      .from('subscriptions')
-      .insert({
-        user_id: user.id,
-        plan_type: planType,
-        amount: finalAmount,
-        original_amount: subscriptionAmount,
-        discount_amount: discountAmount,
-        discount_code_id: validatedDiscount?.id || null,
-        status: 'active',
-        payment_method_id: paymentMethodId,
-        billing_details: billingDetails
-      })
-      .select()
-      .single();
+    const { data: subscription, error: subscriptionError } =
+      await supabaseClient
+        .from('subscriptions')
+        .insert({
+          user_id: user.id,
+          plan_type: planType,
+          amount: finalAmount,
+          original_amount: subscriptionAmount,
+          discount_amount: discountAmount,
+          discount_code_id: validatedDiscount?.id || null,
+          status: 'active',
+          payment_method_id: paymentMethodId,
+          billing_details: billingDetails,
+        })
+        .select()
+        .single();
 
     if (subscriptionError) {
       console.error('Error creating subscription:', subscriptionError);
@@ -189,30 +206,32 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ error: 'Failed to create subscription' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
       );
     }
 
     // Update user's letter credit count based on plan
     const letterCredits: Record<string, number> = {
-      'one_letter': 1,
-      'four_monthly': 4,
-      'eight_yearly': 8
+      one_letter: 1,
+      four_monthly: 4,
+      eight_yearly: 8,
     };
 
     const creditsToAdd = letterCredits[planType] || 0;
 
     // Add credits to user profile or separate credits table
-    await supabaseClient
-      .from('user_credits')
-      .upsert({
-        user_id: user.id,
-        total_credits: creditsToAdd,
-        remaining_credits: creditsToAdd,
-        plan_type: planType,
-        subscription_id: subscription.id,
-        expires_at: planType === 'one_letter' ? null : getExpirationDate(planType)
-      });
+    await supabaseClient.from('user_credits').upsert({
+      user_id: user.id,
+      total_credits: creditsToAdd,
+      remaining_credits: creditsToAdd,
+      plan_type: planType,
+      subscription_id: subscription.id,
+      expires_at:
+        planType === 'one_letter' ? null : getExpirationDate(planType),
+    });
 
     // Send confirmation email
     try {
@@ -226,9 +245,9 @@ serve(async (req) => {
             originalAmount: subscriptionAmount,
             discountAmount,
             discountCode: validatedDiscount?.code,
-            letterCredits: creditsToAdd
-          })
-        }
+            letterCredits: creditsToAdd,
+          }),
+        },
       });
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError);
@@ -245,9 +264,9 @@ serve(async (req) => {
             body: generateCommissionEmail({
               discountCode: validatedDiscount.code,
               commissionAmount: discountUsage.commission_amount,
-              referredUserEmail: user.email
-            })
-          }
+              referredUserEmail: user.email,
+            }),
+          },
         });
       } catch (emailError) {
         console.error('Failed to send commission email:', emailError);
@@ -260,23 +279,19 @@ serve(async (req) => {
       discountUsage,
       totalAmount: subscriptionAmount,
       discountAmount,
-      finalAmount
+      finalAmount,
     };
 
-    return new Response(
-      JSON.stringify(response),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('Error in apply-coupon function:', error);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
 
@@ -284,11 +299,23 @@ function getExpirationDate(planType: string): string {
   const now = new Date();
   switch (planType) {
     case 'four_monthly':
-      return new Date(now.setMonth(now.getMonth() + 1)).toISOString();
+      return new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        now.getDate()
+      ).toISOString();
     case 'eight_yearly':
-      return new Date(now.setFullYear(now.getFullYear() + 1)).toISOString();
+      return new Date(
+        now.getFullYear() + 1,
+        now.getMonth(),
+        now.getDate()
+      ).toISOString();
     default:
-      return new Date(now.setMonth(now.getMonth() + 1)).toISOString();
+      return new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        now.getDate()
+      ).toISOString();
   }
 }
 
@@ -301,9 +328,9 @@ function generateSubscriptionConfirmationEmail(details: {
   letterCredits: number;
 }): string {
   const planNames: Record<string, string> = {
-    'one_letter': 'Single Letter Plan',
-    'four_monthly': 'Monthly Plan (4 Letters)',
-    'eight_yearly': 'Yearly Plan (8 Letters/month)'
+    one_letter: 'Single Letter Plan',
+    four_monthly: 'Monthly Plan (4 Letters)',
+    eight_yearly: 'Yearly Plan (8 Letters/month)',
   };
 
   return `
