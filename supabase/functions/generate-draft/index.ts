@@ -40,7 +40,7 @@ Deno.serve(async req => {
     }
 
     // 4. Initialize the Gemini client and build the prompt
-    const genAI = new GoogleGenAI(GEMINI_API_KEY);
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     let styleInstructions = '';
