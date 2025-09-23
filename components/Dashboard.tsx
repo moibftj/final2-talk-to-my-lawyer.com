@@ -1,4 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  FileText,
+  Plus,
+  CreditCard,
+  TrendingUp,
+  Calendar,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  User,
+  Crown,
+  BarChart3,
+  Briefcase
+} from 'lucide-react';
 import { LettersTable } from './LettersTable';
 import { LetterGenerationModal } from './LetterGenerationModal';
 import { SubscriptionForm } from './SubscriptionForm';
@@ -258,45 +273,333 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     return <SubscriptionForm onSubscribe={handleSubscribe} />;
   }
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'text-green-600 bg-green-100';
+      case 'under_review':
+        return 'text-blue-600 bg-blue-100';
+      case 'pending':
+        return 'text-orange-600 bg-orange-100';
+      case 'draft':
+        return 'text-purple-600 bg-purple-100';
+      default:
+        return 'text-slate-600 bg-slate-100';
+    }
+  };
+
+  const recentLetters = letters.slice(0, 3);
+  const completedLetters = letters.filter(l => l.status === 'completed').length;
+  const pendingLetters = letters.filter(l => l.status === 'pending' || l.status === 'under_review').length;
+
   return (
-    <>
-      {/* User Stats Header */}
-      <div className='mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border'>
-        <h2 className='text-xl font-semibold text-gray-800 mb-2'>
-          Your Dashboard
-        </h2>
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-          <div className='text-center'>
-            <div className='text-2xl font-bold text-blue-600'>
-              {letters.length}
+    <div className="space-y-8">
+      {/* Header Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-8 text-white relative overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10" />
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
+              <p className="text-slate-300 text-lg">
+                Manage your legal correspondence with ease
+              </p>
             </div>
-            <div className='text-sm text-gray-600'>Total Letters</div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleNewLetter}
+              className="flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-medium transition-colors"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              New Letter
+            </motion.button>
           </div>
-          <div className='text-center'>
-            <div className='text-2xl font-bold text-green-600'>
-              {remainingLetters}
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+              className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <FileText className="w-5 h-5 text-blue-300" />
+                </div>
+                <span className="text-2xl font-bold">{letters.length}</span>
+              </div>
+              <p className="text-slate-300 text-sm">Total Letters</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-green-500/20 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-green-300" />
+                </div>
+                <span className="text-2xl font-bold">{completedLetters}</span>
+              </div>
+              <p className="text-slate-300 text-sm">Completed</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-orange-500/20 rounded-lg">
+                  <Clock className="w-5 h-5 text-orange-300" />
+                </div>
+                <span className="text-2xl font-bold">{pendingLetters}</span>
+              </div>
+              <p className="text-slate-300 text-sm">In Progress</p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4 }}
+              className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-purple-500/20 rounded-lg">
+                  <Crown className="w-5 h-5 text-purple-300" />
+                </div>
+                <span className="text-2xl font-bold">{remainingLetters}</span>
+              </div>
+              <p className="text-slate-300 text-sm">Credits Left</p>
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Recent Letters */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-slate-800 flex items-center">
+              <Briefcase className="w-5 h-5 mr-2 text-slate-600" />
+              Recent Letters
+            </h3>
+            <button
+              onClick={() => {/* Show all letters view */}}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              View All
+            </button>
+          </div>
+
+          {recentLetters.length > 0 ? (
+            <div className="space-y-4">
+              {recentLetters.map((letter, index) => (
+                <motion.div
+                  key={letter.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 * index }}
+                  className="p-4 border border-slate-200 rounded-xl hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => handleEditLetter(letter)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-slate-800 mb-1">
+                        {letter.title}
+                      </h4>
+                      <p className="text-sm text-slate-600 mb-2">
+                        To: {letter.recipientName}
+                      </p>
+                      <div className="flex items-center space-x-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(letter.status)}`}>
+                          {letter.status.replace('_', ' ').toUpperCase()}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {new Date(letter.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-slate-600" />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
             </div>
-            <div className='text-sm text-gray-600'>Credits Remaining</div>
-          </div>
-          <div className='text-center'>
-            <div className='text-2xl font-bold text-purple-600'>
-              {subscription?.planType.replace('_', ' ').toUpperCase() ||
-                'No Plan'}
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="w-8 h-8 text-slate-400" />
+              </div>
+              <h4 className="text-lg font-medium text-slate-600 mb-2">
+                No letters yet
+              </h4>
+              <p className="text-slate-500 mb-4">
+                Create your first professional letter to get started
+              </p>
+              <button
+                onClick={handleNewLetter}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Create Letter
+              </button>
             </div>
-            <div className='text-sm text-gray-600'>Current Plan</div>
-          </div>
+          )}
+        </motion.div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Subscription Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-800">Current Plan</h3>
+              <Crown className="w-5 h-5 text-blue-600" />
+            </div>
+
+            <div className="mb-4">
+              <div className="text-2xl font-bold text-blue-600 mb-1">
+                {subscription?.planType.replace('_', ' ').toUpperCase() || 'Free Trial'}
+              </div>
+              <p className="text-sm text-slate-600">
+                {remainingLetters} credits remaining
+              </p>
+            </div>
+
+            <div className="w-full bg-white rounded-full h-2 mb-4">
+              <div
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.max(10, (remainingLetters / (subscription ?
+                    subscription.planType === 'one_letter' ? 1 :
+                    subscription.planType === 'four_monthly' ? 4 : 8
+                  : 1)) * 100)}%`
+                }}
+              />
+            </div>
+
+            <button
+              onClick={() => navigateTo('subscription')}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            >
+              Manage Plan
+            </button>
+          </motion.div>
+
+          {/* Quick Actions */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-white rounded-2xl p-6 shadow-sm border"
+          >
+            <h3 className="font-semibold text-slate-800 mb-4">Quick Actions</h3>
+            <div className="space-y-3">
+              <button
+                onClick={handleNewLetter}
+                className="w-full flex items-center px-4 py-3 text-left hover:bg-slate-50 rounded-lg transition-colors"
+              >
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                  <Plus className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <div className="font-medium text-slate-800">New Letter</div>
+                  <div className="text-sm text-slate-500">Create a new request</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => navigateTo('subscription')}
+                className="w-full flex items-center px-4 py-3 text-left hover:bg-slate-50 rounded-lg transition-colors"
+              >
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                  <CreditCard className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <div className="font-medium text-slate-800">Upgrade Plan</div>
+                  <div className="text-sm text-slate-500">Get more credits</div>
+                </div>
+              </button>
+            </div>
+          </motion.div>
+
+          {/* Activity Summary */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-white rounded-2xl p-6 shadow-sm border"
+          >
+            <h3 className="font-semibold text-slate-800 mb-4 flex items-center">
+              <BarChart3 className="w-5 h-5 mr-2 text-slate-600" />
+              Activity
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-600">This Month</span>
+                <span className="font-medium text-slate-800">
+                  {letters.filter(l =>
+                    new Date(l.createdAt).getMonth() === new Date().getMonth()
+                  ).length} letters
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-600">Success Rate</span>
+                <span className="font-medium text-green-600">
+                  {letters.length > 0 ? Math.round((completedLetters / letters.length) * 100) : 0}%
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-600">Avg. Processing</span>
+                <span className="font-medium text-slate-800">2-3 days</span>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
 
-      <LettersTable
-        letters={letters}
-        onNewLetterClick={handleNewLetter}
-        onEditLetterClick={handleEditLetter}
-        onDeleteLetter={handleDeleteRequest}
-        isDeletingId={isDeletingId}
-        isLoading={isLoading}
-        onStatusUpdate={handleStatusUpdate}
-      />
+      {/* Full Letters Table */}
+      {letters.length > 3 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <LettersTable
+            letters={letters}
+            onNewLetterClick={handleNewLetter}
+            onEditLetterClick={handleEditLetter}
+            onDeleteLetter={handleDeleteRequest}
+            isDeletingId={isDeletingId}
+            isLoading={isLoading}
+            onStatusUpdate={handleStatusUpdate}
+          />
+        </motion.div>
+      )}
+
+      {/* Modals and Overlays */}
       <ConfirmationModal
         isOpen={!!letterToDeleteId}
         onClose={handleCancelDelete}
@@ -306,7 +609,6 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
         isConfirming={isDeletingId === letterToDeleteId}
       />
 
-      {/* Letter Generation Modal */}
       <LetterGenerationModal
         isOpen={showLetterModal}
         onClose={handleCloseModal}
@@ -315,9 +617,11 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
       />
 
       {/* Render all banners */}
-      {banners.map(banner => (
-        <CompletionBanner key={banner.id} {...banner} />
-      ))}
-    </>
+      <AnimatePresence>
+        {banners.map(banner => (
+          <CompletionBanner key={banner.id} {...banner} />
+        ))}
+      </AnimatePresence>
+    </div>
   );
 };

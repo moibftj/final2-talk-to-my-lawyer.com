@@ -21,7 +21,10 @@
       "Bash(taskkill:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Read(//c/Users/prod.3/AppData/Roaming/Cursor/User/**)"
+      "Read(//c/Users/prod.3/AppData/Roaming/Cursor/User/**)",
+      "Read(//c/Users/prod.3/AppData/Roaming/Code/User/**)",
+      "Bash(find:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
