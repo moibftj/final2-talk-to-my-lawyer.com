@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reset Your Password - Law Letter AI</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f8fafc;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: white;
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 40px 20px;
+        text-align: center;
+      }
+      .logo {
+        color: white;
+        font-size: 28px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      .header-subtitle {
+        color: #e2e8f0;
+        font-size: 16px;
+      }
+      .content {
+        padding: 40px 30px;
+      }
+      .reset-text {
+        color: #1a202c;
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 20px;
+      }
+      .description {
+        color: #4a5568;
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 30px;
+      }
+      .cta-button {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 30px;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 16px;
+        margin: 20px 0;
+      }
+      .security-note {
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+      .security-title {
+        color: #dc2626;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      .security-text {
+        color: #7f1d1d;
+        font-size: 14px;
+      }
+      .footer {
+        background-color: #f7fafc;
+        padding: 30px;
+        text-align: center;
+        border-top: 1px solid #e2e8f0;
+      }
+      .footer-text {
+        color: #718096;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="logo">⚖️ Law Letter AI</div>
+        <div class="header-subtitle">Secure Password Reset</div>
+      </div>
+
+      <div class="content">
+        <h1 class="reset-text">Reset Your Password</h1>
+
+        <p class="description">
+          We received a request to reset the password for your Law Letter AI
+          account. If you made this request, click the button below to set a new
+          password.
+        </p>
+
+        <div style="text-align: center">
+          <a href="{{ .ConfirmationURL }}" class="cta-button">
+            Reset Password
+          </a>
+        </div>
+
+        <div class="security-note">
+          <div class="security-title">🔐 Security Notice</div>
+          <div class="security-text">
+            This password reset link will expire in 60 minutes for your
+            security. If you didn't request this reset, please ignore this email
+            and your password will remain unchanged.
+          </div>
+        </div>
+
+        <p class="description">
+          For your security, this link will only work once. If you need to reset
+          your password again, please request a new reset email.
+        </p>
+      </div>
+
+      <div class="footer">
+        <p class="footer-text">
+          If you're having trouble clicking the button, copy and paste this URL
+          into your browser:<br />
+          <span style="word-break: break-all; color: #4a5568"
+            >{{ .ConfirmationURL }}</span
+          >
+        </p>
+        <p class="footer-text">© 2024 Law Letter AI. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>

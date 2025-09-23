@@ -4,23 +4,25 @@
 // Follow this guide to deploy the function to your Supabase project:
 // https://supabase.com/docs/guides/functions/deploy
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Define interfaces for type safety
 interface GenerateDraftPayload {
-    title: string;
-    templateBody: string;
-    templateFields: Record<string, string>;
-    additionalContext: string;
-    tone?: 'Formal' | 'Aggressive' | 'Conciliatory' | 'Neutral';
-    length?: 'Short' | 'Medium' | 'Long';
+  title: string;
+  templateBody: string;
+  templateFields: Record<string, string>;
+  additionalContext: string;
+  tone?: 'Formal' | 'Aggressive' | 'Conciliatory' | 'Neutral';
+  length?: 'Short' | 'Medium' | 'Long';
+  letterId?: string; // Add letter ID to update status
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async req => {
   // 1. Set up CORS headers
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers':
+      'authorization, x-client-info, apikey, content-type',
   };
 
   if (req.method === 'OPTIONS') {
@@ -30,30 +32,37 @@ Deno.serve(async (req) => {
   try {
     // 2. Get the payload from the request body
     const payload: GenerateDraftPayload = await req.json();
-    
+
     // 3. SECURELY get the Gemini API key from Supabase secrets
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
     if (!GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY environment variable not set.");
+      throw new Error('GEMINI_API_KEY environment variable not set.');
     }
 
     // 4. Initialize the Gemini client and build the prompt
     const genAI = new GoogleGenAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     let styleInstructions = '';
     if (payload.tone || payload.length) {
-        styleInstructions += '\n**Tone & Style Instructions:**\n';
-        if (payload.tone) styleInstructions += `- **Tone:** The tone of the letter should be professional and ${payload.tone.toLowerCase()}.\n`;
-        if (payload.length) {
-            let lengthDesc = '';
-            switch (payload.length) {
-                case 'Short': lengthDesc = 'concise and to the point.'; break;
-                case 'Medium': lengthDesc = 'standard, with sufficient detail.'; break;
-                case 'Long': lengthDesc = 'comprehensive and highly detailed.'; break;
-            }
-            styleInstructions += `- **Length:** The filled-in sections should be relatively ${payload.length.toLowerCase()}, resulting in a letter that is ${lengthDesc}\n`;
+      styleInstructions += '\n**Tone & Style Instructions:**\n';
+      if (payload.tone)
+        styleInstructions += `- **Tone:** The tone of the letter should be professional and ${payload.tone.toLowerCase()}.\n`;
+      if (payload.length) {
+        let lengthDesc = '';
+        switch (payload.length) {
+          case 'Short':
+            lengthDesc = 'concise and to the point.';
+            break;
+          case 'Medium':
+            lengthDesc = 'standard, with sufficient detail.';
+            break;
+          case 'Long':
+            lengthDesc = 'comprehensive and highly detailed.';
+            break;
         }
+        styleInstructions += `- **Length:** The filled-in sections should be relatively ${payload.length.toLowerCase()}, resulting in a letter that is ${lengthDesc}\n`;
+      }
     }
 
     const prompt = `
@@ -64,7 +73,9 @@ Deno.serve(async (req) => {
         ${payload.templateBody}
         ---
         **User-provided details to fill in the placeholders:**
-        ${Object.entries(payload.templateFields).map(([key, value]) => `- ${key}: ${value}`).join('\n')}
+        ${Object.entries(payload.templateFields)
+          .map(([key, value]) => `- ${key}: ${value}`)
+          .join('\n')}
         **Additional Context from the user (incorporate this where relevant):**
         ${payload.additionalContext || 'No additional context provided.'}
         ${styleInstructions}
@@ -81,12 +92,28 @@ Deno.serve(async (req) => {
     const response = await model.generateContent(prompt);
     const draft = response.response.text();
 
-    // 6. Return the successful response
+    // 6. Update letter status and save AI content if letterId provided
+    if (payload.letterId) {
+      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      await supabase
+        .from('letters')
+        .update({
+          status: 'in_review',
+          ai_generated_content: draft,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', payload.letterId);
+    }
+
+    // 7. Return the successful response
     return new Response(JSON.stringify({ draft }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
-
   } catch (error) {
     // 7. Handle any errors
     return new Response(JSON.stringify({ error: error.message }), {

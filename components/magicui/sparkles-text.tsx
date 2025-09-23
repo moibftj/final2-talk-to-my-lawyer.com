@@ -1,5 +1,5 @@
-import React, { ReactElement } from "react";
-import { cn } from "../../lib/utils";
+import React, { ReactElement } from 'react';
+import { cn } from '../../lib/utils';
 
 // The props interface is kept for compatibility, even though sparkle-related props are no longer used.
 interface SparklesTextProps {
