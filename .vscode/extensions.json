@@ -1,6 +1,5 @@
 {
   "recommendations": [
-    "denoland.vscode-deno",
-    "github.copilot-chat"
+    "denoland.vscode-deno"
   ]
 }
