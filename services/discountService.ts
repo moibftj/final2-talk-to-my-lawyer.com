@@ -127,3 +127,54 @@ export async function getAllDiscountCodes(includeInactive = false): Promise<Disc
   
   return data as DiscountCode[];
 }
+
+// Placeholder functions for features not yet implemented
+export async function getEmployeeAnalytics(employeeId: string): Promise<any> {
+  console.warn('getEmployeeAnalytics not implemented');
+  return null;
+}
+
+export async function getEmployeeDiscountCodes(employeeId: string): Promise<DiscountCode[]> {
+  console.warn('getEmployeeDiscountCodes not implemented');
+  return [];
+}
+
+export async function generateDiscountCode(employeeId: string): Promise<DiscountCode | null> {
+  console.warn('generateDiscountCode not implemented');
+  return null;
+}
+
+export async function toggleDiscountCodeStatus(codeId: string, isActive: boolean): Promise<boolean> {
+  console.warn('toggleDiscountCodeStatus not implemented');
+  return false;
+}
+
+export async function getAllUsers(): Promise<any[]> {
+  console.warn('getAllUsers not implemented');
+  return [];
+}
+
+export async function getAllLetters(): Promise<any[]> {
+  console.warn('getAllLetters not implemented');
+  return [];
+}
+
+export async function getEmployeesWithAnalytics(): Promise<any[]> {
+  console.warn('getEmployeesWithAnalytics not implemented');
+  return [];
+}
+
+// Service object for components that expect object imports
+export const discountService = {
+  validateDiscountCode,
+  applyDiscountCode,
+  createDiscountCode,
+  getAllDiscountCodes,
+  getEmployeeAnalytics,
+  getEmployeeDiscountCodes,
+  generateDiscountCode,
+  toggleDiscountCodeStatus,
+  getAllUsers,
+  getAllLetters,
+  getEmployeesWithAnalytics,
+};

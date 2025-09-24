@@ -9,7 +9,7 @@ interface PreviewModalProps {
   title?: string;
 }
 
-export default function PreviewModal({
+function PreviewModal({
   isOpen,
   onClose,
   onSubmit,
@@ -113,3 +113,6 @@ export default function PreviewModal({
     </div>
   );
 }
+
+export { PreviewModal };
+export default PreviewModal;

@@ -22,7 +22,7 @@ import type { LetterRequest, Subscription } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
 import { CompletionBanner, useBanners } from './CompletionBanner';
 import { useAuth } from '../contexts/AuthContext';
-import { letterStatusService } from '../services/letterStatusService';
+// import { letterStatusService } from '../services/letterStatusService';
 
 type View = 'dashboard' | 'subscription';
 
@@ -49,26 +49,26 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   const { banners, showSuccess, showError, showInfo } = useBanners();
 
   useEffect(() => {
-    // Subscribe to real-time status updates
-    const unsubscribe = letterStatusService.subscribeToStatusUpdates(
-      payload => {
-        setLetters(prev =>
-          prev.map(letter =>
-            letter.id === payload.letterId
-              ? {
-                  ...letter,
-                  status: payload.newStatus,
-                  updatedAt: payload.timestamp,
-                }
-              : letter
-          )
-        );
-        showInfo(
-          'Status Update',
-          `Letter status updated to ${payload.newStatus.replace('_', ' ')}`
-        );
-      }
-    );
+    // TODO: Subscribe to real-time status updates
+    // const unsubscribe = letterStatusService.subscribeToStatusUpdates(
+    //   payload => {
+    //     setLetters(prev =>
+    //       prev.map(letter =>
+    //         letter.id === payload.letterId
+    //           ? {
+    //               ...letter,
+    //               status: payload.newStatus,
+    //               updatedAt: payload.timestamp,
+    //             }
+    //           : letter
+    //       )
+    //     );
+    //     showInfo(
+    //       'Status Update',
+    //       `Letter status updated to ${payload.newStatus.replace('_', ' ')}`
+    //     );
+    //   }
+    // );
 
     const loadUserData = async () => {
       setIsLoading(true);
@@ -124,9 +124,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     }
 
     // Cleanup subscription on unmount
-    return () => {
-      unsubscribe();
-    };
+    // return () => {
+    //   unsubscribe();
+    // };
   }, [currentView]);
 
   const navigateTo = (view: View) => setCurrentView(view);

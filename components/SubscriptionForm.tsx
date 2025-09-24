@@ -69,7 +69,7 @@ interface SubscriptionFormProps {
   onComplete?: () => void;
 }
 
-export default function SubscriptionForm({ onComplete }: SubscriptionFormProps) {
+function SubscriptionForm({ onComplete }: SubscriptionFormProps) {
   const { user } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [discountCode, setDiscountCode] = useState('');
@@ -274,3 +274,6 @@ export default function SubscriptionForm({ onComplete }: SubscriptionFormProps) 
     </div>
   );
 }
+
+export { SubscriptionForm };
+export default SubscriptionForm;
