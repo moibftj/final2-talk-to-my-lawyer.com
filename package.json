@@ -29,7 +29,8 @@
     "react-dom": "^18.3.1",
     "supabase": "^2.45.4",
     "tailwind-merge": "^2.6.0",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "wsl-utils": "^0.1.0"
   },
   "devDependencies": {
     "@types/deno": "^2.3.0",
