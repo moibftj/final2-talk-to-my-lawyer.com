@@ -13,11 +13,6 @@ interface StatusTimelineProps {
   className?: string;
 }
 
-interface StatusTimelineCompactProps {
-  currentStatus: LetterStatus;
-  className?: string;
-}
-
 export default function StatusTimeline({ currentStatus, className = '' }: StatusTimelineProps) {
   // Define status steps with icons and descriptions
   const statusSteps: StatusStep[] = [
@@ -74,8 +69,8 @@ export default function StatusTimeline({ currentStatus, className = '' }: Status
   ];
 
   // Check if the letter is in a terminal state
-  const isTerminalState =
-    currentStatus === LetterStatus.CANCELLED ||
+  const isTerminalState = 
+    currentStatus === LetterStatus.CANCELLED || 
     currentStatus === LetterStatus.REJECTED;
 
   // Get the current step index
@@ -101,8 +96,8 @@ export default function StatusTimeline({ currentStatus, className = '' }: Status
       {/* Terminal state banner */}
       {isTerminalState && (
         <div className={`mb-4 p-3 rounded-md ${
-          currentStatus === LetterStatus.CANCELLED
-            ? 'bg-gray-100 text-gray-800 border border-gray-300'
+          currentStatus === LetterStatus.CANCELLED 
+            ? 'bg-gray-100 text-gray-800 border border-gray-300' 
             : 'bg-red-50 text-red-800 border border-red-300'
         }`}>
           <div className="flex items-center">
@@ -110,8 +105,8 @@ export default function StatusTimeline({ currentStatus, className = '' }: Status
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <span className="font-medium">
-              {currentStatus === LetterStatus.CANCELLED
-                ? 'This letter request has been cancelled.'
+              {currentStatus === LetterStatus.CANCELLED 
+                ? 'This letter request has been cancelled.' 
                 : 'This letter has been rejected. Please review the feedback and make necessary revisions.'}
             </span>
           </div>
@@ -122,20 +117,20 @@ export default function StatusTimeline({ currentStatus, className = '' }: Status
       <div className="relative">
         {statusSteps.map((step, index) => {
           const stepStatus = getStepStatus(index);
-
+          
           return (
             <div key={step.status} className="relative flex items-start mb-8 last:mb-0">
               {/* Connector line */}
               {index < statusSteps.length - 1 && (
-                <div
+                <div 
                   className={`absolute left-3.5 top-6 w-0.5 h-full -mt-3 ${
                     stepStatus === 'completed' ? 'bg-blue-500' : 'bg-gray-200'
                   }`}
                 ></div>
               )}
-
+              
               {/* Step icon */}
-              <div
+              <div 
                 className={`flex items-center justify-center w-7 h-7 rounded-full z-10 mr-4 ${
                   stepStatus === 'completed' ? 'bg-blue-500 text-white' :
                   stepStatus === 'current' ? 'bg-blue-100 text-blue-600 ring-2 ring-blue-500' :
@@ -144,10 +139,10 @@ export default function StatusTimeline({ currentStatus, className = '' }: Status
               >
                 {step.icon}
               </div>
-
+              
               {/* Step content */}
               <div className="flex-1">
-                <h4
+                <h4 
                   className={`font-medium ${
                     stepStatus === 'completed' ? 'text-blue-600' :
                     stepStatus === 'current' ? 'text-blue-800' :
@@ -156,7 +151,7 @@ export default function StatusTimeline({ currentStatus, className = '' }: Status
                 >
                   {step.label}
                 </h4>
-                <p
+                <p 
                   className={`text-sm ${
                     stepStatus === 'upcoming' ? 'text-gray-400' : 'text-gray-600'
                   }`}
@@ -172,55 +167,64 @@ export default function StatusTimeline({ currentStatus, className = '' }: Status
   );
 }
 
-// Compact version for use in tables and smaller spaces
-export function StatusTimelineCompact({ currentStatus, className = '' }: StatusTimelineCompactProps) {
-  const getStatusLabel = (status: LetterStatus): string => {
-    switch (status) {
-      case LetterStatus.DRAFT:
-        return 'Draft';
-      case LetterStatus.PENDING_REVIEW:
-        return 'Pending Review';
-      case LetterStatus.UNDER_REVIEW:
-        return 'Under Review';
-      case LetterStatus.APPROVED:
-        return 'Approved';
-      case LetterStatus.COMPLETED:
-        return 'Completed';
-      case LetterStatus.REJECTED:
-        return 'Rejected';
-      case LetterStatus.CANCELLED:
-        return 'Cancelled';
-      default:
-        return 'Unknown';
-    }
+// Compact version of the timeline for use in tables
+export function StatusTimelineCompact({ currentStatus, className = '' }: StatusTimelineProps) {
+  // Define status colors and labels
+  const statusConfig = {
+    [LetterStatus.DRAFT]: { color: 'bg-gray-200', textColor: 'text-gray-800', label: 'Draft' },
+    [LetterStatus.PENDING_REVIEW]: { color: 'bg-yellow-100', textColor: 'text-yellow-800', label: 'Pending' },
+    [LetterStatus.UNDER_REVIEW]: { color: 'bg-blue-100', textColor: 'text-blue-800', label: 'Reviewing' },
+    [LetterStatus.APPROVED]: { color: 'bg-green-100', textColor: 'text-green-800', label: 'Approved' },
+    [LetterStatus.COMPLETED]: { color: 'bg-green-500', textColor: 'text-white', label: 'Completed' },
+    [LetterStatus.REJECTED]: { color: 'bg-red-100', textColor: 'text-red-800', label: 'Rejected' },
+    [LetterStatus.CANCELLED]: { color: 'bg-gray-100', textColor: 'text-gray-500', label: 'Cancelled' },
   };
 
-  const getStatusColor = (status: LetterStatus): string => {
-    switch (status) {
-      case LetterStatus.DRAFT:
-        return 'bg-gray-100 text-gray-800';
-      case LetterStatus.PENDING_REVIEW:
-        return 'bg-yellow-100 text-yellow-800';
-      case LetterStatus.UNDER_REVIEW:
-        return 'bg-blue-100 text-blue-800';
-      case LetterStatus.APPROVED:
-        return 'bg-green-100 text-green-800';
-      case LetterStatus.COMPLETED:
-        return 'bg-green-100 text-green-800';
-      case LetterStatus.REJECTED:
-        return 'bg-red-100 text-red-800';
-      case LetterStatus.CANCELLED:
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  // Determine number of steps and current position
+  const totalSteps = 5; // Draft -> Pending -> Review -> Approved -> Completed
+  let currentStep = 0;
+
+  // Map status to step number
+  if (currentStatus === LetterStatus.DRAFT) currentStep = 1;
+  else if (currentStatus === LetterStatus.PENDING_REVIEW) currentStep = 2;
+  else if (currentStatus === LetterStatus.UNDER_REVIEW) currentStep = 3;
+  else if (currentStatus === LetterStatus.APPROVED) currentStep = 4;
+  else if (currentStatus === LetterStatus.COMPLETED) currentStep = 5;
+  else currentStep = 0; // For rejected/cancelled
+
+  // Calculate percentage completion
+  const percentComplete = currentStatus === LetterStatus.REJECTED || currentStatus === LetterStatus.CANCELLED
+    ? 0
+    : Math.min(Math.round((currentStep / totalSteps) * 100), 100);
+
+  // Get the status config
+  const config = statusConfig[currentStatus];
 
   return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(currentStatus)} ${className}`}
-    >
-      {getStatusLabel(currentStatus)}
-    </span>
+    <div className={`flex flex-col ${className}`}>
+      {/* Status label */}
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color} ${config.textColor} mb-2`}>
+        {config.label}
+      </span>
+      
+      {/* Progress bar */}
+      {(currentStatus !== LetterStatus.REJECTED && currentStatus !== LetterStatus.CANCELLED) && (
+        <div className="w-full bg-gray-200 rounded-full h-1.5">
+          <div 
+            className="bg-blue-600 h-1.5 rounded-full" 
+            style={{ width: `${percentComplete}%` }}
+          ></div>
+        </div>
+      )}
+      
+      {/* Cancelled/Rejected indicator */}
+      {(currentStatus === LetterStatus.REJECTED || currentStatus === LetterStatus.CANCELLED) && (
+        <div className="w-full bg-gray-200 rounded-full h-1.5">
+          <div className={`h-1.5 rounded-full ${
+            currentStatus === LetterStatus.REJECTED ? 'bg-red-500' : 'bg-gray-400'
+          }`} style={{ width: '100%' }}></div>
+        </div>
+      )}
+    </div>
   );
 }
