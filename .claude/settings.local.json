@@ -24,7 +24,10 @@
       "Read(//c/Users/prod.3/AppData/Roaming/Cursor/User/**)",
       "Read(//c/Users/prod.3/AppData/Roaming/Code/User/**)",
       "Bash(find:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(dir)",
+      "Bash(npm run test:*)",
+      "Bash(dir \"C:\\Users\\prod.3\\Downloads\\Gemini-talk-to-my-lawyer-\\supabase\\functions\\generate-draft\"\")"
     ],
     "deny": [],
     "ask": []
