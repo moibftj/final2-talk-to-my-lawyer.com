@@ -200,8 +200,10 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({
           templateData: formData,
           status: 'submitted' as const,
         };
-        const savedLetter = await onFormSubmit(letterData);
-        letterId = (savedLetter as LetterRequest).id;
+        await onFormSubmit(letterData);
+        // Note: In a real implementation, onFormSubmit should return the created letter
+        // For now, we'll skip the letterId assignment since the API doesn't return it
+        // letterId = createdLetter.id;
       }
 
       const draft = await generateLetterDraft({

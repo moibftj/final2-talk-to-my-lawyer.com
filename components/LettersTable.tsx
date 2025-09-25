@@ -359,7 +359,7 @@ export function LettersTable({
               Completed: {letters.filter(l => l.status === 'completed').length}
             </span>
             <span>
-              Pending: {letters.filter(l => l.status === 'pending').length}
+              Draft: {letters.filter(l => l.status === 'draft').length}
             </span>
           </div>
         </div>

@@ -21,12 +21,16 @@ export const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [adminStats, setAdminStats] = useState<AdminStats>({
+    totalUsers: 0,
     totalEmployees: 0,
     activeEmployees: 0,
+    totalLetters: 0,
+    totalRevenue: 0,
     totalDiscountCodes: 0,
     activeDiscountCodes: 0,
     totalCommissionsGenerated: 0,
     monthlyCommissions: 0,
+    monthlyGrowth: 0,
   });
   const [discountUsage, setDiscountUsage] = useState<DiscountUsage[]>([]);
   const [isLoading, setIsLoading] = useState(true);

@@ -149,7 +149,7 @@ export const UserProfile: React.FC = () => {
         return {
           ...prev,
           [parent]: {
-            ...prev[parent as keyof UserProfileData],
+            ...((prev[parent as keyof UserProfileData] as object) || {}),
             [child]: value,
           },
         };

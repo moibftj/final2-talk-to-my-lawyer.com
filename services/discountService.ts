@@ -282,22 +282,30 @@ class DiscountService {
         .reduce((sum, usage) => sum + (usage.commission_amount || 0), 0);
 
       return {
+        totalUsers: 0, // Add when user data is available
         totalEmployees,
         activeEmployees,
+        totalLetters: 0, // Add when letter data is available
+        totalRevenue: totalCommissionsGenerated,
         totalDiscountCodes,
         activeDiscountCodes,
         totalCommissionsGenerated,
         monthlyCommissions,
+        monthlyGrowth: 0, // Add growth calculation later
       };
     } catch (error) {
       console.error('Error fetching admin stats:', error);
       return {
+        totalUsers: 0,
         totalEmployees: 0,
         activeEmployees: 0,
+        totalLetters: 0,
+        totalRevenue: 0,
         totalDiscountCodes: 0,
         activeDiscountCodes: 0,
         totalCommissionsGenerated: 0,
         monthlyCommissions: 0,
+        monthlyGrowth: 0,
       };
     }
   }

@@ -62,6 +62,8 @@ export interface Employee {
   id: string;
   email: string;
   role: UserRole;
+  name?: string;
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -74,6 +76,8 @@ export interface DiscountCode {
   employeeId: string;
   isActive: boolean;
   usageCount: number;
+  maxUses?: number;
+  expiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -108,8 +112,12 @@ export interface EmployeeAnalytics {
 export interface AdminStats {
   totalUsers: number;
   totalEmployees: number;
+  activeEmployees: number;
   totalLetters: number;
   totalRevenue: number;
   activeDiscountCodes: number;
+  totalDiscountCodes: number;
+  totalCommissionsGenerated: number;
+  monthlyCommissions: number;
   monthlyGrowth: number;
 }
