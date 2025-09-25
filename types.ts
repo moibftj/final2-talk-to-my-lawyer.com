@@ -56,3 +56,60 @@ export interface LetterRequest {
   createdAt: string; // TIMESTAMPTZ
   updatedAt: string; // TIMESTAMPTZ
 }
+
+// Employee interface
+export interface Employee {
+  id: string;
+  email: string;
+  role: UserRole;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Discount Code interface
+export interface DiscountCode {
+  id: string;
+  code: string;
+  discountPercentage: number;
+  employeeId: string;
+  isActive: boolean;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Discount Usage interface
+export interface DiscountUsage {
+  id: string;
+  discountCodeId: string;
+  userId: string;
+  employeeId: string;
+  subscriptionAmount: number;
+  discountAmount: number;
+  commissionAmount: number;
+  usedAt: string;
+}
+
+// Employee Analytics interface
+export interface EmployeeAnalytics {
+  totalReferrals: number;
+  totalCommissions: number;
+  monthlyEarnings: number;
+  activeDiscountCodes: number;
+  codeUsageStats: {
+    code: string;
+    usageCount: number;
+    totalRevenue: number;
+    totalCommissions: number;
+  }[];
+}
+
+// Admin Statistics interface
+export interface AdminStats {
+  totalUsers: number;
+  totalEmployees: number;
+  totalLetters: number;
+  totalRevenue: number;
+  activeDiscountCodes: number;
+  monthlyGrowth: number;
+}

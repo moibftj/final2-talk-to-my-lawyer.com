@@ -8,8 +8,7 @@ import {
   CardDescription,
   CardFooter,
 } from './Card';
-import { LETTER_TEMPLATES } from '../constants';
-import { LoaderOne } from './ui/loader-one';
+import { LETTER_TEMPLATES, IconSpinner } from '../constants';
 import { ShinyButton } from './magicui/shiny-button';
 import { ShimmerButton } from './magicui/shimmer-button';
 import { SparklesText } from './magicui/sparkles-text';
@@ -517,7 +516,7 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({
                     className='flex items-center justify-center gap-2 text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-md transition-colors border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed'
                   >
                     {isExporting ? (
-                      <LoaderOne size='sm' className='w-4 h-4' />
+                      <IconSpinner className='w-4 h-4 animate-spin' />
                     ) : (
                       <IconDownload className='w-4 h-4' />
                     )}
@@ -550,7 +549,7 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({
                   >
                     {isSaving ? (
                       <span className='flex items-center gap-2'>
-                        <LoaderOne size='sm' className='w-4 h-4' />
+                        <IconSpinner className='w-4 h-4 animate-spin' />
                         Saving...
                       </span>
                     ) : (
@@ -594,7 +593,7 @@ export const LetterRequestForm: React.FC<LetterRequestFormProps> = ({
                         >
                           {isSending ? (
                             <span className='flex items-center justify-center gap-2'>
-                              <LoaderOne size='sm' className='w-4 h-4' />
+                              <IconSpinner className='w-4 h-4 animate-spin' />
                               Sending...
                             </span>
                           ) : (
