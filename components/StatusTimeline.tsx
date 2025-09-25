@@ -210,9 +210,15 @@ export function StatusTimelineCompact({ currentStatus, className = '' }: StatusT
       {/* Progress bar */}
       {(currentStatus !== LetterStatus.REJECTED && currentStatus !== LetterStatus.CANCELLED) && (
         <div className="w-full bg-gray-200 rounded-full h-1.5">
-          <div 
-            className="bg-blue-600 h-1.5 rounded-full" 
-            style={{ width: `${percentComplete}%` }}
+          <div
+            className={`bg-blue-600 h-1.5 rounded-full transition-all duration-300 ${
+              percentComplete === 0 ? 'w-0' :
+              percentComplete <= 20 ? 'w-1/5' :
+              percentComplete <= 40 ? 'w-2/5' :
+              percentComplete <= 60 ? 'w-3/5' :
+              percentComplete <= 80 ? 'w-4/5' :
+              'w-full'
+            }`}
           ></div>
         </div>
       )}
@@ -220,9 +226,9 @@ export function StatusTimelineCompact({ currentStatus, className = '' }: StatusT
       {/* Cancelled/Rejected indicator */}
       {(currentStatus === LetterStatus.REJECTED || currentStatus === LetterStatus.CANCELLED) && (
         <div className="w-full bg-gray-200 rounded-full h-1.5">
-          <div className={`h-1.5 rounded-full ${
+          <div className={`h-1.5 rounded-full w-full ${
             currentStatus === LetterStatus.REJECTED ? 'bg-red-500' : 'bg-gray-400'
-          }`} style={{ width: '100%' }}></div>
+          }`}></div>
         </div>
       )}
     </div>

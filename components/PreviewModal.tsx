@@ -65,6 +65,7 @@ function PreviewModal({
           <h3 className="text-xl font-semibold text-gray-800">{title}</h3>
           <button
             onClick={handleClose}
+            aria-label="Close preview modal"
             className="text-gray-500 hover:text-gray-700 focus:outline-none"
           >
             <svg

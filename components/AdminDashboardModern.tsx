@@ -610,6 +610,7 @@ export const AdminDashboardModern: React.FC = () => {
               <select
                 value={employeeFilter}
                 onChange={(e) => setEmployeeFilter(e.target.value as any)}
+                aria-label="Filter employees"
                 className="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Employees</option>
