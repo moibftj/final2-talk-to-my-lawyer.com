@@ -98,7 +98,7 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
         senderName: letterToEdit.senderInfo?.name || '',
         description: letterToEdit.description || '',
         priority: letterToEdit.priority || 'medium',
-        letterType: letterToEdit.letterType || 'demand',
+        letterType: (letterToEdit.letterType as 'demand' | 'notice' | 'formal_request' | 'complaint' | 'other') || 'demand',
         additionalInstructions: letterToEdit.templateData?.additionalInstructions || ''
       });
     } else {
@@ -329,19 +329,20 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
                       </select>
                     </div>
 
-                    {/* Urgency */}
+                    {/* Priority */}
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Urgency Level
+                        Priority Level
                       </label>
                       <select
-                        value={formData.urgency}
-                        onChange={(e) => handleInputChange('urgency', e.target.value)}
+                        value={formData.priority}
+                        onChange={(e) => handleInputChange('priority', e.target.value)}
                         className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="normal">Normal</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
                         <option value="urgent">Urgent</option>
-                        <option value="critical">Critical</option>
                       </select>
                     </div>
                   </div>
@@ -537,11 +538,11 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
                         <p className="text-slate-900">{formData.title}</p>
                       </div>
                       <div>
-                        <h4 className="font-medium text-slate-700 mb-1">Type & Urgency</h4>
+                        <h4 className="font-medium text-slate-700 mb-1">Type & Priority</h4>
                         <div className="flex items-center space-x-2">
                           <span className="text-slate-900">{letterTypeLabels[formData.letterType]}</span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${urgencyColors[formData.urgency]}`}>
-                            {formData.urgency.toUpperCase()}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${priorityColors[formData.priority]}`}>
+                            {formData.priority.toUpperCase()}
                           </span>
                         </div>
                       </div>
