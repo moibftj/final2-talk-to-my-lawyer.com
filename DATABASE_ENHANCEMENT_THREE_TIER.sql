@@ -281,7 +281,7 @@ CREATE POLICY "System can manage platform metrics" ON platform_metrics
 CREATE OR REPLACE FUNCTION generate_employee_coupon(employee_uuid UUID)
 RETURNS TEXT AS $$
 DECLARE
-    coupon_code TEXT;
+    generated_code TEXT;
     code_exists BOOLEAN;
     attempt_count INTEGER := 0;
     max_attempts INTEGER := 10;
@@ -289,11 +289,11 @@ BEGIN
     -- Generate a unique coupon code
     LOOP
         -- Create code like "TML" + 4 random characters
-        coupon_code := 'TML' || UPPER(LEFT(MD5(RANDOM()::text || employee_uuid::text), 4));
+        generated_code := 'TML' || UPPER(LEFT(MD5(RANDOM()::text || employee_uuid::text), 4));
 
         -- Check if code already exists
         SELECT EXISTS(
-            SELECT 1 FROM employee_coupons WHERE code = coupon_code
+            SELECT 1 FROM employee_coupons WHERE code = generated_code
         ) INTO code_exists;
 
         EXIT WHEN NOT code_exists;
@@ -306,14 +306,14 @@ BEGIN
 
     -- Insert the coupon
     INSERT INTO employee_coupons (employee_id, code)
-    VALUES (employee_uuid, coupon_code);
+    VALUES (employee_uuid, generated_code);
 
     -- Update the profile with the coupon code
     UPDATE public.profiles
-    SET coupon_code = coupon_code
+    SET coupon_code = generated_code
     WHERE id = employee_uuid;
 
-    RETURN coupon_code;
+    RETURN generated_code;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -579,7 +579,7 @@ GRANT EXECUTE ON FUNCTION generate_employee_coupon(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION process_referral_signup(UUID, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION update_letter_timeline(UUID, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_employee_analytics(UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION get_admin_platform_metrics() TO authenticated;
+GRANT EXECUTE ON FUNCTION get_platform_metrics() TO authenticated;
 
 -- Grant permissions on new tables
 GRANT ALL ON employee_coupons TO authenticated;
