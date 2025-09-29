@@ -1,417 +1,279 @@
 import React, { useState } from 'react';
-import {
-  Check,
-  CreditCard,
-  Percent,
-  Gift,
-  Users,
-  Calendar,
-} from 'lucide-react';
-import { discountService } from '../services/discountService';
-import { ShinyButton } from './magicui/shiny-button';
-import { CompletionBanner, useBanners } from './CompletionBanner';
-import type { DiscountCode } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { validateDiscountCode } from '../services/discountService';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
 
-interface SubscriptionPlan {
-  id: 'one_letter' | 'four_monthly' | 'eight_yearly';
+// Subscription plan interface
+interface Plan {
+  id: string;
   name: string;
   price: number;
-  originalPrice?: number;
-  letters: number;
-  duration: string;
-  popular?: boolean;
   features: string[];
-  icon: React.ComponentType<any>;
+  period: 'monthly' | 'annual';
 }
 
-const subscriptionPlans: SubscriptionPlan[] = [
+// Available plans
+const PLANS: Plan[] = [
   {
-    id: 'one_letter',
-    name: 'Single Letter',
-    price: 29.99,
-    letters: 1,
-    duration: 'One-time',
+    id: 'basic-monthly',
+    name: 'Basic',
+    price: 19.99,
+    period: 'monthly',
     features: [
-      '1 AI-generated legal letter',
-      'Professional formatting',
-      'PDF download',
-      'Email delivery',
-      'Attorney review',
+      'Up to 5 legal letter drafts per month',
+      'Basic document review',
+      'Email support',
     ],
-    icon: CreditCard,
   },
   {
-    id: 'four_monthly',
-    name: 'Monthly Plan',
-    price: 89.99,
-    originalPrice: 119.96,
-    letters: 4,
-    duration: 'Per month',
-    popular: true,
+    id: 'pro-monthly',
+    name: 'Professional',
+    price: 49.99,
+    period: 'monthly',
     features: [
-      '4 AI-generated legal letters',
-      'Professional formatting',
-      'PDF download & email delivery',
-      'Priority attorney review',
-      'Status tracking',
-      'Cancel anytime',
+      'Unlimited legal letter drafts',
+      'Priority document review',
+      'Phone and email support',
+      'Document storage',
     ],
-    icon: Calendar,
   },
   {
-    id: 'eight_yearly',
-    name: 'Yearly Plan',
-    price: 799.99,
-    originalPrice: 1079.88,
-    letters: 96,
-    duration: 'Per year',
+    id: 'basic-annual',
+    name: 'Basic Annual',
+    price: 199.99,
+    period: 'annual',
     features: [
-      '8 letters per month (96 total)',
-      'All monthly features',
-      'Fastest attorney review',
-      'Premium support',
-      'Custom templates',
-      'Annual savings of $280',
+      'Up to 5 legal letter drafts per month',
+      'Basic document review',
+      'Email support',
+      'Save over 15% compared to monthly',
     ],
-    icon: Users,
+  },
+  {
+    id: 'pro-annual',
+    name: 'Professional Annual',
+    price: 499.99,
+    period: 'annual',
+    features: [
+      'Unlimited legal letter drafts',
+      'Priority document review',
+      'Phone and email support',
+      'Document storage',
+      'Save over 15% compared to monthly',
+    ],
   },
 ];
 
 interface SubscriptionFormProps {
-  onSubscribe: (planId: string, discountCode?: string) => Promise<void>;
-  onCancel?: () => void;
+  onComplete?: () => void;
 }
 
-export const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
-  onSubscribe,
-  onCancel,
-}) => {
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(
-    subscriptionPlans.find(p => p.popular) || subscriptionPlans[0]
-  );
+function SubscriptionForm({ onComplete }: SubscriptionFormProps) {
+  const { user } = useAuth();
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [discountCode, setDiscountCode] = useState('');
-  const [validatedDiscount, setValidatedDiscount] =
-    useState<DiscountCode | null>(null);
-  const [isValidating, setIsValidating] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>('card');
-  const { banners, showSuccess, showError, showInfo } = useBanners();
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [isValidatingCode, setIsValidatingCode] = useState(false);
+  const [discountError, setDiscountError] = useState('');
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [showAnnual, setShowAnnual] = useState(false);
 
-  const calculateDiscountedPrice = (
-    originalPrice: number,
-    discountPercentage: number
-  ): number => {
-    return originalPrice * (1 - discountPercentage / 100);
-  };
+  // Calculate the final price after discount
+  const finalPrice = selectedPlan 
+    ? Math.max(selectedPlan.price - (selectedPlan.price * discountAmount / 100), 0).toFixed(2) 
+    : '0.00';
 
-  const validateDiscountCode = async () => {
+  // Handle discount code validation
+  const handleValidateCode = async () => {
     if (!discountCode.trim()) {
-      setValidatedDiscount(null);
+      setDiscountError('Please enter a discount code');
       return;
     }
 
-    setIsValidating(true);
-    showInfo('Validating Code', 'Checking discount code...');
+    setIsValidatingCode(true);
+    setDiscountError('');
 
     try {
-      const discount = await discountService.validateDiscountCode(
-        discountCode.trim()
-      );
-
-      if (discount) {
-        setValidatedDiscount(discount);
-        showSuccess(
-          'Code Valid!',
-          `${discount.discountPercentage}% discount applied`
-        );
+      const discountInfo = await validateDiscountCode(discountCode);
+      
+      if (discountInfo) {
+        setDiscountAmount(discountInfo.percent_off);
+        setDiscountError('');
       } else {
-        setValidatedDiscount(null);
-        showError('Invalid Code', 'Discount code not found or expired');
+        setDiscountAmount(0);
+        setDiscountError('Invalid or expired discount code');
       }
     } catch (error) {
       console.error('Error validating discount code:', error);
-      setValidatedDiscount(null);
-      showError('Validation Failed', 'Unable to validate discount code');
+      setDiscountError('Error validating code. Please try again.');
     } finally {
-      setIsValidating(false);
+      setIsValidatingCode(false);
     }
   };
 
-  const getFinalPrice = (plan: SubscriptionPlan): number => {
-    if (validatedDiscount) {
-      return calculateDiscountedPrice(
-        plan.price,
-        validatedDiscount.discountPercentage
-      );
-    }
-    return plan.price;
-  };
-
-  const getSavingsAmount = (plan: SubscriptionPlan): number => {
-    if (validatedDiscount) {
-      return (
-        plan.price -
-        calculateDiscountedPrice(
-          plan.price,
-          validatedDiscount.discountPercentage
-        )
-      );
-    }
-    return 0;
-  };
-
+  // Handle subscription submission
   const handleSubscribe = async () => {
-    if (!selectedPlan) return;
+    if (!selectedPlan) {
+      return;
+    }
 
-    setIsProcessing(true);
-    showInfo('Processing', 'Setting up your subscription...');
+    setIsSubscribing(true);
 
     try {
-      await onSubscribe(selectedPlan.id, validatedDiscount?.code);
+      // Here you would integrate with your payment processor (Stripe, etc.)
+      // For now, we'll just simulate a successful subscription
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Call onComplete callback if provided
+      if (onComplete) {
+        onComplete();
+      }
     } catch (error) {
       console.error('Subscription error:', error);
-      showError(
-        'Subscription Failed',
-        'Unable to process subscription. Please try again.'
-      );
     } finally {
-      setIsProcessing(false);
+      setIsSubscribing(false);
     }
   };
 
+  // Filter plans based on period selection
+  const filteredPlans = PLANS.filter(plan => 
+    showAnnual ? plan.period === 'annual' : plan.period === 'monthly'
+  );
+
   return (
-    <div className='min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4'>
-      <div className='max-w-6xl mx-auto'>
-        {/* Header */}
-        <div className='text-center mb-12'>
-          <h1 className='text-4xl font-bold text-gray-900 mb-4'>
-            Choose Your Legal Letter Plan
-          </h1>
-          <p className='text-xl text-gray-600 max-w-3xl mx-auto'>
-            Get professional AI-generated legal letters reviewed by qualified
-            attorneys. Cancel anytime.
-          </p>
+    <div className="w-full max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold text-center mb-8">Choose Your Subscription Plan</h2>
+      
+      {/* Period toggle */}
+      <div className="flex justify-center mb-8">
+        <div className="bg-gray-100 p-1 rounded-full flex items-center">
+          <button 
+            className={`px-4 py-2 rounded-full ${!showAnnual ? 'bg-blue-600 text-white' : 'text-gray-700'}`}
+            onClick={() => setShowAnnual(false)}
+          >
+            Monthly
+          </button>
+          <button 
+            className={`px-4 py-2 rounded-full ${showAnnual ? 'bg-blue-600 text-white' : 'text-gray-700'}`}
+            onClick={() => setShowAnnual(true)}
+          >
+            Annual (Save 15%)
+          </button>
         </div>
-
-        {/* Plans Grid */}
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-8 mb-12'>
-          {subscriptionPlans.map(plan => {
-            const Icon = plan.icon;
-            const isSelected = selectedPlan?.id === plan.id;
-            const finalPrice = getFinalPrice(plan);
-            const savings = getSavingsAmount(plan);
-
-            return (
-              <div
-                key={plan.id}
-                onClick={() => setSelectedPlan(plan)}
-                className={`relative bg-white rounded-xl shadow-lg cursor-pointer transition-all transform hover:scale-105 ${
-                  isSelected
-                    ? 'ring-4 ring-blue-500 ring-opacity-50'
-                    : 'hover:shadow-xl'
-                } ${plan.popular ? 'border-2 border-blue-500' : 'border border-gray-200'}`}
-              >
-                {plan.popular && (
-                  <div className='absolute -top-4 left-1/2 transform -translate-x-1/2'>
-                    <span className='bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium'>
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-
-                <div className='p-8'>
-                  <div className='flex items-center justify-center mb-4'>
-                    <Icon className='w-12 h-12 text-blue-600' />
-                  </div>
-
-                  <h3 className='text-2xl font-bold text-gray-900 text-center mb-2'>
-                    {plan.name}
-                  </h3>
-
-                  <div className='text-center mb-6'>
-                    {validatedDiscount && isSelected && (
-                      <div className='mb-2'>
-                        <span className='text-lg text-gray-500 line-through'>
-                          ${plan.price.toFixed(2)}
-                        </span>
-                        <span className='ml-2 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium'>
-                          {validatedDiscount.discountPercentage}% OFF
-                        </span>
-                      </div>
-                    )}
-
-                    <div className='text-4xl font-bold text-gray-900'>
-                      ${finalPrice.toFixed(2)}
-                    </div>
-
-                    <div className='text-gray-600'>{plan.duration}</div>
-
-                    {savings > 0 && isSelected && (
-                      <div className='text-green-600 font-medium mt-1'>
-                        Save ${savings.toFixed(2)}!
-                      </div>
-                    )}
-                  </div>
-
-                  <div className='text-center mb-6'>
-                    <span className='text-lg font-semibold text-blue-600'>
-                      {plan.letters} Letter{plan.letters > 1 ? 's' : ''}
-                    </span>
-                  </div>
-
-                  <ul className='space-y-3 mb-8'>
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className='flex items-center'>
-                        <Check className='w-5 h-5 text-green-500 mr-3 flex-shrink-0' />
-                        <span className='text-gray-700'>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {isSelected && (
-                    <div className='absolute inset-0 bg-blue-50 bg-opacity-50 rounded-xl flex items-center justify-center'>
-                      <div className='bg-blue-600 text-white px-4 py-2 rounded-lg font-medium'>
-                        Selected Plan
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Discount Code Section */}
-        <div className='bg-white rounded-xl shadow-lg p-8 mb-8'>
-          <div className='flex items-center mb-4'>
-            <Gift className='w-6 h-6 text-green-600 mr-3' />
-            <h3 className='text-xl font-semibold text-gray-900'>
-              Have a Discount Code?
-            </h3>
-          </div>
-
-          <div className='flex items-center space-x-4'>
-            <div className='flex-1'>
-              <input
-                type='text'
-                placeholder='Enter discount code (e.g., EMP-ABC123)'
-                value={discountCode}
-                onChange={e => setDiscountCode(e.target.value.toUpperCase())}
-                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-              />
-            </div>
-            <button
-              onClick={validateDiscountCode}
-              disabled={!discountCode.trim() || isValidating}
-              className='px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+      </div>
+      
+      {/* Plans selection */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {filteredPlans.map(plan => (
+          <div 
+            key={plan.id}
+            className={`border rounded-lg p-6 cursor-pointer transition-all ${
+              selectedPlan?.id === plan.id 
+                ? 'border-blue-500 bg-blue-50 shadow-md' 
+                : 'border-gray-200 hover:border-blue-300'
+            }`}
+            onClick={() => setSelectedPlan(plan)}
+          >
+            <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+            <p className="text-3xl font-bold mb-4">
+              ${plan.price.toFixed(2)}
+              <span className="text-sm font-normal text-gray-600">
+                /{plan.period === 'monthly' ? 'month' : 'year'}
+              </span>
+            </p>
+            
+            <ul className="mb-4">
+              {plan.features.map((feature, index) => (
+                <li key={index} className="flex items-start mb-2">
+                  <svg className="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+            
+            <Button
+              className={`w-full ${selectedPlan?.id === plan.id ? 'bg-blue-600' : 'bg-gray-200 text-gray-700'}`}
+              onClick={() => setSelectedPlan(plan)}
             >
-              {isValidating ? 'Validating...' : 'Apply'}
-            </button>
+              {selectedPlan?.id === plan.id ? 'Selected' : 'Select Plan'}
+            </Button>
           </div>
-
-          {validatedDiscount && (
-            <div className='mt-4 p-4 bg-green-50 border border-green-200 rounded-lg'>
-              <div className='flex items-center'>
-                <Percent className='w-5 h-5 text-green-600 mr-2' />
-                <span className='text-green-800 font-medium'>
-                  Discount code applied! You save{' '}
-                  {validatedDiscount.discountPercentage}% on your subscription.
-                </span>
-              </div>
-            </div>
+        ))}
+      </div>
+      
+      {/* Discount code section */}
+      {selectedPlan && (
+        <div className="mb-8 p-4 border border-gray-200 rounded-lg">
+          <h3 className="text-lg font-medium mb-4">Have a discount code?</h3>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter discount code"
+              value={discountCode}
+              onChange={(e) => setDiscountCode(e.target.value)}
+              className="flex-grow"
+              disabled={isValidatingCode}
+            />
+            <Button
+              onClick={handleValidateCode}
+              disabled={isValidatingCode || !discountCode.trim()}
+              className="bg-blue-600"
+            >
+              {isValidatingCode ? 'Validating...' : 'Apply'}
+            </Button>
+          </div>
+          
+          {discountError && (
+            <p className="text-red-500 mt-2 text-sm">{discountError}</p>
+          )}
+          
+          {discountAmount > 0 && (
+            <p className="text-green-500 mt-2">
+              Discount applied: {discountAmount}% off
+            </p>
           )}
         </div>
-
-        {/* Payment Section */}
-        {selectedPlan && (
-          <div className='bg-white rounded-xl shadow-lg p-8'>
-            <h3 className='text-xl font-semibold text-gray-900 mb-6'>
-              Payment Method
-            </h3>
-
-            <div className='grid grid-cols-2 gap-4 mb-6'>
-              <button
-                onClick={() => setPaymentMethod('card')}
-                className={`p-4 border rounded-lg transition-colors ${
-                  paymentMethod === 'card'
-                    ? 'border-blue-500 bg-blue-50 text-blue-900'
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                <CreditCard className='w-6 h-6 mx-auto mb-2' />
-                Credit Card
-              </button>
-
-              <button
-                onClick={() => setPaymentMethod('paypal')}
-                className={`p-4 border rounded-lg transition-colors ${
-                  paymentMethod === 'paypal'
-                    ? 'border-blue-500 bg-blue-50 text-blue-900'
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                <div className='w-6 h-6 mx-auto mb-2 bg-blue-600 rounded'></div>
-                PayPal
-              </button>
-            </div>
-
-            {/* Order Summary */}
-            <div className='bg-gray-50 rounded-lg p-6 mb-6'>
-              <h4 className='font-semibold text-gray-900 mb-4'>
-                Order Summary
-              </h4>
-
-              <div className='space-y-2'>
-                <div className='flex justify-between'>
-                  <span>{selectedPlan.name}</span>
-                  <span>${selectedPlan.price.toFixed(2)}</span>
-                </div>
-
-                {validatedDiscount && (
-                  <div className='flex justify-between text-green-600'>
-                    <span>
-                      Discount ({validatedDiscount.discountPercentage}% off)
-                    </span>
-                    <span>-${getSavingsAmount(selectedPlan).toFixed(2)}</span>
-                  </div>
-                )}
-
-                <div className='border-t pt-2 flex justify-between font-bold text-lg'>
-                  <span>Total</span>
-                  <span>${getFinalPrice(selectedPlan).toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className='flex justify-between'>
-              {onCancel && (
-                <button
-                  onClick={onCancel}
-                  className='px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors'
-                >
-                  Cancel
-                </button>
-              )}
-
-              <ShinyButton
-                onClick={handleSubscribe}
-                disabled={isProcessing}
-                className='px-8 py-3 ml-auto'
-              >
-                {isProcessing
-                  ? 'Processing...'
-                  : `Subscribe to ${selectedPlan.name}`}
-              </ShinyButton>
-            </div>
+      )}
+      
+      {/* Summary and checkout section */}
+      {selectedPlan && (
+        <div className="border-t pt-6">
+          <div className="flex justify-between items-center mb-4">
+            <span className="font-medium">Plan:</span>
+            <span>{selectedPlan.name} (${selectedPlan.price.toFixed(2)})</span>
           </div>
-        )}
-      </div>
-
-      {/* Render banners */}
-      {banners.map(banner => (
-        <CompletionBanner key={banner.id} {...banner} />
-      ))}
+          
+          {discountAmount > 0 && (
+            <div className="flex justify-between items-center mb-4 text-green-600">
+              <span className="font-medium">Discount:</span>
+              <span>-${(selectedPlan.price * discountAmount / 100).toFixed(2)}</span>
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center mb-6 text-lg font-bold">
+            <span>Total:</span>
+            <span>${finalPrice}/{selectedPlan.period === 'monthly' ? 'month' : 'year'}</span>
+          </div>
+          
+          <Button
+            className="w-full bg-blue-600 hover:bg-blue-700"
+            onClick={handleSubscribe}
+            disabled={isSubscribing}
+          >
+            {isSubscribing ? 'Processing...' : `Subscribe Now - $${finalPrice}/${selectedPlan.period === 'monthly' ? 'month' : 'year'}`}
+          </Button>
+          
+          <p className="text-center text-sm text-gray-500 mt-4">
+            You can cancel your subscription at any time.
+            By subscribing, you agree to our Terms of Service and Privacy Policy.
+          </p>
+        </div>
+      )}
     </div>
   );
-};
+}
+
+export { SubscriptionForm };
+export default SubscriptionForm;

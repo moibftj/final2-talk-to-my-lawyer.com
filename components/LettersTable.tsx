@@ -31,8 +31,6 @@ import {
   Edit,
   Trash2,
   FileText,
-  Download,
-  Send,
   Clock,
   CheckCircle,
   XCircle,
@@ -40,6 +38,8 @@ import {
 import { ShimmerButton } from './magicui/shimmer-button';
 import type { LetterRequest } from '../types';
 import { STATUS_STYLES, getTemplateLabel, IconSpinner } from '../constants';
+import { StatusTimelineCompact } from './StatusTimeline';
+import { PreviewModal } from './PreviewModal';
 
 interface LettersTableProps {
   letters: LetterRequest[];
@@ -48,12 +48,14 @@ interface LettersTableProps {
   onDeleteLetter: (id: string) => void;
   isDeletingId: string | null;
   isLoading?: boolean;
+  onStatusUpdate?: (letterId: string, newStatus: string) => void;
 }
 
 const allColumns = [
   'Title',
   'Template',
   'Status',
+  'Progress',
   'Created',
   'Updated',
   'Actions',
@@ -100,12 +102,16 @@ export function LettersTable({
   onDeleteLetter,
   isDeletingId,
   isLoading = false,
+  onStatusUpdate,
 }: LettersTableProps) {
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
     ...allColumns,
   ]);
   const [statusFilter, setStatusFilter] = useState('');
   const [titleFilter, setTitleFilter] = useState('');
+  const [previewLetter, setPreviewLetter] = useState<LetterRequest | null>(
+    null
+  );
 
   if (isLoading) {
     return <LettersTableSkeleton />;
@@ -196,6 +202,9 @@ export function LettersTable({
             {visibleColumns.includes('Status') && (
               <TableHead className='w-[120px]'>Status</TableHead>
             )}
+            {visibleColumns.includes('Progress') && (
+              <TableHead className='w-[200px]'>Progress</TableHead>
+            )}
             {visibleColumns.includes('Created') && (
               <TableHead className='w-[120px]'>Created</TableHead>
             )}
@@ -253,6 +262,15 @@ export function LettersTable({
                     </TableCell>
                   )}
 
+                  {visibleColumns.includes('Progress') && (
+                    <TableCell>
+                      <StatusTimelineCompact
+                        currentStatus={letter.status}
+                        className='max-w-[180px]'
+                      />
+                    </TableCell>
+                  )}
+
                   {visibleColumns.includes('Created') && (
                     <TableCell className='text-sm text-gray-600 dark:text-gray-400'>
                       {new Date(letter.createdAt).toLocaleDateString()}
@@ -268,6 +286,29 @@ export function LettersTable({
                   {visibleColumns.includes('Actions') && (
                     <TableCell>
                       <div className='flex items-center gap-2'>
+                        {(letter.status === 'approved' ||
+                          letter.status === 'completed') &&
+                          letter.aiGeneratedContent && (
+                            <TooltipProvider>
+                              <TooltipEnhanced>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    onClick={() => setPreviewLetter(letter)}
+                                    disabled={isDeletingId === letter.id}
+                                    className='h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50'
+                                  >
+                                    <Eye className='h-4 w-4' />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Preview & Download</p>
+                                </TooltipContent>
+                              </TooltipEnhanced>
+                            </TooltipProvider>
+                          )}
+
                         <TooltipProvider>
                           <TooltipEnhanced>
                             <TooltipTrigger asChild>
@@ -359,10 +400,28 @@ export function LettersTable({
               Completed: {letters.filter(l => l.status === 'completed').length}
             </span>
             <span>
-              Draft: {letters.filter(l => l.status === 'draft').length}
+              In Review: {letters.filter(l => l.status === 'in_review').length}
+            </span>
+            <span>
+              Submitted: {letters.filter(l => l.status === 'submitted').length}
             </span>
           </div>
         </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewLetter && (
+        <PreviewModal
+          isOpen={true}
+          onClose={() => setPreviewLetter(null)}
+          letter={previewLetter}
+          onStatusUpdate={newStatus => {
+            if (onStatusUpdate) {
+              onStatusUpdate(previewLetter.id, newStatus);
+            }
+            setPreviewLetter(null);
+          }}
+        />
       )}
     </div>
   );

@@ -1,164 +1,125 @@
-import supabase from './supabase';
-import type { LetterRequest } from '../types';
-import type { LetterTone, LetterLength } from './aiService';
+import { supabase } from './supabase';
 
-// This file is the single source of truth for all frontend-to-backend communication.
-// It uses the Supabase client to interact with the database and Edge Functions.
+// Define API base URL - uses environment variable or default
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
-const handleSupabaseError = (error: any, context: string) => {
-  console.error(`Error in ${context}:`, error);
-  throw new Error(error.message || `An unknown error occurred in ${context}.`);
-};
-
-// Helper to map Supabase's snake_case to our app's camelCase
-const mapLetterFromSupabase = (l: any): LetterRequest => ({
-  id: l.id,
-  userId: l.user_id,
-  lawyerId: l.lawyer_id,
-  title: l.title,
-  letterType: l.letter_type,
-  description: l.description,
-  recipientInfo: l.recipient_info,
-  senderInfo: l.sender_info,
-  status: l.status,
-  priority: l.priority,
-  dueDate: l.due_date,
-  aiGeneratedContent: l.ai_generated_content,
-  templateData: l.template_data,
-  finalContent: l.final_content,
-  createdAt: l.created_at,
-  updatedAt: l.updated_at,
-});
-
-// --- LETTERS API (DATABASE) ---
-
-const fetchLetters = async (): Promise<LetterRequest[]> => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  const { data, error } = await supabase
-    .from('letters')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  if (error) handleSupabaseError(error, 'fetchLetters');
-  return (data || []).map(mapLetterFromSupabase);
-};
-
-const createLetter = async (
-  letterData: Partial<LetterRequest>
-): Promise<LetterRequest> => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  const letterToInsert = {
-    user_id: user.id,
-    title: letterData.title,
-    letter_type: letterData.letterType,
-    description: letterData.description,
-    template_data: letterData.templateData,
-    ai_generated_content: letterData.aiGeneratedContent,
-    status: letterData.status || 'submitted',
-    priority: letterData.priority || 'medium',
-    recipient_info: letterData.recipientInfo || {},
-    sender_info: letterData.senderInfo || {},
+// Generic interface for API responses
+interface ApiResponse<T = any> {
+  data?: T;
+  error?: {
+    message: string;
+    code?: string;
+    status?: number;
   };
-
-  const { data, error } = await supabase
-    .from('letters')
-    .insert(letterToInsert)
-    .select()
-    .single();
-
-  if (error) handleSupabaseError(error, 'createLetter');
-  return mapLetterFromSupabase(data);
-};
-
-const updateLetter = async (
-  letterData: LetterRequest
-): Promise<LetterRequest> => {
-  const letterToUpdate = {
-    title: letterData.title,
-    letter_type: letterData.letterType,
-    description: letterData.description,
-    template_data: letterData.templateData,
-    ai_generated_content: letterData.aiGeneratedContent,
-    status: letterData.status,
-    priority: letterData.priority,
-    updated_at: new Date().toISOString(), // Manually update timestamp
-  };
-
-  const { data, error } = await supabase
-    .from('letters')
-    .update(letterToUpdate)
-    .eq('id', letterData.id)
-    .select()
-    .single();
-
-  if (error) handleSupabaseError(error, 'updateLetter');
-  return mapLetterFromSupabase(data);
-};
-
-const deleteLetter = async (id: string): Promise<void> => {
-  const { error } = await supabase.from('letters').delete().eq('id', id);
-
-  if (error) handleSupabaseError(error, 'deleteLetter');
-};
-
-// --- AI SERVICE API (EDGE FUNCTION) ---
-interface GenerateDraftPayload {
-  title: string;
-  templateBody: string;
-  templateFields: Record<string, string>;
-  additionalContext: string;
-  tone?: LetterTone;
-  length?: LetterLength;
-  letterId?: string;
 }
-const generateDraft = async (
-  payload: GenerateDraftPayload
-): Promise<string> => {
-  const { data, error } = await supabase.functions.invoke('generate-draft', {
-    body: payload,
-  });
 
-  if (error) handleSupabaseError(error, 'generateDraft function');
-  if (data.error) throw new Error(data.error);
-  return data.draft;
-};
+// Type for request options
+interface RequestOptions {
+  headers?: Record<string, string>;
+  params?: Record<string, string>;
+  signal?: AbortSignal;
+}
 
-// --- ADMIN API (EDGE FUNCTIONS) ---
+/**
+ * General purpose fetch wrapper with error handling
+ */
+async function fetchWithAuth<T>(
+  endpoint: string,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
+  body?: any,
+  options: RequestOptions = {}
+): Promise<ApiResponse<T>> {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
 
-const fetchAllUsers = async (): Promise<
-  { id: string; email: string | undefined; role: string | undefined }[]
-> => {
-  const { data, error } = await supabase.functions.invoke('get-all-users');
-  if (error) handleSupabaseError(error, 'fetchAllUsers function');
-  return data.users;
-};
+    // Construct URL with query parameters if provided
+    let url = `${API_BASE_URL}${endpoint}`;
+    if (options.params) {
+      const queryParams = new URLSearchParams();
+      Object.entries(options.params).forEach(([key, value]) => {
+        queryParams.append(key, value);
+      });
+      url += `?${queryParams.toString()}`;
+    }
 
-const fetchAllLetters = async (): Promise<any[]> => {
-  const { data, error } = await supabase.functions.invoke('get-all-letters');
-  if (error) handleSupabaseError(error, 'fetchAllLetters function');
-  return data.letters;
-};
+    // Default headers
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    };
 
+    // Prepare request
+    const requestOptions: RequestInit = {
+      method,
+      headers,
+      signal: options.signal,
+    };
+
+    // Add body for non-GET requests
+    if (method !== 'GET' && body !== undefined) {
+      requestOptions.body = JSON.stringify(body);
+    }
+
+    // Execute request
+    const response = await fetch(url, requestOptions);
+    
+    // Parse response
+    let data: any;
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
+
+    // Handle API response
+    if (!response.ok) {
+      return {
+        error: {
+          message: data.message || 'API request failed',
+          code: data.code,
+          status: response.status,
+        },
+      };
+    }
+
+    return { data };
+  } catch (error: any) {
+    return {
+      error: {
+        message: error.message || 'Network error',
+        code: 'NETWORK_ERROR',
+      },
+    };
+  }
+}
+
+// Export convenience methods for different HTTP verbs
 export const apiClient = {
-  // Letters (Database)
-  fetchLetters,
-  createLetter,
-  updateLetter,
-  deleteLetter,
-
-  // AI Service (Edge Function)
-  generateDraft,
-
-  // Admin (Edge Functions)
-  fetchAllUsers,
-  fetchAllLetters,
+  get: <T>(endpoint: string, options?: RequestOptions) => 
+    fetchWithAuth<T>(endpoint, 'GET', undefined, options),
+  
+  post: <T>(endpoint: string, data?: any, options?: RequestOptions) => 
+    fetchWithAuth<T>(endpoint, 'POST', data, options),
+  
+  put: <T>(endpoint: string, data?: any, options?: RequestOptions) => 
+    fetchWithAuth<T>(endpoint, 'PUT', data, options),
+  
+  delete: <T>(endpoint: string, options?: RequestOptions) => 
+    fetchWithAuth<T>(endpoint, 'DELETE', undefined, options),
+  
+  // Helper for checking if the API is available
+  checkHealth: async (): Promise<boolean> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/health`);
+      return response.ok;
+    } catch (error) {
+      console.error('API health check failed:', error);
+      return false;
+    }
+  },
 };
+
+export default apiClient;

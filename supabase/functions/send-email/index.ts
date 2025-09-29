@@ -1,0 +1,157 @@
+/// <reference types="https://raw.githubusercontent.com/denoland/deno/v1.40.2/cli/dts/lib.deno.ns.d.ts" />
+
+import { createClient } from '@supabase/supabase-js'
+
+interface EmailRequest {
+  letterId: string
+  recipientEmail: string
+  senderEmail?: string
+  attorneyEmail?: string
+}
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Get request body
+    const { letterId, recipientEmail, senderEmail, attorneyEmail }: EmailRequest = await req.json()
+
+    if (!letterId || !recipientEmail) {
+      throw new Error('Missing required fields: letterId or recipientEmail')
+    }
+
+    // Get the letter details
+    const { data: letter, error: letterError } = await supabase
+      .from('letters')
+      .select(`
+        *,
+        profiles:user_id (email)
+      `)
+      .eq('id', letterId)
+      .single()
+
+    if (letterError || !letter) {
+      throw new Error('Letter not found')
+    }
+
+    if (!letter.ai_draft) {
+      throw new Error('Letter draft not available')
+    }
+
+    // Prepare email content
+    const subject = `Legal Letter: ${letter.title}`
+    const emailBody = `
+Dear Recipient,
+
+Please find below the legal letter prepared by our attorney:
+
+${letter.ai_draft}
+
+---
+This letter was generated through our legal letter service.
+If you have any questions, please contact the sender or attorney directly.
+
+Best regards,
+Talk to My Lawyer Service
+    `
+
+    // For demo purposes, we'll simulate sending the email
+    // In production, integrate with a real email service like SendGrid, Mailgun, or AWS SES
+    console.log('Simulating email send:', {
+      to: recipientEmail,
+      from: attorneyEmail || senderEmail || 'noreply@talktomylawyer.com',
+      subject,
+      body: emailBody
+    })
+
+    // Update letter status to 'sent'
+    const { error: updateError } = await supabase
+      .from('letters')
+      .update({
+        status: 'completed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', letterId)
+
+    if (updateError) {
+      throw updateError
+    }
+
+    // Log the email sending activity
+    const { error: logError } = await supabase
+      .from('letter_status_history')
+      .insert({
+        letter_id: letterId,
+        old_status: 'approved',
+        new_status: 'completed',
+        changed_by: letter.user_id,
+        notes: `Email sent to ${recipientEmail}`
+      })
+
+    if (logError) {
+      console.warn('Failed to log email activity:', logError)
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'Email sent successfully',
+        data: {
+          letterId,
+          recipientEmail,
+          subject,
+          status: 'sent'
+        }
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
+    )
+
+  } catch (error) {
+    console.error('Error sending email:', error)
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      }
+    )
+  }
+})
+
+/*
+TODO: Integrate with a real email service provider
+Example with SendGrid:
+
+import { SendGridAPI } from 'https://deno.land/x/sendgrid@0.0.3/mod.ts'
+
+const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY')!
+const sendGrid = new SendGridAPI(sendGridApiKey)
+
+const emailData = {
+  to: recipientEmail,
+  from: 'noreply@talktomylawyer.com',
+  subject: subject,
+  text: emailBody,
+  html: emailBody.replace(/\n/g, '<br>')
+}
+
+const response = await sendGrid.send(emailData)
+*/

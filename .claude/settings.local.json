@@ -25,6 +25,9 @@
       "Bash(rm:*)",
       "Bash(npm run lint)",
       "Bash(npm run format:*)"
+      "Bash(node:*)",
+      "Bash(ts-node test:*)",
+      "Bash(npx ts-node:*)"
     ],
     "deny": [],
     "ask": []

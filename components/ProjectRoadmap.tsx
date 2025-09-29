@@ -1,449 +1,301 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+} from './Card';
+import { NeonGradientCard } from './magicui/neon-gradient-card';
 import { useAuth } from '../contexts/AuthContext';
 import { discountService } from '../services/discountService';
-import type { DiscountCode } from '../types';
-import { CompletionBanner, useBanners } from './CompletionBanner';
-import { Star, TrendingUp, Gift, DollarSign } from 'lucide-react';
-
-interface EmployeeAnalyticsWithPoints {
-  totalReferrals: number;
-  totalCommissions: number;
-  totalPoints: number;
-  monthlyEarnings: number;
-  monthlyPoints: number;
-  activeDiscountCodes: number;
-  codeUsageStats: {
-    code: string;
-    usageCount: number;
-    totalRevenue: number;
-    totalCommissions: number;
-  }[];
-}
+import { DiscountCode, EmployeeAnalytics } from '../types';
+import { Spinner } from './Spinner';
 
 export const EmployeeDashboard: React.FC = () => {
   const { user } = useAuth();
-  const [analytics, setAnalytics] = useState<EmployeeAnalyticsWithPoints>({
-    totalReferrals: 0,
-    totalCommissions: 0,
-    totalPoints: 0,
-    monthlyEarnings: 0,
-    monthlyPoints: 0,
-    activeDiscountCodes: 0,
-    codeUsageStats: [],
-  });
   const [discountCodes, setDiscountCodes] = useState<DiscountCode[]>([]);
+  const [analytics, setAnalytics] = useState<EmployeeAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
-  const { banners, showSuccess, showError, showInfo } = useBanners();
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    loadEmployeeData();
-  }, []);
+    if (user?.email) {
+      loadDashboardData();
+    }
+  }, [user]);
 
-  const loadEmployeeData = async () => {
-    if (!user?.email) return;
-
-    setIsLoading(true);
-    showInfo('Loading Dashboard', 'Fetching your employee data...');
-
+  const loadDashboardData = async () => {
     try {
-      const employeeId = user.email;
+      setIsLoading(true);
+      // In a real app, you'd get the employee ID from the user object
+      const employeeId = user?.email; // Using email as temp ID
 
-      // Load analytics with points
       const [codes, analyticsData] = await Promise.all([
-        discountService.getEmployeeDiscountCodes(employeeId),
-        fetchEmployeeAnalyticsWithPoints(employeeId),
+        discountService.getEmployeeDiscountCodes(employeeId!),
+        discountService.getEmployeeAnalytics(employeeId!),
       ]);
 
       setDiscountCodes(codes);
       setAnalytics(analyticsData);
-
-      showSuccess(
-        'Dashboard Loaded',
-        `Found ${codes.length} discount codes, ${analyticsData.totalPoints} points, and $${analyticsData.totalCommissions.toFixed(2)} in total commissions.`
-      );
     } catch (error) {
-      console.error('Failed to load employee data:', error);
-      showError(
-        'Loading Failed',
-        'Unable to load your employee dashboard. Please refresh the page.'
-      );
+      console.error('Error loading dashboard data:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchEmployeeAnalyticsWithPoints = async (
-    employeeId: string
-  ): Promise<EmployeeAnalyticsWithPoints> => {
-    // This would normally be a function in discountService, but for now we'll simulate it
-    const basicAnalytics =
-      await discountService.getEmployeeAnalytics(employeeId);
-
-    // Add mock points data (in real app, this would come from the database function)
-    return {
-      ...basicAnalytics,
-      totalPoints: basicAnalytics.totalReferrals, // 1 point per referral
-      monthlyPoints: Math.floor(basicAnalytics.monthlyEarnings / 20), // Estimate based on monthly earnings
-    };
-  };
-
-  const handleGenerateCode = async () => {
-    if (!user?.email) return;
-
-    setIsGeneratingCode(true);
-    showInfo('Generating Code', 'Creating new discount code...');
-
+  const generateNewCode = async () => {
     try {
-      const employeeId = user.email;
-      const newCode = await discountService.generateDiscountCode(employeeId);
+      setIsGenerating(true);
+      const employeeId = user?.email;
+      const newCode = await discountService.generateDiscountCode(employeeId!);
 
       if (newCode) {
         setDiscountCodes(prev => [newCode, ...prev]);
-        setAnalytics(prev => ({
-          ...prev,
-          activeDiscountCodes: prev.activeDiscountCodes + 1,
-        }));
-        showSuccess(
-          'Code Generated',
-          `New discount code "${newCode.code}" created successfully!`
+        // Refresh analytics
+        const updatedAnalytics = await discountService.getEmployeeAnalytics(
+          employeeId!
         );
-      } else {
-        showError(
-          'Generation Failed',
-          'Unable to generate discount code. Please try again.'
-        );
+        setAnalytics(updatedAnalytics);
       }
     } catch (error) {
-      console.error('Failed to generate code:', error);
-      showError(
-        'Generation Failed',
-        'Unable to generate discount code. Please try again.'
-      );
+      console.error('Error generating new code:', error);
     } finally {
-      setIsGeneratingCode(false);
+      setIsGenerating(false);
     }
   };
 
-  const handleToggleCode = async (codeId: string, isActive: boolean) => {
-    showInfo(
-      isActive ? 'Activating Code' : 'Deactivating Code',
-      'Updating discount code status...'
+  const toggleCodeStatus = async (codeId: string, isActive: boolean) => {
+    const success = await discountService.toggleDiscountCodeStatus(
+      codeId,
+      !isActive
     );
-
-    try {
-      const success = await discountService.toggleDiscountCodeStatus(
-        codeId,
-        isActive
+    if (success) {
+      setDiscountCodes(prev =>
+        prev.map(code =>
+          code.id === codeId ? { ...code, isActive: !isActive } : code
+        )
       );
-
-      if (success) {
-        setDiscountCodes(prev =>
-          prev.map(code => (code.id === codeId ? { ...code, isActive } : code))
-        );
-        showSuccess(
-          'Status Updated',
-          `Discount code ${isActive ? 'activated' : 'deactivated'} successfully.`
-        );
-      } else {
-        showError('Update Failed', 'Unable to update discount code status.');
-      }
-    } catch (error) {
-      console.error('Failed to toggle code:', error);
-      showError('Update Failed', 'Unable to update discount code status.');
     }
   };
 
-  const getPointsLevel = (
-    points: number
-  ): { level: string; color: string; nextLevel: number } => {
-    if (points < 5)
-      return { level: 'Bronze', color: 'text-amber-600', nextLevel: 5 };
-    if (points < 15)
-      return { level: 'Silver', color: 'text-gray-500', nextLevel: 15 };
-    if (points < 30)
-      return { level: 'Gold', color: 'text-yellow-500', nextLevel: 30 };
-    if (points < 50)
-      return { level: 'Platinum', color: 'text-indigo-600', nextLevel: 50 };
-    return { level: 'Diamond', color: 'text-purple-600', nextLevel: -1 };
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    // You could add a toast notification here
   };
 
   if (isLoading) {
-    return (
-      <div className='flex justify-center items-center h-64'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
-      </div>
-    );
+    return <Spinner />;
   }
 
-  const pointsLevel = getPointsLevel(analytics.totalPoints);
-
   return (
-    <>
-      <div className='space-y-6'>
-        {/* Employee Analytics Header */}
-        <div className='bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border p-6'>
-          <h2 className='text-2xl font-bold text-gray-800 mb-4'>
-            Employee Dashboard
-          </h2>
-          <div className='grid grid-cols-1 md:grid-cols-5 gap-4'>
-            <div className='text-center'>
-              <div className='text-3xl font-bold text-green-600'>
-                {analytics.totalReferrals}
+    <div className='space-y-6'>
+      {/* Analytics Overview */}
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+        <Card className='bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-800/20 border-green-200 dark:border-green-700'>
+          <CardContent className='p-6'>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-sm font-medium text-green-600 dark:text-green-400'>
+                  Total Referrals
+                </p>
+                <p className='text-3xl font-bold text-green-700 dark:text-green-300'>
+                  {analytics?.totalReferrals || 0}
+                </p>
               </div>
-              <div className='text-sm text-gray-600'>Total Referrals</div>
-            </div>
-            <div className='text-center'>
-              <div className='text-3xl font-bold text-blue-600'>
-                ${analytics.totalCommissions.toFixed(2)}
+              <div className='w-12 h-12 bg-green-500 rounded-full flex items-center justify-center'>
+                <span className='text-white text-xl'>👥</span>
               </div>
-              <div className='text-sm text-gray-600'>Total Commissions</div>
             </div>
-            <div className='text-center'>
-              <div className='text-3xl font-bold text-purple-600'>
-                ${analytics.monthlyEarnings.toFixed(2)}
+          </CardContent>
+        </Card>
+
+        <Card className='bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-800/20 border-blue-200 dark:border-blue-700'>
+          <CardContent className='p-6'>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-sm font-medium text-blue-600 dark:text-blue-400'>
+                  Total Commissions
+                </p>
+                <p className='text-3xl font-bold text-blue-700 dark:text-blue-300'>
+                  ${analytics?.totalCommissions?.toFixed(2) || '0.00'}
+                </p>
               </div>
-              <div className='text-sm text-gray-600'>This Month</div>
-            </div>
-            <div className='text-center'>
-              <div className='text-3xl font-bold text-orange-600'>
-                {analytics.activeDiscountCodes}
+              <div className='w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center'>
+                <span className='text-white text-xl'>💰</span>
               </div>
-              <div className='text-sm text-gray-600'>Active Codes</div>
             </div>
-            <div className='text-center'>
-              <div className={`text-3xl font-bold ${pointsLevel.color}`}>
-                {analytics.totalPoints}
+          </CardContent>
+        </Card>
+
+        <Card className='bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/20 dark:to-violet-800/20 border-purple-200 dark:border-purple-700'>
+          <CardContent className='p-6'>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-sm font-medium text-purple-600 dark:text-purple-400'>
+                  Monthly Earnings
+                </p>
+                <p className='text-3xl font-bold text-purple-700 dark:text-purple-300'>
+                  ${analytics?.monthlyEarnings?.toFixed(2) || '0.00'}
+                </p>
               </div>
-              <div className='text-sm text-gray-600'>Total Points</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Points System */}
-        <div className='bg-white rounded-lg border p-6'>
-          <div className='flex items-center justify-between mb-4'>
-            <div className='flex items-center'>
-              <Star className='w-6 h-6 text-yellow-500 mr-2' />
-              <h3 className='text-xl font-semibold text-gray-800'>
-                Points & Level
-              </h3>
-            </div>
-            <div
-              className={`px-4 py-2 rounded-full font-bold ${pointsLevel.color} bg-gray-100`}
-            >
-              {pointsLevel.level} Level
-            </div>
-          </div>
-
-          <div className='space-y-4'>
-            <div className='flex justify-between items-center'>
-              <span className='text-gray-700'>Current Points:</span>
-              <span className='font-bold text-2xl'>
-                {analytics.totalPoints}
-              </span>
-            </div>
-
-            {pointsLevel.nextLevel > 0 && (
-              <>
-                <div className='flex justify-between items-center'>
-                  <span className='text-gray-700'>Points to next level:</span>
-                  <span className='font-semibold'>
-                    {pointsLevel.nextLevel - analytics.totalPoints}
-                  </span>
-                </div>
-
-                <div className='w-full bg-gray-200 rounded-full h-3'>
-                  <div
-                    className='bg-blue-600 h-3 rounded-full transition-all duration-500'
-                    style={{
-                      width: `${(analytics.totalPoints / pointsLevel.nextLevel) * 100}%`,
-                    }}
-                  ></div>
-                </div>
-              </>
-            )}
-
-            <div className='mt-4 p-4 bg-blue-50 rounded-lg'>
-              <div className='flex items-center mb-2'>
-                <TrendingUp className='w-5 h-5 text-blue-600 mr-2' />
-                <span className='font-medium text-blue-900'>
-                  How to Earn Points
-                </span>
+              <div className='w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center'>
+                <span className='text-white text-xl'>📈</span>
               </div>
-              <ul className='text-sm text-blue-800 space-y-1'>
-                <li>
-                  • 1 point for each successful referral (user subscribes with
-                  your code)
-                </li>
-                <li>• Bonus points for monthly milestones</li>
-                <li>• Special rewards for reaching new levels</li>
-              </ul>
             </div>
+          </CardContent>
+        </Card>
 
-            {analytics.monthlyPoints > 0 && (
-              <div className='flex items-center justify-between p-3 bg-green-50 rounded-lg'>
-                <span className='text-green-800'>
-                  Points earned this month:
-                </span>
-                <span className='font-bold text-green-600'>
-                  {analytics.monthlyPoints}
-                </span>
+        <Card className='bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-900/20 dark:to-amber-800/20 border-orange-200 dark:border-orange-700'>
+          <CardContent className='p-6'>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-sm font-medium text-orange-600 dark:text-orange-400'>
+                  Active Codes
+                </p>
+                <p className='text-3xl font-bold text-orange-700 dark:text-orange-300'>
+                  {analytics?.activeDiscountCodes || 0}
+                </p>
               </div>
-            )}
-          </div>
-        </div>
+              <div className='w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center'>
+                <span className='text-white text-xl'>🎫</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Discount Codes Management */}
-        <div className='bg-white rounded-lg border p-6'>
-          <div className='flex justify-between items-center mb-4'>
-            <h3 className='text-xl font-semibold text-gray-800'>
-              Discount Codes
-            </h3>
+      {/* Discount Codes Section */}
+      <NeonGradientCard
+        className='w-full'
+        borderRadius={12}
+        neonColors={{ firstColor: '#10B981', secondColor: '#2DD4BF' }}
+      >
+        <Card className='bg-white/95 dark:bg-slate-900/95'>
+          <CardHeader className='flex flex-row items-center justify-between'>
+            <div>
+              <CardTitle>Your Discount Codes</CardTitle>
+              <CardDescription>
+                Generate and manage 20% discount codes for users. Earn 5%
+                commission on each successful referral.
+              </CardDescription>
+            </div>
             <button
-              onClick={handleGenerateCode}
-              disabled={isGeneratingCode}
-              className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+              onClick={generateNewCode}
+              disabled={isGenerating}
+              className='px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-medium transition-colors flex items-center gap-2'
             >
-              {isGeneratingCode ? 'Generating...' : 'Generate New Code'}
+              {isGenerating ? <Spinner /> : <span>🎫</span>}
+              Generate New Code
             </button>
-          </div>
-
-          <div className='overflow-x-auto'>
-            <table className='w-full table-auto'>
-              <thead>
-                <tr className='bg-gray-50'>
-                  <th className='px-4 py-2 text-left font-medium text-gray-700'>
-                    Code
-                  </th>
-                  <th className='px-4 py-2 text-left font-medium text-gray-700'>
-                    Discount %
-                  </th>
-                  <th className='px-4 py-2 text-left font-medium text-gray-700'>
-                    Usage Count
-                  </th>
-                  <th className='px-4 py-2 text-left font-medium text-gray-700'>
-                    Status
-                  </th>
-                  <th className='px-4 py-2 text-left font-medium text-gray-700'>
-                    Created
-                  </th>
-                  <th className='px-4 py-2 text-left font-medium text-gray-700'>
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+          </CardHeader>
+          <CardContent>
+            {discountCodes.length === 0 ? (
+              <div className='text-center py-8 text-gray-500 dark:text-gray-400'>
+                <p>No discount codes generated yet.</p>
+                <p className='text-sm mt-1'>
+                  Click "Generate New Code" to create your first discount code.
+                </p>
+              </div>
+            ) : (
+              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
                 {discountCodes.map(code => (
-                  <tr key={code.id} className='border-t'>
-                    <td className='px-4 py-2 font-mono font-bold text-blue-600'>
-                      {code.code}
-                    </td>
-                    <td className='px-4 py-2'>{code.discountPercentage}%</td>
-                    <td className='px-4 py-2'>{code.usageCount}</td>
-                    <td className='px-4 py-2'>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          code.isActive
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {code.isActive ? 'Active' : 'Inactive'}
+                  <div
+                    key={code.id}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      code.isActive
+                        ? 'border-green-300 bg-green-50 dark:bg-green-900/20 dark:border-green-600'
+                        : 'border-gray-300 bg-gray-50 dark:bg-gray-800 dark:border-gray-600 opacity-60'
+                    }`}
+                  >
+                    <div className='flex items-center justify-between mb-2'>
+                      <span className='text-sm font-medium text-gray-600 dark:text-gray-400'>
+                        {code.isActive ? '🟢 Active' : '🔴 Inactive'}
                       </span>
-                    </td>
-                    <td className='px-4 py-2'>
-                      {new Date(code.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className='px-4 py-2'>
                       <button
-                        onClick={() =>
-                          handleToggleCode(code.id, !code.isActive)
-                        }
-                        className={`px-3 py-1 rounded text-xs font-medium ${
-                          code.isActive
-                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                            : 'bg-green-100 text-green-700 hover:bg-green-200'
-                        }`}
+                        onClick={() => toggleCodeStatus(code.id, code.isActive)}
+                        className='text-xs px-2 py-1 rounded bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600'
                       >
                         {code.isActive ? 'Deactivate' : 'Activate'}
                       </button>
-                    </td>
-                  </tr>
+                    </div>
+                    <div className='bg-white dark:bg-gray-800 p-3 rounded border-2 border-dashed border-gray-300 dark:border-gray-600 mb-3'>
+                      <p className='text-2xl font-bold text-center text-green-600 dark:text-green-400 tracking-wider'>
+                        {code.code}
+                      </p>
+                    </div>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-sm text-gray-600 dark:text-gray-400'>
+                        Used: {code.usageCount} times
+                      </span>
+                      <button
+                        onClick={() => copyToClipboard(code.code)}
+                        className='text-xs px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors'
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </NeonGradientCard>
 
-          {discountCodes.length === 0 && (
-            <div className='text-center py-8 text-gray-500'>
-              No discount codes generated yet. Click "Generate New Code" to
-              create your first one.
-            </div>
-          )}
-        </div>
-
-        {/* Usage Statistics */}
-        {analytics.codeUsageStats.length > 0 && (
-          <div className='bg-white rounded-lg border p-6'>
-            <h3 className='text-xl font-semibold text-gray-800 mb-4'>
-              Code Performance
-            </h3>
+      {/* Code Usage Analytics */}
+      {analytics?.codeUsageStats && analytics.codeUsageStats.length > 0 && (
+        <Card className='bg-white/95 dark:bg-slate-900/95'>
+          <CardHeader>
+            <CardTitle>Code Performance</CardTitle>
+            <CardDescription>
+              Detailed analytics for each of your discount codes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className='overflow-x-auto'>
-              <table className='w-full table-auto'>
+              <table className='w-full text-sm'>
                 <thead>
-                  <tr className='bg-gray-50'>
-                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
+                  <tr className='border-b border-gray-200 dark:border-gray-700'>
+                    <th className='text-left py-2 px-3 font-medium text-gray-700 dark:text-gray-300'>
                       Code
                     </th>
-                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
-                      Uses
+                    <th className='text-left py-2 px-3 font-medium text-gray-700 dark:text-gray-300'>
+                      Usage Count
                     </th>
-                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
-                      Revenue Generated
+                    <th className='text-left py-2 px-3 font-medium text-gray-700 dark:text-gray-300'>
+                      Total Revenue
                     </th>
-                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
+                    <th className='text-left py-2 px-3 font-medium text-gray-700 dark:text-gray-300'>
                       Your Commission
-                    </th>
-                    <th className='px-4 py-2 text-left font-medium text-gray-700'>
-                      Points Earned
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {analytics.codeUsageStats.map(stat => (
-                    <tr key={stat.code} className='border-t'>
-                      <td className='px-4 py-2 font-mono font-bold text-blue-600'>
+                  {analytics.codeUsageStats.map((stat, index) => (
+                    <tr
+                      key={index}
+                      className='border-b border-gray-100 dark:border-gray-800'
+                    >
+                      <td className='py-3 px-3 font-mono font-medium text-green-600 dark:text-green-400'>
                         {stat.code}
                       </td>
-                      <td className='px-4 py-2'>{stat.usageCount}</td>
-                      <td className='px-4 py-2'>
+                      <td className='py-3 px-3'>{stat.usageCount}</td>
+                      <td className='py-3 px-3'>
                         ${stat.totalRevenue.toFixed(2)}
                       </td>
-                      <td className='px-4 py-2 font-bold text-green-600'>
+                      <td className='py-3 px-3 font-medium text-blue-600 dark:text-blue-400'>
                         ${stat.totalCommissions.toFixed(2)}
-                      </td>
-                      <td className='px-4 py-2'>
-                        <div className='flex items-center'>
-                          <Star className='w-4 h-4 text-yellow-500 mr-1' />
-                          <span className='font-bold text-yellow-600'>
-                            {stat.usageCount}
-                          </span>
-                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Render all banners */}
-      {banners.map(banner => (
-        <CompletionBanner key={banner.id} {...banner} />
-      ))}
-    </>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
