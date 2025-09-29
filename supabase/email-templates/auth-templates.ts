@@ -1,4 +1,4 @@
-// Custom Email Templates for Law Letter AI
+// Custom Email Templates for Talk to My Lawyer
 // These templates can be uploaded to Supabase Auth settings
 
 export const EMAIL_TEMPLATES = {
@@ -9,7 +9,7 @@ export const EMAIL_TEMPLATES = {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Law Letter AI</title>
+    <title>Welcome to Talk to My Lawyer</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
         .container { max-width: 600px; margin: 0 auto; background-color: white; }
@@ -31,15 +31,15 @@ export const EMAIL_TEMPLATES = {
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">⚖️ Law Letter AI</div>
-            <div class="header-subtitle">AI-Powered Legal Letter Generation</div>
+            <div class="logo">⚖️ Talk to My Lawyer</div>
+            <div class="header-subtitle">Professional Legal Communication Made Simple</div>
         </div>
         
         <div class="content">
-            <h1 class="welcome-text">Welcome to Law Letter AI!</h1>
-            
+            <h1 class="welcome-text">Welcome to Talk to My Lawyer!</h1>
+
             <p class="description">
-                Thank you for joining Law Letter AI, the revolutionary platform that helps you create professional legal letters using artificial intelligence. You're now part of a community that's making legal communication more accessible and efficient.
+                Thank you for joining TalkToMyLawyer.com, the premier platform for creating professional legal correspondence with AI assistance. You're now part of a community that's revolutionizing legal communication and making it more accessible to everyone.
             </p>
             
             <div style="text-align: center;">
@@ -75,7 +75,7 @@ export const EMAIL_TEMPLATES = {
         <div class="footer">
             <p class="footer-text">
                 If you didn't create this account, you can safely ignore this email.<br>
-                © 2024 Law Letter AI. All rights reserved.
+                © 2024 Talk to My Lawyer. All rights reserved.
             </p>
         </div>
     </div>
@@ -90,7 +90,7 @@ export const EMAIL_TEMPLATES = {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Your Password - Law Letter AI</title>
+    <title>Reset Your Password - Talk to My Lawyer</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
         .container { max-width: 600px; margin: 0 auto; background-color: white; }
@@ -111,7 +111,7 @@ export const EMAIL_TEMPLATES = {
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">⚖️ Law Letter AI</div>
+            <div class="logo">⚖️ Talk to My Lawyer</div>
             <div class="header-subtitle">Secure Password Reset</div>
         </div>
         
@@ -119,7 +119,7 @@ export const EMAIL_TEMPLATES = {
             <h1 class="reset-text">Reset Your Password</h1>
             
             <p class="description">
-                We received a request to reset the password for your Law Letter AI account. If you made this request, click the button below to set a new password.
+                We received a request to reset the password for your TalkToMyLawyer.com account. If you made this request, click the button below to set a new password.
             </p>
             
             <div style="text-align: center;">
@@ -146,7 +146,7 @@ export const EMAIL_TEMPLATES = {
                 <span style="word-break: break-all; color: #4a5568;">{{ .ConfirmationURL }}</span>
             </p>
             <p class="footer-text">
-                © 2024 Law Letter AI. All rights reserved.
+                © 2024 Talk to My Lawyer. All rights reserved.
             </p>
         </div>
     </div>
@@ -168,7 +168,7 @@ For Gmail/Google Workspace:
 - Port: 587
 - Username: your-email@yourdomain.com
 - Password: Your app-specific password
-- Sender Name: Law Letter AI
+- Sender Name: Talk to My Lawyer
 - Sender Email: noreply@yourdomain.com
 
 For SendGrid:
@@ -176,7 +176,7 @@ For SendGrid:
 - Port: 587
 - Username: apikey
 - Password: Your SendGrid API key
-- Sender Name: Law Letter AI
+- Sender Name: Talk to My Lawyer
 - Sender Email: noreply@yourdomain.com
 
 3. Upload the custom templates above to:
