@@ -21,8 +21,7 @@
     "@supabase/supabase-js": "^2.57.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "deno": "^2.5.2
-    "deno": "^2.5.1",
+    "deno": "^2.5.2",
     "framer-motion": "^11.18.2",
     "jspdf": "^3.0.3",
     "lucide-react": "^0.544.0",

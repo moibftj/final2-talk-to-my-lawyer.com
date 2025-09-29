@@ -6,10 +6,11 @@ interface LetterRequest {
   senderName: string
   senderAddress: string
   attorneyName: string
-  recipient: string
-  subject: string
+  recipientName: string
+  matter: string
   desiredResolution: string
   letterType: string
+  priority?: string
 }
 
 const corsHeaders = {
@@ -50,17 +51,25 @@ Deno.serve(async (req) => {
       length: length || 'medium'
     }
 
-    // Create or update letter
+    // Create or update letter with enhanced three-tier schema
     let currentLetterId = letterId
-    if (!letterId) {
-      // Create a new letter for testing purposes
+    if (!letterId && letterRequest) {
+      // Create a new letter with all enhanced fields
       const { data: newLetter, error: createError } = await supabase
         .from('letters')
         .insert({
-          title: letterData.title,
-          letter_type: 'general',
+          title: `Letter to ${letterRequest.recipientName} - ${letterRequest.matter}`,
+          letter_type: letterRequest.letterType || 'general',
           status: 'submitted',
+          timeline_status: 'received',
           user_id: userId || 'adb39d17-16f5-44c7-968a-533fad7540c6', // fallback for testing
+          sender_name: letterRequest.senderName,
+          sender_address: letterRequest.senderAddress,
+          attorney_name: letterRequest.attorneyName,
+          recipient_name: letterRequest.recipientName,
+          matter: letterRequest.matter,
+          desired_resolution: letterRequest.desiredResolution,
+          priority: letterRequest.priority || 'medium',
           content: JSON.stringify(requestBody)
         })
         .select()
@@ -68,15 +77,33 @@ Deno.serve(async (req) => {
 
       if (createError) {
         console.error('Create letter error:', createError)
+        throw createError
       } else {
         currentLetterId = newLetter.id
+
+        // Create initial timeline entry
+        await supabase.rpc('update_letter_timeline', {
+          letter_id_param: newLetter.id,
+          new_status: 'received',
+          message_param: 'Letter request received and processing started'
+        })
       }
-    } else {
-      // Update existing letter
+    } else if (letterId) {
+      // Update existing letter status
       await supabase
         .from('letters')
-        .update({ status: 'submitted' })
+        .update({
+          status: 'submitted',
+          timeline_status: 'under_review'
+        })
         .eq('id', letterId)
+
+      // Update timeline
+      await supabase.rpc('update_letter_timeline', {
+        letter_id_param: letterId,
+        new_status: 'under_review',
+        message_param: 'Letter is under attorney review'
+      })
     }
 
     // Generate AI draft using Gemini API
@@ -86,8 +113,8 @@ You are a professional legal letter writer. Generate a formal legal letter based
 Sender: ${letterRequest.senderName}
 Sender Address: ${letterRequest.senderAddress}
 Attorney/Law Firm: ${letterRequest.attorneyName}
-Recipient: ${letterRequest.recipient}
-Subject/Matter: ${letterRequest.subject}
+Recipient: ${letterRequest.recipientName}
+Subject/Matter: ${letterRequest.matter}
 Desired Resolution: ${letterRequest.desiredResolution}
 Letter Type: ${letterRequest.letterType}
 
@@ -140,12 +167,13 @@ Maintain a ${tone} tone throughout.
       throw new Error('Failed to generate AI draft')
     }
 
-    // Update letter with AI draft and change status to 'in_review'
+    // Update letter with AI draft and change status to 'posted'
     const { error: updateError } = await supabase
       .from('letters')
       .update({
         ai_draft: aiDraft,
-        status: 'in_review',
+        status: 'completed',
+        timeline_status: 'posted',
         updated_at: new Date().toISOString()
       })
       .eq('id', currentLetterId)
@@ -153,6 +181,13 @@ Maintain a ${tone} tone throughout.
     if (updateError) {
       throw updateError
     }
+
+    // Update timeline to 'posted' status
+    await supabase.rpc('update_letter_timeline', {
+      letter_id_param: currentLetterId,
+      new_status: 'posted',
+      message_param: 'Letter draft completed and ready for review'
+    })
 
     return new Response(
       JSON.stringify({

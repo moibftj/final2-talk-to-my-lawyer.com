@@ -32,15 +32,18 @@ Deno.serve(async (req) => {
       throw new Error('Missing required fields')
     }
 
-    // Validate and get discount code
-    const { data: discountCode, error: codeError } = await supabase
-      .from('discount_codes')
-      .select('*')
+    // Validate and get employee coupon using new three-tier schema
+    const { data: employeeCoupon, error: codeError } = await supabase
+      .from('employee_coupons')
+      .select(`
+        *,
+        profiles!employee_id (id, email, role)
+      `)
       .eq('code', couponCode)
       .eq('is_active', true)
       .single()
 
-    if (codeError || !discountCode) {
+    if (codeError || !employeeCoupon) {
       return new Response(
         JSON.stringify({
           success: false,
@@ -53,21 +56,40 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Verify employee role
+    if (employeeCoupon.profiles?.role !== 'employee') {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Coupon is not associated with a valid employee'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      )
+    }
+
     // Calculate discount and final amounts
-    const discountPercentage = discountCode.discount_percentage
+    const discountPercentage = employeeCoupon.discount_percentage
     const discountAmount = (originalAmount * discountPercentage) / 100
     const finalAmount = originalAmount - discountAmount
     const commissionAmount = (originalAmount * 5) / 100 // 5% commission for employee
 
-    // Start a transaction
+    // Create subscription with coupon details
     const { data: subscription, error: subscriptionError } = await supabase
       .from('subscriptions')
       .insert({
         user_id: userId,
         plan_type: subscriptionType,
         amount: finalAmount,
-        discount_code_id: discountCode.id,
-        status: 'active'
+        original_amount: originalAmount,
+        discount_applied: discountAmount,
+        coupon_code: couponCode,
+        employee_id: employeeCoupon.employee_id,
+        status: 'active',
+        letters_allowed: subscriptionType === 'one_letter_299' ? 1 :
+                        subscriptionType === 'four_monthly_299' ? 4 : 8
       })
       .select()
       .single()
@@ -76,44 +98,57 @@ Deno.serve(async (req) => {
       throw subscriptionError
     }
 
-    // Record discount usage
-    const { error: usageError } = await supabase
-      .from('discount_usage')
+    // Record commission payment using new schema
+    const { error: commissionError } = await supabase
+      .from('commission_payments')
       .insert({
-        discount_code_id: discountCode.id,
-        user_id: userId,
-        employee_id: discountCode.employee_id,
-        subscription_amount: originalAmount,
-        discount_amount: discountAmount,
-        commission_amount: commissionAmount
+        employee_id: employeeCoupon.employee_id,
+        referred_user_id: userId,
+        commission_amount: commissionAmount,
+        points_awarded: 1,
+        trigger_event: 'subscription',
+        reference_id: subscription.id
       })
 
-    if (usageError) {
-      throw usageError
+    if (commissionError) {
+      throw commissionError
     }
 
-    // Update discount code usage count
-    const { error: updateCodeError } = await supabase
-      .from('discount_codes')
+    // Update employee coupon usage count
+    const { error: updateCouponError } = await supabase
+      .from('employee_coupons')
       .update({
-        usage_count: discountCode.usage_count + 1
+        usage_count: employeeCoupon.usage_count + 1
       })
-      .eq('id', discountCode.id)
+      .eq('id', employeeCoupon.id)
 
-    if (updateCodeError) {
-      throw updateCodeError
+    if (updateCouponError) {
+      throw updateCouponError
     }
 
-    // Update employee points (assuming a points column exists in profiles)
-    const { error: pointsError } = await supabase
+    // Update employee profile with points and commission
+    const { error: updateEmployeeError } = await supabase
       .from('profiles')
       .update({
-        points: supabase.raw('points + 1')
+        points: supabase.raw('COALESCE(points, 0) + 1'),
+        commission_earned: supabase.raw('COALESCE(commission_earned, 0) + ' + commissionAmount)
       })
-      .eq('id', discountCode.employee_id)
+      .eq('id', employeeCoupon.employee_id)
 
-    if (pointsError) {
-      console.warn('Failed to update employee points:', pointsError)
+    if (updateEmployeeError) {
+      console.warn('Failed to update employee totals:', updateEmployeeError)
+    }
+
+    // Update user subscription status
+    const { error: updateUserError } = await supabase
+      .from('profiles')
+      .update({
+        subscription_status: 'active'
+      })
+      .eq('id', userId)
+
+    if (updateUserError) {
+      console.warn('Failed to update user subscription status:', updateUserError)
     }
 
     return new Response(
@@ -126,7 +161,9 @@ Deno.serve(async (req) => {
           discountAmount,
           finalAmount,
           discountPercentage,
-          commissionAmount
+          commissionAmount,
+          employeeId: employeeCoupon.employee_id,
+          lettersAllowed: subscription.letters_allowed
         }
       }),
       {
