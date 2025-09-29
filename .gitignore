@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 # Ignore environment files
 .env
+
+# Local Netlify folder
+.netlify
