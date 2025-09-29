@@ -1,233 +1,170 @@
-The primary issue is an unresolved **Git merge conflict** in the code block following `getEmployeeDiscountCodes`.
-
-Here is the fixed and complete code, with the merge conflict resolved. Since the two conflicting blocks address different features (one is for admin stats, the other is a simple placeholder for `generateDiscountCode`), I'll assume the intention was to **include both** and that the admin stats logic was cut short in the merge.
-
-I'll keep the existing working functions, remove the conflict markers, and insert the placeholder function from the `main` branch:
-
-```typescript
 import { supabase } from './supabase';
 
 // Interface for discount code data
 interface DiscountCode {
-  id: string;
-  code: string;
-  percent_off: number;
-  max_uses: number;
-  current_uses: number;
-  expires_at: string | null;
-  created_at: string;
-  is_active: boolean;
+  id: string;
+  code: string;
+  discount_percentage: number;
+  usage_count: number;
+  is_active: boolean;
+  employee_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
-/**
- * Validate a discount code and return its details
- * @param code - The discount code to validate
- * @returns The discount information or null if invalid
- */
-export async function validateDiscountCode(code: string): Promise<DiscountCode | null> {
-  // Convert to uppercase for consistency
-  const normalizedCode = code.toUpperCase().trim();
-  
-  // Query the database for the discount code
-  const { data, error } = await supabase
-    .from('discount_codes')
-    .select('*')
-    .eq('code', normalizedCode)
-    .eq('is_active', true)
-    .single();
-  
-  if (error || !data) {
-    console.error('Error validating discount code:', error);
-    return null;
-  }
-  
-  const discountCode = data as DiscountCode;
-  
-  // Check if the code has expired
-  if (discountCode.expires_at && new Date(discountCode.expires_at) < new Date()) {
-    return null;
-  }
-  
-  // Check if the code has reached its usage limit
-  if (discountCode.current_uses >= discountCode.max_uses) {
-    return null;
-  }
-  
-  return discountCode;
+interface EmployeeDiscountStats {
+  total_discounts: number;
+  total_revenue_generated: number;
+  total_usage: number;
+  active_codes: number;
 }
 
-/**
- * Apply a discount code by incrementing its usage count
- * @param code - The discount code to apply
- * @returns True if successfully applied, false otherwise
- */
-export async function applyDiscountCode(code: string): Promise<boolean> {
-  // Validate the code first
-  const discountCode = await validateDiscountCode(code);
-  
-  if (!discountCode) {
-    return false;
-  }
-  
-  // Increment the usage count
-  const { error } = await supabase
-    .from('discount_codes')
-    .update({ current_uses: discountCode.current_uses + 1 })
-    .eq('id', discountCode.id);
-  
-  if (error) {
-    console.error('Error applying discount code:', error);
-    return false;
-  }
-  
-  return true;
+// Get all employee discount codes with stats
+export async function getEmployeeDiscountCodes(employeeId: string): Promise<{
+  codes: DiscountCode[];
+  stats: EmployeeDiscountStats;
+}> {
+  try {
+    // Get employee's discount codes
+    const { data: codes, error: codesError } = await supabase
+      .from('employee_coupons')
+      .select('*')
+      .eq('employee_id', employeeId)
+      .order('created_at', { ascending: false });
+
+    if (codesError) {
+      throw codesError;
+    }
+
+    // Calculate stats
+    const stats: EmployeeDiscountStats = {
+      total_discounts: codes?.length || 0,
+      total_revenue_generated: 0, // This would need to be calculated from actual revenue
+      total_usage: codes?.reduce((sum, code) => sum + code.usage_count, 0) || 0,
+      active_codes: codes?.filter(code => code.is_active).length || 0
+    };
+
+    return {
+      codes: codes || [],
+      stats
+    };
+  } catch (error) {
+    console.error('Error fetching employee discount codes:', error);
+    throw error;
+  }
 }
 
-/**
- * Create a new discount code
- * @param discountData - The discount code data
- * @returns The created discount code or null if failed
- */
-export async function createDiscountCode(discountData: Partial<DiscountCode>): Promise<DiscountCode | null> {
-  const { data, error } = await supabase
-    .from('discount_codes')
-    .insert([{
-      code: discountData.code?.toUpperCase().trim(),
-      percent_off: discountData.percent_off || 10,
-      max_uses: discountData.max_uses || 100,
-      current_uses: 0,
-      expires_at: discountData.expires_at || null,
-      is_active: true
-    }])
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error creating discount code:', error);
-    return null;
-  }
-  
-  return data as DiscountCode;
+// Generate a new discount code for an employee
+export async function generateDiscountCode(employeeId: string): Promise<string> {
+  try {
+    // Use the database function to generate coupon
+    const { data, error } = await supabase
+      .rpc('generate_employee_coupon', { employee_uuid: employeeId });
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error generating discount code:', error);
+    throw error;
+  }
 }
 
-/**
- * Get all available discount codes
- * @param includeInactive - Whether to include inactive codes
- * @returns Array of discount codes
- */
-export async function getAllDiscountCodes(includeInactive = false): Promise<DiscountCode[]> {
-  let query = supabase
-    .from('discount_codes')
-    .select('*')
-    .order('created_at', { ascending: false });
-  
-  if (!includeInactive) {
-    query = query.eq('is_active', true);
-  }
-  
-  const { data, error } = await query;
-  
-  if (error) {
-    console.error('Error fetching discount codes:', error);
-    return [];
-  }
-  
-  return data as DiscountCode[];
+// Validate a discount code
+export async function validateDiscountCode(code: string): Promise<{
+  isValid: boolean;
+  discount_percentage?: number;
+  employee_id?: string;
+  error?: string;
+}> {
+  try {
+    const { data, error } = await supabase
+      .from('employee_coupons')
+      .select('*')
+      .eq('code', code)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !data) {
+      return {
+        isValid: false,
+        error: 'Invalid or inactive coupon code'
+      };
+    }
+
+    return {
+      isValid: true,
+      discount_percentage: data.discount_percentage,
+      employee_id: data.employee_id
+    };
+  } catch (error) {
+    console.error('Error validating discount code:', error);
+    return {
+      isValid: false,
+      error: 'Error validating coupon code'
+    };
+  }
 }
 
-// Placeholder functions for features not yet implemented
-export async function getEmployeeAnalytics(employeeId: string): Promise<any> {
-  console.warn('getEmployeeAnalytics not implemented');
-  return null;
+// Apply a discount code during subscription
+export async function applyDiscountCode(
+  code: string,
+  userId: string,
+  subscriptionType: string,
+  originalAmount: number
+): Promise<any> {
+  try {
+    const response = await fetch('/api/apply-coupon', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        couponCode: code,
+        userId,
+        subscriptionType,
+        originalAmount
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to apply discount code');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error applying discount code:', error);
+    throw error;
+  }
 }
 
-export async function getEmployeeDiscountCodes(employeeId: string): Promise<DiscountCode[]> {
-  console.warn('getEmployeeDiscountCodes not implemented');
-  return [];
+// Get admin discount analytics
+export async function getAdminDiscountAnalytics(): Promise<any> {
+  try {
+    const { data, error } = await supabase
+      .from('employee_coupons')
+      .select(`
+        *,
+        profiles!employee_id (email, points, commission_earned)
+      `);
+
+    if (error) {
+      throw error;
+    }
+
+    // Process analytics data
+    const analytics = {
+      total_codes: data?.length || 0,
+      total_usage: data?.reduce((sum, code) => sum + code.usage_count, 0) || 0,
+      active_codes: data?.filter(code => code.is_active).length || 0,
+      top_performers: data?.sort((a, b) => b.usage_count - a.usage_count).slice(0, 5) || []
+    };
+
+    return analytics;
+  } catch (error) {
+    console.error('Error fetching admin discount analytics:', error);
+    throw error;
+  }
 }
-
-/**
- * NOTE: The following section was a merge conflict.
- * The logic below is a placeholder for a function that returns various admin statistics.
- * The implementation is incomplete (as noted by the placeholder comments).
- */
-export async function getAdminStats(): Promise<any> {
-  try {
-    // Placeholder values based on the conflict data:
-    const totalEmployees = 0;
-    const activeEmployees = 0;
-    const totalDiscountCodes = 0;
-    const activeDiscountCodes = 0;
-    const totalCommissionsGenerated = 0;
-    const monthlyCommissions = 0;
-
-    return {
-      totalUsers: 0, // Add when user data is available
-      totalEmployees,
-      activeEmployees,
-      totalLetters: 0, // Add when letter data is available
-      totalRevenue: totalCommissionsGenerated,
-      totalDiscountCodes,
-      activeDiscountCodes,
-      totalCommissionsGenerated,
-      monthlyCommissions,
-      monthlyGrowth: 0, // Add growth calculation later
-    };
-  } catch (error) {
-    console.error('Error fetching admin stats:', error);
-    return {
-      totalUsers: 0,
-      totalEmployees: 0,
-      activeEmployees: 0,
-      totalLetters: 0,
-      totalRevenue: 0,
-      totalDiscountCodes: 0,
-      activeDiscountCodes: 0,
-      totalCommissionsGenerated: 0,
-      monthlyCommissions: 0,
-      monthlyGrowth: 0,
-    };
-  }
-}
-
-export async function generateDiscountCode(employeeId: string): Promise<DiscountCode | null> {
-  console.warn('generateDiscountCode not implemented');
-  return null;
-}
-
-export async function toggleDiscountCodeStatus(codeId: string, isActive: boolean): Promise<boolean> {
-  console.warn('toggleDiscountCodeStatus not implemented');
-  return false;
-}
-
-export async function getAllUsers(): Promise<any[]> {
-  console.warn('getAllUsers not implemented');
-  return [];
-}
-
-export async function getAllLetters(): Promise<any[]> {
-  console.warn('getAllLetters not implemented');
-  return [];
-}
-
-export async function getEmployeesWithAnalytics(): Promise<any[]> {
-  console.warn('getEmployeesWithAnalytics not implemented');
-  return [];
-}
-
-// Service object for components that expect object imports
-export const discountService = {
-  validateDiscountCode,
-  applyDiscountCode,
-  createDiscountCode,
-  getAllDiscountCodes,
-  getEmployeeAnalytics,
-  getEmployeeDiscountCodes,
-  getAdminStats, // Added the function from the conflict
-  generateDiscountCode,
-  toggleDiscountCodeStatus,
-  getAllUsers,
-  getAllLetters,
-  getEmployeesWithAnalytics,
-};
-```

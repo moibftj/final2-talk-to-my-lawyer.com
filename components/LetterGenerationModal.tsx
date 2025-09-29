@@ -32,7 +32,7 @@ interface FormData {
   recipientAddress: string;
   senderName: string;
   description: string;
-  urgency: 'normal' | 'urgent' | 'critical';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
   letterType: 'demand' | 'notice' | 'formal_request' | 'complaint' | 'other';
   additionalInstructions: string;
 }
@@ -81,7 +81,7 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
     recipientAddress: '',
     senderName: '',
     description: '',
-    urgency: 'normal',
+    priority: 'medium',
     letterType: 'demand',
     additionalInstructions: ''
   });
@@ -93,13 +93,13 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
     if (letterToEdit) {
       setFormData({
         title: letterToEdit.title || '',
-        recipientName: letterToEdit.recipientName || '',
-        recipientAddress: letterToEdit.recipientAddress || '',
-        senderName: letterToEdit.senderName || '',
+        recipientName: letterToEdit.recipientInfo?.name || '',
+        recipientAddress: letterToEdit.recipientInfo?.address || '',
+        senderName: letterToEdit.senderInfo?.name || '',
         description: letterToEdit.description || '',
-        urgency: (letterToEdit.urgency as any) || 'normal',
-        letterType: (letterToEdit.letterType as any) || 'demand',
-        additionalInstructions: letterToEdit.additionalInstructions || ''
+        priority: letterToEdit.priority || 'medium',
+        letterType: letterToEdit.letterType || 'demand',
+        additionalInstructions: letterToEdit.templateData?.additionalInstructions || ''
       });
     } else {
       // Reset form for new letter
@@ -109,7 +109,7 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
         recipientAddress: '',
         senderName: '',
         description: '',
-        urgency: 'normal',
+        priority: 'medium',
         letterType: 'demand',
         additionalInstructions: ''
       });
@@ -164,7 +164,18 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
       await onSubmit({
         ...formData,
         id: letterToEdit?.id,
-        status: letterToEdit ? letterToEdit.status : 'pending',
+        userId: letterToEdit?.userId || '',
+        status: letterToEdit ? letterToEdit.status : 'draft',
+        recipientInfo: {
+          name: formData.recipientName,
+          address: formData.recipientAddress
+        },
+        senderInfo: {
+          name: formData.senderName
+        },
+        templateData: {
+          additionalInstructions: formData.additionalInstructions
+        },
         createdAt: letterToEdit ? letterToEdit.createdAt : new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
@@ -174,10 +185,11 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
     }
   };
 
-  const urgencyColors = {
-    normal: 'bg-blue-100 text-blue-800',
-    urgent: 'bg-orange-100 text-orange-800',
-    critical: 'bg-red-100 text-red-800'
+  const priorityColors = {
+    low: 'bg-blue-100 text-blue-800',
+    medium: 'bg-green-100 text-green-800',
+    high: 'bg-orange-100 text-orange-800',
+    urgent: 'bg-red-100 text-red-800'
   };
 
   const letterTypeLabels = {
