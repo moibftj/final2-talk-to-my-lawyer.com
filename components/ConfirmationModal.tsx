@@ -2,7 +2,7 @@ import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './Card';
 import { ShimmerButton } from './magicui/shimmer-button';
-import { LoaderOne } from './ui/loader-one';
+import { IconSpinner } from '../constants';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -67,7 +67,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 >
                   {isConfirming ? (
                     <span className='flex items-center gap-2'>
-                      <LoaderOne size='sm' className='w-4 h-4' />
+                      <IconSpinner className='w-4 h-4 animate-spin' />
                       Deleting...
                     </span>
                   ) : (

@@ -1,6 +1,30 @@
 {
   "permissions": {
     "allow": [
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "Bash(git rm:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git push:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(npx supabase:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(docker:*)",
+      "Bash(del:*)",
+      "Bash(supabase:*)",
+      "Bash(scoop install:*)",
+      "Bash(scoop:*)",
+      "Bash(powershell:*)",
+      "Bash(npx tsc:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Read(//c/Users/prod.3/AppData/Roaming/Cursor/User/**)",
+      "Bash(rm:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run format:*)"
       "Bash(node:*)",
       "Bash(ts-node test:*)",
       "Bash(npx ts-node:*)"

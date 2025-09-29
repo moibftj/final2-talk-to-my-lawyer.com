@@ -31,16 +31,13 @@ import {
   Edit,
   Trash2,
   FileText,
-  Download,
-  Send,
   Clock,
   CheckCircle,
   XCircle,
 } from 'lucide-react';
 import { ShimmerButton } from './magicui/shimmer-button';
-import { LoaderOne } from './ui/loader-one';
 import type { LetterRequest } from '../types';
-import { STATUS_STYLES, getTemplateLabel } from '../constants';
+import { STATUS_STYLES, getTemplateLabel, IconSpinner } from '../constants';
 import { StatusTimelineCompact } from './StatusTimeline';
 import { PreviewModal } from './PreviewModal';
 
@@ -342,7 +339,7 @@ export function LettersTable({
                                 className='h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50'
                               >
                                 {isDeletingId === letter.id ? (
-                                  <LoaderOne size='sm' className='w-4 h-4' />
+                                  <IconSpinner className='w-4 h-4 animate-spin' />
                                 ) : (
                                   <Trash2 className='h-4 w-4' />
                                 )}
