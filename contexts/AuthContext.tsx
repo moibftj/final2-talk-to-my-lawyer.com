@@ -10,6 +10,8 @@ interface UserProfile {
   points?: number;
   commission_earned?: number;
   coupon_code?: string;
+  referred_by?: string;
+  subscription_status?: string;
   created_at: string;
   updated_at: string;
 }
@@ -22,11 +24,12 @@ interface AuthContextType {
   isLoading: boolean; // alias for compatibility
   authEvent: string | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, role?: UserRole) => Promise<{ error: any, user: User | null }>;
+  signUp: (email: string, password: string, role?: UserRole, couponCode?: string) => Promise<{ error: any, user: User | null }>;
   adminSignIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   refreshProfile: () => Promise<void>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -105,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, role: UserRole = 'user') => {
+  const signUp = async (email: string, password: string, role: UserRole = 'user', couponCode?: string) => {
     try {
       // Sign up with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
@@ -128,14 +131,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .from('profiles')
           .insert({
             id: data.user.id,
-            email: data.user.email,
+            email: data.user.email || email,
             role: role,
             points: role === 'employee' ? 0 : undefined,
-            commission_earned: role === 'employee' ? 0 : undefined
+            commission_earned: role === 'employee' ? 0 : undefined,
+            subscription_status: 'inactive'
           });
 
         if (profileError) {
           console.error('Error creating profile:', profileError);
+          return { error: profileError, user: null };
+        }
+
+        // Process referral if coupon code provided and user is signing up as 'user'
+        if (couponCode && role === 'user') {
+          try {
+            const { data: referralResult, error: referralError } = await supabase
+              .rpc('process_referral_signup', {
+                new_user_id: data.user.id,
+                coupon_code_param: couponCode
+              });
+
+            if (referralError) {
+              console.error('Error processing referral:', referralError);
+              // Don't fail signup for referral errors, just log
+            } else if (referralResult?.success) {
+              console.log('Referral processed successfully:', referralResult);
+            }
+          } catch (referralError) {
+            console.error('Error processing referral:', referralError);
+            // Don't fail signup for referral errors
+          }
         }
       }
 
@@ -179,6 +205,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
+  // Function to update user profile
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user) {
+      return { error: { message: 'No user logged in' } };
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+
+      if (error) {
+        return { error };
+      }
+
+      // Refresh profile data
+      await refreshProfile();
+      return { error: null };
+    } catch (error) {
+      return { error };
+    }
+  };
+
   const value = {
     session,
     user,
@@ -192,6 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     resetPassword,
     refreshProfile,
+    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
