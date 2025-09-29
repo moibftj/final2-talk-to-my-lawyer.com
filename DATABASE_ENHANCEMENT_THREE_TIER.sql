@@ -474,7 +474,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to get admin platform metrics
-CREATE OR REPLACE FUNCTION get_admin_platform_metrics()
+CREATE OR REPLACE FUNCTION get_platform_metrics()
 RETURNS JSON AS $$
 DECLARE
     metrics JSON;
@@ -487,6 +487,19 @@ BEGIN
         'total_revenue', (SELECT COALESCE(SUM(amount), 0) FROM subscriptions WHERE status = 'active'),
         'total_commissions_paid', (SELECT COALESCE(SUM(commission_amount), 0) FROM commission_payments),
         'active_subscriptions', (SELECT COUNT(*) FROM subscriptions WHERE status = 'active'),
+        'monthly_revenue', (
+            SELECT COALESCE(SUM(amount), 0) FROM subscriptions
+            WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW())
+            AND status = 'active'
+        ),
+        'pending_letters', (
+            SELECT COUNT(*) FROM public.letters
+            WHERE timeline_status IN ('received', 'under_review')
+        ),
+        'completed_letters', (
+            SELECT COUNT(*) FROM public.letters
+            WHERE timeline_status = 'completed'
+        ),
         'letters_this_month', (
             SELECT COUNT(*) FROM public.letters
             WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW())

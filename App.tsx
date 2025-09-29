@@ -14,12 +14,12 @@ const UserDashboard = lazy(() =>
   }))
 );
 const EmployeeDashboard = lazy(() =>
-  import('./components/EmployeeDashboard').then(module => ({
-    default: module.EmployeeDashboard,
+  import('./components/employee/EnhancedEmployeeDashboard').then(module => ({
+    default: module.EnhancedEmployeeDashboard,
   }))
 );
 const AdminDashboard = lazy(() =>
-  import('./components/AdminDashboard').then(module => ({
+  import('./components/admin/AdminDashboard').then(module => ({
     default: module.AdminDashboard,
   }))
 );
@@ -34,7 +34,7 @@ type AppView = 'landing' | 'auth' | 'dashboard';
 type AuthView = 'login' | 'signup';
 
 const App: React.FC = () => {
-  const { user, isLoading, authEvent } = useAuth();
+  const { user, profile, isLoading, authEvent } = useAuth();
   const [userDashboardView, setUserDashboardView] =
     useState<UserDashboardView>('dashboard');
   const [appView, setAppView] = useState<AppView>('landing');
@@ -88,7 +88,7 @@ const App: React.FC = () => {
     return (
       <Suspense fallback={<Spinner />}>
         {(() => {
-          switch (user.role) {
+          switch (profile?.role) {
             case 'admin':
               return <AdminDashboard />;
             case 'employee':
@@ -108,7 +108,7 @@ const App: React.FC = () => {
   };
 
   const getTitle = () => {
-    switch (user.role) {
+    switch (profile?.role) {
       case 'admin':
         return 'Admin Panel';
       case 'employee':
