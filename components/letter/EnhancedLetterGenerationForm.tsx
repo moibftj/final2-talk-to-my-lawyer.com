@@ -346,6 +346,7 @@ export const EnhancedLetterGenerationForm: React.FC<EnhancedLetterGenerationForm
                   Your Address *
                 </label>
                 <textarea
+                  autoComplete="street-address"
                   value={formData.senderAddress}
                   onChange={(e) => handleInputChange('senderAddress', e.target.value)}
                   rows={3}
@@ -386,6 +387,7 @@ export const EnhancedLetterGenerationForm: React.FC<EnhancedLetterGenerationForm
                   </label>
                   <input
                     type="text"
+                    autoComplete="name"
                     value={formData.recipientName}
                     onChange={(e) => handleInputChange('recipientName', e.target.value)}
                     className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
