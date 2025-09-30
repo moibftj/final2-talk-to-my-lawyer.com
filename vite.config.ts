@@ -25,51 +25,9 @@ export default defineConfig(({ mode }) => {
       sourcemap: false,
       rollupOptions: {
         output: {
-          manualChunks(id) {
-            // Vendor chunks for large third-party libraries
-            if (id.includes('node_modules')) {
-              if (id.includes('react') || id.includes('react-dom')) {
-                return 'vendor-react';
-              }
-              if (id.includes('@google/genai')) {
-                return 'vendor-ai';
-              }
-              if (id.includes('@supabase/supabase-js')) {
-                return 'vendor-supabase';
-              }
-              if (id.includes('jspdf')) {
-                return 'vendor-pdf';
-              }
-              if (
-                id.includes('framer-motion') ||
-                id.includes('clsx') ||
-                id.includes('tailwind-merge')
-              ) {
-                return 'vendor-ui';
-              }
-              return 'vendor-misc';
-            }
-
-            // Component chunks by feature/role (only if they exist and are large)
-            if (
-              id.includes('/components/Dashboard') ||
-              id.includes('/components/LetterRequestForm')
-            ) {
-              return 'components-dashboard';
-            }
-            if (id.includes('/components/DatabasePlan')) {
-              return 'components-admin';
-            }
-            if (id.includes('/components/ProjectRoadmap')) {
-              return 'components-employee';
-            }
-            if (id.includes('/components/magicui/')) {
-              return 'components-ui';
-            }
-          },
+          manualChunks: undefined,
         },
       },
-      // Increase chunk size warning limit to 1000kb to avoid warnings for our optimized chunks
       chunkSizeWarningLimit: 1000,
     },
   };
