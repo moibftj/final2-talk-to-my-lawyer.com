@@ -23,15 +23,22 @@ if [ ! -d dist ]; then
   npm run build
 fi
 
-# Check if site already exists
-EXISTING_ID=$(npx netlify sites:list --json | jq -r --arg NAME "$SITE_NAME_SLUG" '.[] | select(.name==$NAME) | .id' || true)
-if [ -n "$EXISTING_ID" ]; then
-  echo "Site already exists: $SITE_NAME_SLUG ($EXISTING_ID)" >&2
-  SITE_ID=$EXISTING_ID
+# Check if site already exists (Netlify API)
+echo "Checking if site exists via Netlify API" >&2
+SITE_LOOKUP=$(curl -s -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/sites?name=$SITE_NAME_SLUG") || SITE_LOOKUP="[]"
+SITE_ID=$(echo "$SITE_LOOKUP" | jq -r '.[0].id // empty')
+if [ -n "$SITE_ID" ]; then
+  echo "Site already exists: $SITE_NAME_SLUG ($SITE_ID)" >&2
 else
   echo "Creating Netlify site: $SITE_NAME_SLUG" >&2
-  CREATE_JSON=$(npx netlify sites:create --name "$SITE_NAME_SLUG" --json)
-  SITE_ID=$(echo "$CREATE_JSON" | jq -r '.site_id // .id')
+  CREATE_JSON=$(curl -s -X POST -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" -H 'Content-Type: application/json' \
+    -d '{"name":"'"$SITE_NAME_SLUG"'"}' https://api.netlify.com/api/v1/sites)
+  SITE_ID=$(echo "$CREATE_JSON" | jq -r '.id')
+  if [ -z "$SITE_ID" ] || [ "$SITE_ID" = "null" ]; then
+    echo "ERROR: Failed to create site. Response:" >&2
+    echo "$CREATE_JSON" >&2
+    exit 1
+  fi
   echo "Created site id: $SITE_ID" >&2
 fi
 
@@ -43,11 +50,22 @@ for VAR in "${REQ_VARS[@]}"; do
     echo "WARNING: $VAR not set in shell; leaving unchanged on Netlify" >&2
   else
     echo "Setting $VAR" >&2
-    npx netlify env:set "$VAR" "$VAL" --site "$SITE_ID" >/dev/null
+    # Use API to set env var (context=all)
+    curl -s -X POST -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+      -H 'Content-Type: application/json' \
+      -d '{"key":"'"$VAR"'","values":[{"value":"'"$VAL"'","context":"all"}]}' \
+      "https://api.netlify.com/api/v1/sites/$SITE_ID/env" >/dev/null || echo "Failed to set $VAR" >&2
   fi
 done
 
 echo "Deploying (production)..." >&2
-npx netlify deploy --prod --dir=dist --site "$SITE_ID"
+npx netlify deploy --prod --dir=dist --site "$SITE_ID" || {
+  echo "CLI deploy failed, attempting direct API deploy (draft)" >&2
+  ZIP_FILE=$(mktemp /tmp/sitezip.XXXXXX.zip)
+  (cd dist && zip -qr "$ZIP_FILE" .)
+  curl -s -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" -F "file=@$ZIP_FILE" \
+    https://api.netlify.com/api/v1/sites/$SITE_ID/deploys >/dev/null && echo "Fallback deploy uploaded (draft)." || echo "Fallback deploy failed." >&2
+  rm -f "$ZIP_FILE"
+}
 
 echo "Finished. Manage at: https://app.netlify.com/sites/$SITE_NAME_SLUG"
