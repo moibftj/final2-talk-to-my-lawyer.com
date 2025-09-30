@@ -26,7 +26,7 @@ Your primary responsibility is to ensure complete fullstack applications using V
    - Gemini API Key: AIzaSyApbHzGazyIWR6QsQh76dhD0gWmfhN26Ts
    - VITE_SUPABASE_URL=https://hevnbcyuqxirqwhekwse.supabase.co
    - VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhldm5iY3l1cXhpcnF3aGVrd3NlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2MDU3MDUsImV4cCI6MjA3MzE4MTcwNX0.o_awyK7z7pHa06guTVGmsLANG4czQAvzJO1RP__Kwak
-   - VITE_SUPABASE_SERVICE_ROLE=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhldm5iY3l1cXhpcnF3aGVrd3NlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzYwNTcwNSwiZXhwIjoyMDczMTgxNzA1fQ.4yve642WCh_pofppAUwlt63XcaFfln2YwVEAttJ6MdU
+   - VITE_SUPABASE_SERVICE_ROLE=<deprecated – remove, do not expose service role>
 
 3. **Backend Validation (Supabase)**:
    - Authenticate Supabase project connection

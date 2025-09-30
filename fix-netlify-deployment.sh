@@ -32,7 +32,7 @@ echo "npx netlify-cli env:set VITE_GEMINI_API_KEY \"AIzaSyApbHzGazyIWR6QsQh76dhD
 echo ""
 echo "# For Netlify Functions (backend)"
 echo "npx netlify-cli env:set SUPABASE_URL \"https://hevnbcyuqxirqwhekwse.supabase.co\""
-echo "npx netlify-cli env:set SUPABASE_SERVICE_ROLE_KEY \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhldm5iY3l1cXhpcnF3aGVrd3NlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzYwNTcwNSwiZXhwIjoyMDczMTgxNzA1fQ.4yve642WCh_pofppAUwlt63XcaFfln2YwVEAttJ6MdU\""
+echo "npx netlify-cli env:set SUPABASE_SERVICE_ROLE_KEY \"<your-service-role-key>\""
 
 echo ""
 echo "📋 STEP 4: Trigger a new deployment"
@@ -51,7 +51,7 @@ echo "   VITE_SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 echo "   VITE_API_URL = https://hevnbcyuqxirqwhekwse.supabase.co"
 echo "   VITE_GEMINI_API_KEY = AIzaSyApbHzGazyIWR6QsQh76dhD0gWmfhN26Ts"
 echo "   SUPABASE_URL = https://hevnbcyuqxirqwhekwse.supabase.co"
-echo "   SUPABASE_SERVICE_ROLE_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhldm5iY3l1cXhpcnF3aGVrd3NlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzYwNTcwNSwiZXhwIjoyMDczMTgxNzA1fQ.4yve642WCh_pofppAUwlt63XcaFfln2YwVEAttJ6MdU"
+echo "   SUPABASE_SERVICE_ROLE_KEY = <set in Netlify UI only>"
 echo "5. Save and trigger a new deployment"
 
 echo ""

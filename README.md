@@ -87,3 +87,32 @@ Guidelines:
 5. If leaked, rotate the key in the Supabase dashboard immediately.
 
 Client code should always use the anon key (`VITE_SUPABASE_ANON_KEY`).
+
+### Key Rotation Policy
+
+To reduce blast radius, rotate sensitive credentials on a schedule and after any suspected exposure.
+
+| Secret | Scope | Recommended Cadence | Triggered Rotation Events |
+| ------ | ----- | ------------------- | -------------------------- |
+| SUPABASE_SERVICE_ROLE_KEY | Server-only (Netlify Functions) | Quarterly | Leak, permission changes, repo history rewrite |
+| VITE_SUPABASE_ANON_KEY | Public (client) | Semi-annual | Leak, Supabase project clone, auth config changes |
+| GEMINI_API_KEY | Server-only | Quarterly | Leak, provider policy change |
+
+Rotation (Service Role Example):
+1. Generate new key in Supabase: Settings → API → Regenerate service_role.
+2. Add new value in Netlify as `SUPABASE_SERVICE_ROLE_KEY` (keep old until deploy validated if zero-downtime needed).
+3. Trigger deploy.
+4. Verify protected endpoints (e.g. get-all-users) still succeed.
+5. Remove old key from Supabase (invalidate) and any local shells.
+6. Confirm built JS bundles do NOT contain the new key (grep first 8 chars—should be absent).
+
+Incident Response Steps:
+1. Revoke/rotate affected keys immediately.
+2. Audit Supabase logs (Auth + SQL) for anomalous access.
+3. Force sign-out (invalidate refresh tokens) if user session compromise suspected.
+4. Document timeline & remediation.
+
+Future Automation Ideas:
+- CI grep for base64 JWT header pattern: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ`.
+- Scripted rotation + deployment verification.
+
