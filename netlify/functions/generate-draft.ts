@@ -1,52 +1,63 @@
-import { Handler } from '@netlify/functions'
-import { createClient } from '@supabase/supabase-js'
+import { Handler } from '@netlify/functions';
+import { createClient } from '@supabase/supabase-js';
 
 interface LetterRequest {
-  senderName: string
-  senderAddress: string
-  attorneyName: string
-  recipient: string
-  subject: string
-  desiredResolution: string
-  letterType: string
+  senderName: string;
+  senderAddress: string;
+  attorneyName: string;
+  recipient: string;
+  subject: string;
+  desiredResolution: string;
+  letterType: string;
 }
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-}
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
 export const handler: Handler = async (event, context) => {
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: 'ok'
-    }
+      body: 'ok',
+    };
   }
 
   try {
     // Create Supabase client
-    const supabaseUrl = process.env.SUPABASE_URL!
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-    const geminiApiKey = process.env.GEMINI_API_KEY
-    
+    const supabaseUrl = process.env.SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+
     if (!geminiApiKey) {
-      throw new Error('GEMINI_API_KEY environment variable is not set')
+      throw new Error('GEMINI_API_KEY environment variable is not set');
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get request body
-    const requestBody = JSON.parse(event.body || '{}')
-    console.log('Request body received:', requestBody)
+    const requestBody = JSON.parse(event.body || '{}');
+    console.log('Request body received:', requestBody);
 
     // Handle both test format and production format
-    const { letterRequest, userId, letterId, title, templateBody, templateFields, additionalContext, tone, length } = requestBody
+    const {
+      letterRequest,
+      userId,
+      letterId,
+      title,
+      templateBody,
+      templateFields,
+      additionalContext,
+      tone,
+      length,
+    } = requestBody;
 
     if (!title && !letterRequest) {
-      throw new Error('Missing required fields: title or letterRequest')
+      throw new Error('Missing required fields: title or letterRequest');
     }
 
     // Use test format if available, otherwise use production format
@@ -55,11 +66,11 @@ export const handler: Handler = async (event, context) => {
       content: templateBody,
       additionalContext: additionalContext,
       tone: tone || 'formal',
-      length: length || 'medium'
-    }
+      length: length || 'medium',
+    };
 
     // Create or update letter
-    let currentLetterId = letterId
+    let currentLetterId = letterId;
     if (!letterId) {
       // Create a new letter for testing purposes
       const { data: newLetter, error: createError } = await supabase
@@ -69,26 +80,27 @@ export const handler: Handler = async (event, context) => {
           letter_type: 'general',
           status: 'submitted',
           user_id: userId || 'adb39d17-16f5-44c7-968a-533fad7540c6', // fallback for testing
-          content: JSON.stringify(requestBody)
+          content: JSON.stringify(requestBody),
         })
         .select()
-        .single()
+        .single();
 
       if (createError) {
-        console.error('Create letter error:', createError)
+        console.error('Create letter error:', createError);
       } else {
-        currentLetterId = newLetter.id
+        currentLetterId = newLetter.id;
       }
     } else {
       // Update existing letter
       await supabase
         .from('letters')
         .update({ status: 'submitted' })
-        .eq('id', letterId)
+        .eq('id', letterId);
     }
 
     // Generate AI draft using Gemini API
-    const prompt = letterRequest ? `
+    const prompt = letterRequest
+      ? `
 You are a professional legal letter writer. Generate a formal legal letter based on the following information:
 
 Sender: ${letterRequest.senderName}
@@ -108,7 +120,8 @@ Please create a professional, formal legal letter that:
 6. Is formatted as a complete business letter with proper headers
 
 The letter should be comprehensive but concise, typically 1-2 pages when printed.
-    ` : `
+    `
+      : `
 You are a professional letter writer. Generate a ${tone} letter based on the following information:
 
 Title: ${title}
@@ -120,32 +133,39 @@ Length: ${length}
 Please create a professional letter that incorporates the template and additional context.
 Replace any placeholders in brackets with appropriate content based on the context provided.
 Maintain a ${tone} tone throughout.
-    `
+    `;
 
     // Call Gemini API
-    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }]
-      })
-    })
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+        }),
+      }
+    );
 
     if (!geminiResponse.ok) {
-      throw new Error(`Gemini API error: ${geminiResponse.statusText}`)
+      throw new Error(`Gemini API error: ${geminiResponse.statusText}`);
     }
 
-    const geminiData = await geminiResponse.json()
-    const aiDraft = geminiData.candidates?.[0]?.content?.parts?.[0]?.text
+    const geminiData = await geminiResponse.json();
+    const aiDraft = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!aiDraft) {
-      throw new Error('Failed to generate AI draft')
+      throw new Error('Failed to generate AI draft');
     }
 
     // Update letter with AI draft and change status to 'in_review'
@@ -154,12 +174,12 @@ Maintain a ${tone} tone throughout.
       .update({
         ai_draft: aiDraft,
         status: 'in_review',
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', currentLetterId)
+      .eq('id', currentLetterId);
 
     if (updateError) {
-      throw updateError
+      throw updateError;
     }
 
     return {
@@ -169,19 +189,18 @@ Maintain a ${tone} tone throughout.
         success: true,
         message: 'Letter draft generated successfully',
         letterId: currentLetterId,
-        aiDraft
-      })
-    }
-
+        aiDraft,
+      }),
+    };
   } catch (error) {
-    console.error('Error generating draft:', error)
+    console.error('Error generating draft:', error);
     return {
       statusCode: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         success: false,
-        error: error.message
-      })
-    }
+        error: error.message,
+      }),
+    };
   }
-}
+};
