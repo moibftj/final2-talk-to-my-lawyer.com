@@ -107,15 +107,25 @@ export const handler: Handler = async (event, context) => {
     }
 
     // Update employee points (assuming a points column exists in profiles)
-    const { error: pointsError } = await supabase
+    // First get current points value
+    const { data: employeeProfile, error: fetchError } = await supabase
       .from('profiles')
-      .update({
-        points: supabase.raw('points + 1')
-      })
+      .select('points')
       .eq('id', discountCode.employee_id)
+      .single()
 
-    if (pointsError) {
-      console.warn('Failed to update employee points:', pointsError)
+    if (!fetchError && employeeProfile) {
+      const currentPoints = employeeProfile.points || 0
+      const { error: pointsError } = await supabase
+        .from('profiles')
+        .update({
+          points: currentPoints + 1
+        })
+        .eq('id', discountCode.employee_id)
+
+      if (pointsError) {
+        console.warn('Failed to update employee points:', pointsError)
+      }
     }
 
     return {

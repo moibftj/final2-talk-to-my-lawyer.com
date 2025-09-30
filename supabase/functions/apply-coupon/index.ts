@@ -127,16 +127,28 @@ Deno.serve(async (req) => {
     }
 
     // Update employee profile with points and commission
-    const { error: updateEmployeeError } = await supabase
+    // First get current values
+    const { data: employeeProfile, error: fetchError } = await supabase
       .from('profiles')
-      .update({
-        points: supabase.raw('COALESCE(points, 0) + 1'),
-        commission_earned: supabase.raw('COALESCE(commission_earned, 0) + ' + commissionAmount)
-      })
+      .select('points, commission_earned')
       .eq('id', employeeCoupon.employee_id)
+      .single()
 
-    if (updateEmployeeError) {
-      console.warn('Failed to update employee totals:', updateEmployeeError)
+    if (!fetchError && employeeProfile) {
+      const currentPoints = employeeProfile.points || 0
+      const currentCommission = employeeProfile.commission_earned || 0
+      
+      const { error: updateEmployeeError } = await supabase
+        .from('profiles')
+        .update({
+          points: currentPoints + 1,
+          commission_earned: currentCommission + commissionAmount
+        })
+        .eq('id', employeeCoupon.employee_id)
+
+      if (updateEmployeeError) {
+        console.warn('Failed to update employee totals:', updateEmployeeError)
+      }
     }
 
     // Update user subscription status

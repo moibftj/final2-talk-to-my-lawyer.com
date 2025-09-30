@@ -27,7 +27,11 @@ Deno.serve(async (req) => {
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY') || 'AIzaSyApbHzGazyIWR6QsQh76dhD0gWmfhN26Ts'
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
+
+    if (!geminiApiKey) {
+      throw new Error('GEMINI_API_KEY environment variable is not set')
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 

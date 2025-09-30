@@ -30,7 +30,11 @@ export const handler: Handler = async (event, context) => {
     // Create Supabase client
     const supabaseUrl = process.env.SUPABASE_URL!
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-    const geminiApiKey = process.env.GEMINI_API_KEY || 'AIzaSyApbHzGazyIWR6QsQh76dhD0gWmfhN26Ts'
+    const geminiApiKey = process.env.GEMINI_API_KEY
+    
+    if (!geminiApiKey) {
+      throw new Error('GEMINI_API_KEY environment variable is not set')
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
