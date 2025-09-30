@@ -302,6 +302,7 @@ export const EnhancedLetterGenerationForm: React.FC<EnhancedLetterGenerationForm
                   </label>
                   <input
                     type="text"
+                    autoComplete="name"
                     value={formData.senderName}
                     onChange={(e) => handleInputChange('senderName', e.target.value)}
                     className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
@@ -323,6 +324,7 @@ export const EnhancedLetterGenerationForm: React.FC<EnhancedLetterGenerationForm
                   </label>
                   <input
                     type="text"
+                    autoComplete="organization"
                     value={formData.attorneyName}
                     onChange={(e) => handleInputChange('attorneyName', e.target.value)}
                     className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${

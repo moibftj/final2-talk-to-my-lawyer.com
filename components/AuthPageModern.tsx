@@ -441,6 +441,7 @@ export const AuthPageModern: React.FC<AuthPageProps> = ({
                           type="email"
                           placeholder="your.email@example.com"
                           required
+                          autoComplete="email"
                           value={email}
                           onChange={handleEmailChange}
                           icon={<Mail className="w-4 h-4" />}
@@ -481,6 +482,7 @@ export const AuthPageModern: React.FC<AuthPageProps> = ({
                               required
                               minLength={6}
                               placeholder="Enter your password"
+                              autoComplete={view === 'login' ? 'current-password' : 'new-password'}
                               value={password}
                               onChange={e => setPassword(e.target.value)}
                               icon={<Lock className="w-4 h-4" />}

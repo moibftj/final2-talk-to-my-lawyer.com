@@ -118,6 +118,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
                   type="email"
                   id="email"
                   name="email"
+                  autoComplete="email"
                   value={formData.email}
                   onChange={handleChange}
                   required
@@ -141,6 +142,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   name="password"
+                  autoComplete="current-password"
                   value={formData.password}
                   onChange={handleChange}
                   required

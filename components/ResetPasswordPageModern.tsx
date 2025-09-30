@@ -283,6 +283,7 @@ export const ResetPasswordPageModern: React.FC = () => {
                       required
                       minLength={6}
                       placeholder="Enter your new password"
+                      autoComplete="new-password"
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       icon={<Lock className="w-4 h-4" />}
@@ -331,6 +332,7 @@ export const ResetPasswordPageModern: React.FC = () => {
                       required
                       minLength={6}
                       placeholder="Confirm your new password"
+                      autoComplete="new-password"
                       value={confirmPassword}
                       onChange={e => setConfirmPassword(e.target.value)}
                       icon={<Lock className="w-4 h-4" />}
