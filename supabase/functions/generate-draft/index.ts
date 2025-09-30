@@ -1,45 +1,60 @@
 /// <reference types="https://raw.githubusercontent.com/denoland/deno/v1.40.2/cli/dts/lib.deno.ns.d.ts" />
 
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 
 interface LetterRequest {
-  senderName: string
-  senderAddress: string
-  attorneyName: string
-  recipientName: string
-  matter: string
-  desiredResolution: string
-  letterType: string
-  priority?: string
+  senderName: string;
+  senderAddress: string;
+  attorneyName: string;
+  recipientName: string;
+  matter: string;
+  desiredResolution: string;
+  letterType: string;
+  priority?: string;
 }
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type',
+};
 
-Deno.serve(async (req) => {
+Deno.serve(async req => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
     // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY') || 'AIzaSyApbHzGazyIWR6QsQh76dhD0gWmfhN26Ts'
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    if (!geminiApiKey) {
+      throw new Error('GEMINI_API_KEY environment variable is not set');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get request body
-    const requestBody = await req.json()
-    console.log('Request body received:', requestBody)
+    const requestBody = await req.json();
+    console.log('Request body received:', requestBody);
 
     // Handle both test format and production format
-    const { letterRequest, userId, letterId, title, templateBody, templateFields, additionalContext, tone, length } = requestBody
+    const {
+      letterRequest,
+      userId,
+      letterId,
+      title,
+      templateBody,
+      templateFields,
+      additionalContext,
+      tone,
+      length,
+    } = requestBody;
 
     if (!title && !letterRequest) {
-      throw new Error('Missing required fields: title or letterRequest')
+      throw new Error('Missing required fields: title or letterRequest');
     }
 
     // Use test format if available, otherwise use production format
@@ -48,11 +63,11 @@ Deno.serve(async (req) => {
       content: templateBody,
       additionalContext: additionalContext,
       tone: tone || 'formal',
-      length: length || 'medium'
-    }
+      length: length || 'medium',
+    };
 
     // Create or update letter with enhanced three-tier schema
-    let currentLetterId = letterId
+    let currentLetterId = letterId;
     if (!letterId && letterRequest) {
       // Create a new letter with all enhanced fields
       const { data: newLetter, error: createError } = await supabase
@@ -70,23 +85,23 @@ Deno.serve(async (req) => {
           matter: letterRequest.matter,
           desired_resolution: letterRequest.desiredResolution,
           priority: letterRequest.priority || 'medium',
-          content: JSON.stringify(requestBody)
+          content: JSON.stringify(requestBody),
         })
         .select()
-        .single()
+        .single();
 
       if (createError) {
-        console.error('Create letter error:', createError)
-        throw createError
+        console.error('Create letter error:', createError);
+        throw createError;
       } else {
-        currentLetterId = newLetter.id
+        currentLetterId = newLetter.id;
 
         // Create initial timeline entry
         await supabase.rpc('update_letter_timeline', {
           letter_id_param: newLetter.id,
           new_status: 'received',
-          message_param: 'Letter request received and processing started'
-        })
+          message_param: 'Letter request received and processing started',
+        });
       }
     } else if (letterId) {
       // Update existing letter status
@@ -94,20 +109,21 @@ Deno.serve(async (req) => {
         .from('letters')
         .update({
           status: 'submitted',
-          timeline_status: 'under_review'
+          timeline_status: 'under_review',
         })
-        .eq('id', letterId)
+        .eq('id', letterId);
 
       // Update timeline
       await supabase.rpc('update_letter_timeline', {
         letter_id_param: letterId,
         new_status: 'under_review',
-        message_param: 'Letter is under attorney review'
-      })
+        message_param: 'Letter is under attorney review',
+      });
     }
 
     // Generate AI draft using Gemini API
-    const prompt = letterRequest ? `
+    const prompt = letterRequest
+      ? `
 You are a professional legal letter writer. Generate a formal legal letter based on the following information:
 
 Sender: ${letterRequest.senderName}
@@ -127,7 +143,8 @@ Please create a professional, formal legal letter that:
 6. Is formatted as a complete business letter with proper headers
 
 The letter should be comprehensive but concise, typically 1-2 pages when printed.
-    ` : `
+    `
+      : `
 You are a professional letter writer. Generate a ${tone} letter based on the following information:
 
 Title: ${title}
@@ -139,32 +156,39 @@ Length: ${length}
 Please create a professional letter that incorporates the template and additional context.
 Replace any placeholders in brackets with appropriate content based on the context provided.
 Maintain a ${tone} tone throughout.
-    `
+    `;
 
     // Call Gemini API
-    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }]
-      })
-    })
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+        }),
+      }
+    );
 
     if (!geminiResponse.ok) {
-      throw new Error(`Gemini API error: ${geminiResponse.statusText}`)
+      throw new Error(`Gemini API error: ${geminiResponse.statusText}`);
     }
 
-    const geminiData = await geminiResponse.json()
-    const aiDraft = geminiData.candidates?.[0]?.content?.parts?.[0]?.text
+    const geminiData = await geminiResponse.json();
+    const aiDraft = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!aiDraft) {
-      throw new Error('Failed to generate AI draft')
+      throw new Error('Failed to generate AI draft');
     }
 
     // Update letter with AI draft and change status to 'posted'
@@ -174,45 +198,44 @@ Maintain a ${tone} tone throughout.
         ai_draft: aiDraft,
         status: 'completed',
         timeline_status: 'posted',
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', currentLetterId)
+      .eq('id', currentLetterId);
 
     if (updateError) {
-      throw updateError
+      throw updateError;
     }
 
     // Update timeline to 'posted' status
     await supabase.rpc('update_letter_timeline', {
       letter_id_param: currentLetterId,
       new_status: 'posted',
-      message_param: 'Letter draft completed and ready for review'
-    })
+      message_param: 'Letter draft completed and ready for review',
+    });
 
     return new Response(
       JSON.stringify({
         success: true,
         message: 'Letter draft generated successfully',
         letterId: currentLetterId,
-        aiDraft
+        aiDraft,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       }
-    )
-
+    );
   } catch (error) {
-    console.error('Error generating draft:', error)
+    console.error('Error generating draft:', error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message
+        error: error.message,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       }
-    )
+    );
   }
-})
+});
