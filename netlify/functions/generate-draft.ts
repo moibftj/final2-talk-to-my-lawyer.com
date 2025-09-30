@@ -1,5 +1,5 @@
 import { Handler } from '@netlify/functions';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '../../services/supabaseAdmin';
 
 interface LetterRequest {
   senderName: string;
@@ -28,16 +28,14 @@ export const handler: Handler = async (event, context) => {
   }
 
   try {
-    // Create Supabase client
-    const supabaseUrl = process.env.SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const geminiApiKey = process.env.GEMINI_API_KEY;
+  // Secure admin client & Gemini key
+  const geminiApiKey = process.env.GEMINI_API_KEY;
 
     if (!geminiApiKey) {
       throw new Error('GEMINI_API_KEY environment variable is not set');
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = getSupabaseAdmin();
 
     // Get request body
     const requestBody = JSON.parse(event.body || '{}');

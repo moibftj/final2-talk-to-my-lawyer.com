@@ -75,3 +75,15 @@ Push to `main` (if connected) or re-run `./deploy-netlify.sh` for ad-hoc deploys
 
 ---
 If the automated script fails due to auth, confirm the `NETLIFY_AUTH_TOKEN` is valid and has write permissions.
+
+### Security: Supabase Service Role Handling
+The Supabase service role key must NEVER be exposed to the browser.
+
+Guidelines:
+1. Do NOT store it in any variable beginning with `VITE_`.
+2. Provide it only as `SUPABASE_SERVICE_ROLE_KEY` in Netlify environment settings.
+3. Use it exclusively inside server contexts (Netlify Functions / Edge Functions / Supabase functions).
+4. The helper `services/supabaseAdmin.ts` centralizes creation of the privileged client.
+5. If leaked, rotate the key in the Supabase dashboard immediately.
+
+Client code should always use the anon key (`VITE_SUPABASE_ANON_KEY`).

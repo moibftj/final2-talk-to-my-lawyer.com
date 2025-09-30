@@ -1,5 +1,5 @@
 import { Handler } from '@netlify/functions'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseAdmin } from '../../services/supabaseAdmin'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,10 +17,8 @@ export const handler: Handler = async (event, context) => {
   }
 
   try {
-    // Create Supabase client
-    const supabaseUrl = process.env.SUPABASE_URL!
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  // Secure admin client (server-only)
+  const supabase = getSupabaseAdmin()
 
     // Get all users with their profiles
     const { data: users, error } = await supabase

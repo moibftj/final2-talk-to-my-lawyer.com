@@ -1,5 +1,5 @@
 import { Handler } from '@netlify/functions';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '../../services/supabaseAdmin';
 
 interface CouponRequest {
   couponCode: string;
@@ -25,10 +25,8 @@ export const handler: Handler = async (event, context) => {
   }
 
   try {
-    // Create Supabase client
-    const supabaseUrl = process.env.SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  // Secure admin client
+  const supabase = getSupabaseAdmin();
 
     // Get request body
     const {
