@@ -24,6 +24,7 @@
     "@supabase/functions-js": "^2.5.0",
     "@supabase/supabase-js": "^2.58.0",
     "@types/react": "^19.1.16",
+    "@typescript-eslint/scope-manager": "^8.45.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
@@ -34,6 +35,7 @@
     "package-json-from-dist": "^1.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "scoop": "^0.0.2",
     "supabase": "^2.47.2",
     "tailwind-merge": "^2.6.0",
     "ts-node": "^10.9.2"
