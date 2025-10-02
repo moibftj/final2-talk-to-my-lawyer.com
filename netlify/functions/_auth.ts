@@ -6,12 +6,15 @@ interface UserContext {
   profile: { id: string; role?: string; email?: string } | null;
 }
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseUrl =
+  process.env.SUPABASE_URL ||
+  process.env.VITE_SUPABASE_URL ||
+  process.env.VITE_SUPABASE_ANON_URL;
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !anonKey) {
   // We intentionally throw early so misconfiguration surfaces fast in logs
-  console.warn('[auth] Missing SUPABASE_URL or VITE_SUPABASE_ANON_KEY env vars');
+  console.warn('[auth] Missing SUPABASE_URL (or VITE_SUPABASE_URL/VITE_SUPABASE_ANON_URL) or VITE_SUPABASE_ANON_KEY env vars');
 }
 
 function getAnonClient() {
