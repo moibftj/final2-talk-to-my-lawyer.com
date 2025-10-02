@@ -12,7 +12,7 @@ export function getSupabaseAdmin() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl) {
-    throw new Error('SUPABASE_URL env var not set');
+    throw new Error('SUPABASE_URL (or VITE_SUPABASE_URL/VITE_SUPABASE_ANON_URL) env var not set');
   }
   if (!serviceRoleKey) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY env var not set (server-only)');
