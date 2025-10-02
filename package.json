@@ -42,6 +42,7 @@
   },
   "devDependencies": {
     "@netlify/functions": "^2.8.2",
+    "@netlify/vite-plugin-netlify-edge": "^1.1.3",
     "@types/node": "^22.18.7",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.4",
