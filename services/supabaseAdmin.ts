@@ -5,7 +5,10 @@ import { createClient } from '@supabase/supabase-js';
  * NEVER import this into browser bundles. Only use inside Netlify functions or edge/server contexts.
  */
 export function getSupabaseAdmin() {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL; // fallback if only anon vars set
+  const supabaseUrl =
+    process.env.SUPABASE_URL ||
+    process.env.VITE_SUPABASE_URL ||
+    process.env.VITE_SUPABASE_ANON_URL; // fallback if only anon vars set
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl) {
