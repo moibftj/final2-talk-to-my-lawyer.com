@@ -160,20 +160,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // If user is created, create profile entry
       if (data.user) {
-        const { error: profileError } = await supabase.from('profiles').insert({
-          id: data.user.id,
-          email: data.user.email || email,
-          role: role,
-          points: role === 'employee' ? 0 : undefined,
-          commission_earned: role === 'employee' ? 0 : undefined,
-          subscription_status: 'inactive',
-        });
-
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-          return { error: profileError, user: null };
-        }
-
         // Process referral if coupon code provided and user is signing up as 'user'
         if (couponCode && role === 'user') {
           try {
