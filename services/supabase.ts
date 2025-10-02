@@ -2,7 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 
 // Production environment variables for Supabase configuration
 const supabaseUrl =
-  import.meta.env.VITE_SUPABASE_URL?.trim() || import.meta.env.VITE_SUPABASE_ANON_URL?.trim();
+  import.meta.env.VITE_SUPABASE_URL?.trim() ||
+  import.meta.env.VITE_SUPABASE_ANON_URL?.trim();
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
 // Validate environment variables

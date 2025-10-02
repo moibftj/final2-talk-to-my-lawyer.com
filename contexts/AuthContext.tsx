@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 import { supabase } from '../services/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { UserRole } from '../types';
@@ -57,7 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authEvent, setAuthEvent] = useState<string | null>(null);
 
   // Fetch user profile from profiles table
-  const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
+  const fetchUserProfile = async (
+    userId: string
+  ): Promise<UserProfile | null> => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -100,7 +108,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setAuthEvent(event);
@@ -119,7 +129,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     return { error };
   };
 
@@ -136,9 +149,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         options: {
           data: {
-            role: role // Pass role in metadata
-          }
-        }
+            role: role, // Pass role in metadata
+          },
+        },
       });
 
       if (error) {
@@ -147,16 +160,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // If user is created, create profile entry
       if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            email: data.user.email || email,
-            role: role,
-            points: role === 'employee' ? 0 : undefined,
-            commission_earned: role === 'employee' ? 0 : undefined,
-            subscription_status: 'inactive'
-          });
+        const { error: profileError } = await supabase.from('profiles').insert({
+          id: data.user.id,
+          email: data.user.email || email,
+          role: role,
+          points: role === 'employee' ? 0 : undefined,
+          commission_earned: role === 'employee' ? 0 : undefined,
+          subscription_status: 'inactive',
+        });
 
         if (profileError) {
           console.error('Error creating profile:', profileError);
@@ -166,10 +177,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Process referral if coupon code provided and user is signing up as 'user'
         if (couponCode && role === 'user') {
           try {
-            const { data: referralResult, error: referralError } = await supabase
-              .rpc('process_referral_signup', {
+            const { data: referralResult, error: referralError } =
+              await supabase.rpc('process_referral_signup', {
                 new_user_id: data.user.id,
-                coupon_code_param: couponCode
+                coupon_code_param: couponCode,
               });
 
             if (referralError) {
@@ -204,7 +215,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role: UserRole = 'user',
     couponCode?: string
   ) => {
-    const { error, user: newUser } = await signUp(email, password, role, couponCode);
+    const { error, user: newUser } = await signUp(
+      email,
+      password,
+      role,
+      couponCode
+    );
     if (error) {
       throw error;
     }
@@ -232,7 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const adminSignIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      password
+      password,
     });
 
     if (error) {
@@ -244,7 +260,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userProfile = await fetchUserProfile(data.user.id);
       if (!userProfile || userProfile.role !== 'admin') {
         await supabase.auth.signOut();
-        return { error: { message: 'Access denied. Admin privileges required.' } };
+        return {
+          error: { message: 'Access denied. Admin privileges required.' },
+        };
       }
     }
 
