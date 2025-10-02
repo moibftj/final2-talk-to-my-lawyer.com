@@ -24,12 +24,27 @@ interface AuthContextType {
   isLoading: boolean; // alias for compatibility
   authEvent: string | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, role?: UserRole, couponCode?: string) => Promise<{ error: any, user: User | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    role?: UserRole,
+    couponCode?: string
+  ) => Promise<{ error: any; user: User | null }>;
   adminSignIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   refreshProfile: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ error: any }>;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (
+    email: string,
+    password: string,
+    role?: UserRole,
+    couponCode?: string
+  ) => Promise<User | null>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  logout: () => Promise<void>;
+  updateUserPassword: (newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -108,7 +123,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, role: UserRole = 'user', couponCode?: string) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    role: UserRole = 'user',
+    couponCode?: string
+  ) => {
     try {
       // Sign up with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
@@ -168,6 +188,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: null, user: data.user };
     } catch (error) {
       return { error, user: null };
+    }
+  };
+
+  const login = async (email: string, password: string) => {
+    const { error } = await signIn(email, password);
+    if (error) {
+      throw error;
+    }
+  };
+
+  const signup = async (
+    email: string,
+    password: string,
+    role: UserRole = 'user',
+    couponCode?: string
+  ) => {
+    const { error, user: newUser } = await signUp(email, password, role, couponCode);
+    if (error) {
+      throw error;
+    }
+    return newUser;
+  };
+
+  const requestPasswordReset = async (email: string) => {
+    const { error } = await resetPassword(email);
+    if (error) {
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    await signOut();
+  };
+
+  const updateUserPassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      throw error;
     }
   };
 
@@ -243,6 +301,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resetPassword,
     refreshProfile,
     updateProfile,
+    login,
+    signup,
+    requestPasswordReset,
+    logout,
+    updateUserPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
