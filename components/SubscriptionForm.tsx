@@ -98,7 +98,7 @@ function SubscriptionForm({ onComplete }: SubscriptionFormProps) {
       const discountInfo = await validateDiscountCode(discountCode);
       
       if (discountInfo) {
-        setDiscountAmount(discountInfo.percent_off);
+        setDiscountAmount(discountInfo.discountPercentage ?? 0);
         setDiscountError('');
       } else {
         setDiscountAmount(0);
