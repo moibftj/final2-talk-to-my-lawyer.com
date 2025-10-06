@@ -24,7 +24,7 @@ port = 587
 user = "apikey"  # or your SMTP username
 pass = "env(SENDGRID_API_KEY)"  # use environment variable
 admin_email = "noreply@yourdomain.com"
-sender_name = "Law Letter AI"
+sender_name = "Talk to My Lawyer"
 ```
 
 ### Step 2: Set Environment Variable
@@ -76,7 +76,7 @@ The application includes custom email templates located in:
 - `supabase/templates/recovery.html` - For password reset
 
 These templates feature:
-- Professional Law Letter AI branding
+- Professional Talk to My Lawyer branding
 - Responsive design
 - Clear call-to-action buttons
 - Security notices for password resets

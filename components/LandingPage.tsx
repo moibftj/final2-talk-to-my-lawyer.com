@@ -24,7 +24,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className='flex items-center gap-2 sm:gap-3'>
             <IconLogo className='h-6 w-6 sm:h-8 sm:w-8 text-blue-400' />
             <span className='text-lg sm:text-xl lg:text-2xl font-bold text-white'>
-              Law Letter AI
+              Talk to My Lawyer
             </span>
           </div>
 
@@ -49,7 +49,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className='text-center z-10 px-4'>
             <div className='mb-4'>
               <span className='inline-flex items-center px-4 py-2 rounded-full bg-blue-600/20 text-blue-400 text-sm font-medium'>
-                ⚖️ Law Letter AI
+                ⚖️ Talk to My Lawyer
               </span>
             </div>
             <h1 className='text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight text-white mb-6'>
@@ -92,7 +92,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='text-center mb-12 sm:mb-16 lg:mb-20'>
             <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4'>
-              Why Choose Law Letter AI?
+              Why Choose Talk to My Lawyer?
             </h2>
             <p className='text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto'>
               Professional legal document creation made simple, fast, and
@@ -225,7 +225,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             Ready to Create Your Legal Letter?
           </h2>
           <p className='text-base sm:text-lg lg:text-xl text-blue-100 dark:text-blue-200 mb-8 sm:mb-12'>
-            Join thousands of users who trust Law Letter AI for their legal
+            Join thousands of users who trust Talk to My Lawyer for their legal
             document needs.
           </p>
 
@@ -254,11 +254,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className='flex items-center justify-center gap-2 mb-4'>
               <IconLogo className='h-6 w-6 text-blue-400' />
               <span className='text-lg font-semibold text-white'>
-                Law Letter AI
+                Talk to My Lawyer
               </span>
             </div>
             <p className='text-sm text-gray-400'>
-              © 2024 Law Letter AI. Professional legal document generation
+              © 2024 Talk to My Lawyer. Professional legal document generation
               powered by AI.
             </p>
           </div>
