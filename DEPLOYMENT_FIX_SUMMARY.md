@@ -36,10 +36,10 @@ npx netlify-cli login
 npx netlify-cli link
 
 # Set environment variables
-npx netlify-cli env:set VITE_SUPABASE_URL "https://hevnbcyuqxirqwhekwse.supabase.co"
-npx netlify-cli env:set VITE_SUPABASE_ANON_KEY "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhldm5iY3l1cXhpcnF3aGVrd3NlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2MDU3MDUsImV4cCI6MjA3MzE4MTcwNX0.o_awyK7z7pHa06guTVGmsLANG4czQAvzJO1RP__Kwak"
-npx netlify-cli env:set VITE_API_URL "https://hevnbcyuqxirqwhekwse.supabase.co"
-npx netlify-cli env:set VITE_GEMINI_API_KEY "AIzaSyApbHzGazyIWR6QsQh76dhD0gWmfhN26Ts"
+npx netlify-cli env:set VITE_SUPABASE_URL "https://your-project-ref.supabase.co"
+npx netlify-cli env:set VITE_SUPABASE_ANON_KEY "your-supabase-anon-key"
+npx netlify-cli env:set VITE_API_URL "https://your-project-ref.supabase.co"
+npx netlify-cli env:set OPENAI_API_KEY "your-openai-api-key"
 
 # Deploy
 npx netlify-cli deploy --prod
@@ -50,10 +50,10 @@ npx netlify-cli deploy --prod
 2. Select your site: **talk-to-my-lawyer.com**
 3. Navigate to: **Site settings > Environment variables**
 4. Add these variables:
-   - `VITE_SUPABASE_URL` = `https://hevnbcyuqxirqwhekwse.supabase.co`
-   - `VITE_SUPABASE_ANON_KEY` = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhldm5iY3l1cXhpcnF3aGVrd3NlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2MDU3MDUsImV4cCI6MjA3MzE4MTcwNX0.o_awyK7z7pHa06guTVGmsLANG4czQAvzJO1RP__Kwak`
-   - `VITE_API_URL` = `https://hevnbcyuqxirqwhekwse.supabase.co`
-   - `VITE_GEMINI_API_KEY` = `AIzaSyApbHzGazyIWR6QsQh76dhD0gWmfhN26Ts`
+   - `VITE_SUPABASE_URL` = `https://your-project-ref.supabase.co`
+   - `VITE_SUPABASE_ANON_KEY` = `your-supabase-anon-key`
+   - `VITE_API_URL` = `https://your-project-ref.supabase.co`
+   - `OPENAI_API_KEY` = `your-openai-api-key`
 5. Save and trigger a new deployment
 
 ## 🧪 Testing

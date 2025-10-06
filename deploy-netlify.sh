@@ -43,7 +43,7 @@ else
 fi
 
 # Set required public (exposed) environment variables
-REQ_VARS=(VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY VITE_API_URL VITE_GEMINI_API_KEY)
+REQ_VARS=(VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY VITE_API_URL)
 for VAR in "${REQ_VARS[@]}"; do
   VAL=${!VAR:-}
   if [ -z "$VAL" ]; then
@@ -58,7 +58,7 @@ for VAR in "${REQ_VARS[@]}"; do
   fi
 done
 
-# Set server-only secret (not prefixed with VITE_)
+# Set server-only secrets (not prefixed with VITE_)
 if [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
   echo "Setting server-only SUPABASE_SERVICE_ROLE_KEY" >&2
   curl -s -X POST -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
@@ -67,6 +67,16 @@ if [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
     "https://api.netlify.com/api/v1/sites/$SITE_ID/env" >/dev/null || echo "Failed to set SUPABASE_SERVICE_ROLE_KEY" >&2
 else
   echo "INFO: SUPABASE_SERVICE_ROLE_KEY not set locally; skipping server-only key" >&2
+fi
+
+if [ -n "${OPENAI_API_KEY:-}" ]; then
+  echo "Setting server-only OPENAI_API_KEY" >&2
+  curl -s -X POST -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+    -H 'Content-Type: application/json' \
+    -d '{"key":"OPENAI_API_KEY","values":[{"value":"'"$OPENAI_API_KEY"'","context":"all"}]}' \
+    "https://api.netlify.com/api/v1/sites/$SITE_ID/env" >/dev/null || echo "Failed to set OPENAI_API_KEY" >&2
+else
+  echo "INFO: OPENAI_API_KEY not set locally; skipping server-only key" >&2
 fi
 
 echo "Deploying (production)..." >&2
