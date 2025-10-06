@@ -58,9 +58,10 @@ async function testCouponSystem() {
       throw new Error(`Expected success response but received: ${JSON.stringify(couponResult)}`);
     }
 
-    const appliedDiscount = couponResult.data?.discountPercentage;
+    const appliedDiscount =
+      couponResult.data?.discountPercentage ?? couponResult.data?.percent_off;
     if (typeof appliedDiscount !== 'number') {
-      throw new Error('Coupon response missing discountPercentage.');
+      throw new Error('Coupon response missing discountPercentage/percent_off.');
     }
 
     if (appliedDiscount !== testCoupon.discount_percentage) {

@@ -142,6 +142,7 @@ export const handler: Handler = async (event, context) => {
           discountAmount,
           finalAmount,
           discountPercentage,
+          percent_off: discountPercentage,
           commissionAmount,
         },
       }),

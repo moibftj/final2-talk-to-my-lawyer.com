@@ -188,6 +188,7 @@ Deno.serve(async req => {
           discountAmount,
           finalAmount,
           discountPercentage,
+          percent_off: discountPercentage,
           commissionAmount,
           employeeId: employeeCoupon.employee_id,
           lettersAllowed: subscription.letters_allowed,

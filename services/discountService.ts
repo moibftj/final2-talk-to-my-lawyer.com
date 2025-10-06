@@ -76,6 +76,7 @@ export async function generateDiscountCode(employeeId: string): Promise<string> 
 export async function validateDiscountCode(code: string): Promise<{
   isValid: boolean;
   discountPercentage?: number;
+  percent_off?: number;
   employee_id?: string;
   error?: string;
 }> {
@@ -97,6 +98,7 @@ export async function validateDiscountCode(code: string): Promise<{
     return {
       isValid: true,
       discountPercentage: data.discount_percentage,
+      percent_off: data.discount_percentage,
       employee_id: data.employee_id
     };
   } catch (error) {
