@@ -33,10 +33,10 @@ Your Talk to My Lawyer three-tier application is **100% ready for production dep
 
 ### **1. Environment Variables (✅ Ready)**
 ```bash
-VITE_SUPABASE_URL=https://hevnbcyuqxirqwhekwse.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 VITE_SUPABASE_SERVICE_ROLE=<deprecated – do NOT use>
-GEMINI_API_KEY=AIzaSyApbHzGazyIWR6QsQh76dhD0gWmfhN26Ts
+OPENAI_API_KEY=your-openai-api-key
 VITE_PUBLIC_BUILDER_KEY=916a1d0da78e42d5a2bf59c8a51e24dc
 ```
 
@@ -103,7 +103,7 @@ npm run build
    - Monitor system performance
 
 ### **Test Core Features:**
-- ✅ Letter generation with AI (Gemini)
+- ✅ Letter generation with AI (OpenAI Codex)
 - ✅ Real-time timeline updates
 - ✅ Coupon discount application
 - ✅ Commission calculation
@@ -155,7 +155,7 @@ Once deployed, your application will have:
 1. **Build Errors:** Ensure all dependencies are installed
 2. **Auth Issues:** Verify Supabase URL and keys
 3. **Database Errors:** Check RLS policies and permissions
-4. **AI Generation:** Verify Gemini API key
+4. **AI Generation:** Verify OpenAI API key
 
 ### **Support Resources:**
 - Database schema: `DATABASE_ENHANCEMENT_THREE_TIER.sql`
@@ -176,4 +176,4 @@ Your Talk to My Lawyer application is production-ready with:
 
 **Ready to go live!** 🚀
 
-*Deployment completed with [Claude Code](https://claude.com/claude-code)*
+*Deployment workflow validated with GitHub Copilot and OpenAI Codex*

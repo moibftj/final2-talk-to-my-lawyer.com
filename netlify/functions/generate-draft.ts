@@ -28,14 +28,14 @@ export const handler: Handler = async (event, context) => {
   }
 
   try {
-  // Secure admin client & Gemini key
-  const geminiApiKey = process.env.GEMINI_API_KEY;
+    // Secure admin client & OpenAI key
+    const openAiApiKey = process.env.OPENAI_API_KEY;
 
-    if (!geminiApiKey) {
-      throw new Error('GEMINI_API_KEY environment variable is not set');
+    if (!openAiApiKey) {
+      throw new Error('OPENAI_API_KEY environment variable is not set');
     }
 
-  const supabase = getSupabaseAdmin();
+    const supabase = getSupabaseAdmin();
 
     // Get request body
     const requestBody = JSON.parse(event.body || '{}');
@@ -96,7 +96,7 @@ export const handler: Handler = async (event, context) => {
         .eq('id', letterId);
     }
 
-    // Generate AI draft using Gemini API
+    // Generate AI draft using OpenAI Codex API
     const prompt = letterRequest
       ? `
 You are a professional legal letter writer. Generate a formal legal letter based on the following information:
@@ -133,34 +133,36 @@ Replace any placeholders in brackets with appropriate content based on the conte
 Maintain a ${tone} tone throughout.
     `;
 
-    // Call Gemini API
-    const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`,
+    // Call OpenAI API
+    const openAiResponse = await fetch(
+      'https://api.openai.com/v1/chat/completions',
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${openAiApiKey}`,
         },
         body: JSON.stringify({
-          contents: [
+          model: 'gpt-4o-mini',
+          temperature: 0.4,
+          messages: [
             {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
+              role: 'system',
+              content:
+                'You are OpenAI Codex assisting legal professionals by drafting polished, accurate, and compliant correspondence.',
             },
+            { role: 'user', content: prompt },
           ],
         }),
       }
     );
 
-    if (!geminiResponse.ok) {
-      throw new Error(`Gemini API error: ${geminiResponse.statusText}`);
+    if (!openAiResponse.ok) {
+      throw new Error(`OpenAI API error: ${openAiResponse.statusText}`);
     }
 
-    const geminiData = await geminiResponse.json();
-    const aiDraft = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    const openAiData = await openAiResponse.json();
+    const aiDraft = openAiData.choices?.[0]?.message?.content?.trim();
 
     if (!aiDraft) {
       throw new Error('Failed to generate AI draft');

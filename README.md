@@ -2,11 +2,9 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# Run and deploy your Codex-powered app
 
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/drive/1jcNus_RZaqWWrN2-hIC4JwqatOfQOAj9
+This guide covers everything you need to run the project locally with OpenAI Codex powering letter generation and GitHub Copilot assisting in your editor.
 
 ## Run Locally
 
@@ -15,7 +13,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/1jcNus_RZaqWWrN2-hIC4Jw
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Set the `OPENAI_API_KEY` in `.env.local` (or your shell) to your OpenAI key
 3. Run the app:
    `npm run dev`
 ## Deploy to Netlify (approved-my-lawyer)
@@ -34,7 +32,7 @@ Create a local `.env` (NOT committed) or export in your shell:
 export VITE_SUPABASE_URL="https://YOUR-PROJECT.supabase.co"
 export VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
 export VITE_API_URL="https://YOUR-PROJECT.supabase.co"
-export VITE_GEMINI_API_KEY="YOUR_GEMINI_KEY"
+export OPENAI_API_KEY="YOUR_OPENAI_KEY"
 export NETLIFY_AUTH_TOKEN="YOUR_NETLIFY_PAT"
 ```
 
@@ -61,7 +59,7 @@ The script will:
     * `VITE_SUPABASE_URL`
     * `VITE_SUPABASE_ANON_KEY`
     * `VITE_API_URL` (can match Supabase URL)
-    * `VITE_GEMINI_API_KEY`
+    * `OPENAI_API_KEY`
 6. Deploy, then visit the URL Netlify provides.
 
 ### 5. Post-Deployment Checklist
@@ -96,7 +94,7 @@ To reduce blast radius, rotate sensitive credentials on a schedule and after any
 | ------ | ----- | ------------------- | -------------------------- |
 | SUPABASE_SERVICE_ROLE_KEY | Server-only (Netlify Functions) | Quarterly | Leak, permission changes, repo history rewrite |
 | VITE_SUPABASE_ANON_KEY | Public (client) | Semi-annual | Leak, Supabase project clone, auth config changes |
-| GEMINI_API_KEY | Server-only | Quarterly | Leak, provider policy change |
+| OPENAI_API_KEY | Server-only | Quarterly | Leak, provider policy change |
 
 Rotation (Service Role Example):
 1. Generate new key in Supabase: Settings → API → Regenerate service_role.
