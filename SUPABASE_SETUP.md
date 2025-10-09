@@ -142,7 +142,7 @@ supabase functions deploy generate-draft
 
 In your Supabase dashboard, go to Settings > Edge Functions and add:
 
-- `GEMINI_API_KEY`: Your Google Gemini API key
+- `OPENAI_API_KEY`: Your OpenAI Codex API key
 
 ### 4. Update Authentication Settings
 
@@ -162,7 +162,7 @@ In your Supabase dashboard, go to Authentication > Settings:
 
 ### CORS Error on Edge Functions
 - Ensure Edge Functions are deployed
-- Check that the GEMINI_API_KEY is set in Supabase secrets
+- Check that the OPENAI_API_KEY is set in Supabase secrets
 - Verify the function is accessible via the correct URL
 
 ### Authentication Issues

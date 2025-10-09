@@ -77,7 +77,7 @@ if (!fetchError && employeeProfile) {
 - `supabase/functions/generate-draft/index.ts` (Line 30)
 
 **Problem:**
-Both files had hardcoded Gemini API keys as fallback values. This is a security risk as:
+Both files had hardcoded Google Gemini API keys as fallback values. This is a security risk as:
 1. API keys should never be committed to source code
 2. Hardcoded keys can be exposed in logs or error messages
 3. If the key is compromised, it requires code changes to rotate
@@ -85,26 +85,26 @@ Both files had hardcoded Gemini API keys as fallback values. This is a security 
 **Original Code:**
 ```typescript
 // Netlify function
-const geminiApiKey = process.env.GEMINI_API_KEY || 'AIzaSyApbHzGazyIWR6QsQh76dhD0gWmfhN26Ts'
+const geminiApiKey = process.env.GEMINI_API_KEY || '<legacy-google-api-key>'
 
 // Supabase function
-const geminiApiKey = Deno.env.get('GEMINI_API_KEY') || 'AIzaSyApbHzGazyIWR6QsQh76dhD0gWmfhN26Ts'
+const geminiApiKey = Deno.env.get('GEMINI_API_KEY') || '<legacy-google-api-key>'
 ```
 
 **Fixed Code:**
 ```typescript
 // Netlify function
-const geminiApiKey = process.env.GEMINI_API_KEY
+const openAiApiKey = process.env.OPENAI_API_KEY
 
-if (!geminiApiKey) {
-  throw new Error('GEMINI_API_KEY environment variable is not set')
+if (!openAiApiKey) {
+  throw new Error('OPENAI_API_KEY environment variable is not set')
 }
 
 // Supabase function
-const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
+const openAiApiKey = Deno.env.get('OPENAI_API_KEY')
 
-if (!geminiApiKey) {
-  throw new Error('GEMINI_API_KEY environment variable is not set')
+if (!openAiApiKey) {
+  throw new Error('OPENAI_API_KEY environment variable is not set')
 }
 ```
 
@@ -121,12 +121,11 @@ After these fixes, ensure the following environment variables are set in Netlify
 ### Required for Build (Frontend):
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
-- `VITE_GEMINI_API_KEY`
 
 ### Required for Functions (Backend):
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `GEMINI_API_KEY`
+- `OPENAI_API_KEY`
 
 ## Testing
 

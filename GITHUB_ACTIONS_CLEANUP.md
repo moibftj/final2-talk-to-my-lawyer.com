@@ -63,7 +63,7 @@ This workflow is **correct and relevant**:
 - Installs dependencies with `npm install`
 - Builds with `npm run build` (uses Vite)
 - Deploys to Netlify
-- Properly configured with environment variables for Supabase and Gemini API
+- Properly configured with environment variables for Supabase and OpenAI Codex API access
 
 **Workflow Details**:
 - **Trigger**: Push to main branch, Pull requests to main

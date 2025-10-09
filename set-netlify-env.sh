@@ -3,6 +3,13 @@
 
 set -euo pipefail
 
+netlify env:set VITE_SUPABASE_URL "https://your-project-ref.supabase.co"
+netlify env:set VITE_SUPABASE_ANON_KEY "your-supabase-anon-key"
+netlify env:set VITE_API_URL "https://your-project-ref.supabase.co"
+netlify env:set SUPABASE_URL "https://your-project-ref.supabase.co"
+netlify env:set SUPABASE_SERVICE_ROLE_KEY "your-supabase-service-role-key"
+netlify env:set OPENAI_API_KEY "your-openai-api-key"
+=======
 if ! command -v netlify >/dev/null 2>&1; then
   echo "Error: netlify CLI not found. Install it with 'npm install -g netlify-cli'." >&2
   exit 1
