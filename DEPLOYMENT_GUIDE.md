@@ -60,9 +60,23 @@ VITE_PUBLIC_BUILDER_KEY=916a1d0da78e42d5a2bf59c8a51e24dc
 # 1. Connect your GitHub repo to Netlify
 # 2. Set build command: npm run build
 # 3. Set publish directory: dist
-# 4. Add environment variables
+# 4. Add environment variables (see notes below)
 # 5. Deploy!
 ```
+
+#### Configure Environment Variables (Secrets stay local)
+- Create a `.env.local` file (gitignored) following Next.js conventions. Example:
+  ```bash
+  NEXT_PUBLIC_SUPABASE_URL=...
+  NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+  NEXT_PUBLIC_API_URL=...
+  NEXT_PUBLIC_GEMINI_API_KEY=...
+  SUPABASE_URL=...
+  SUPABASE_SERVICE_ROLE_KEY=...
+  GEMINI_API_KEY=...
+  ```
+- Keep `.env.local` out of Git; copy placeholders from `.env.example` if needed.
+- To sync these values to Netlify without exposing them, run `./set-netlify-env.sh`. The script reads `.env.local` (or `.env`) and sets the corresponding Netlify environment variables, preferring `NEXT_PUBLIC_*` names when present.
 
 ### **Option 2: Vercel**
 ```bash
@@ -177,3 +191,4 @@ Your Talk to My Lawyer application is production-ready with:
 **Ready to go live!** 🚀
 
 *Deployment workflow validated with GitHub Copilot and OpenAI Codex*
+*Deployment completed with [Claude Code](https://claude.com/claude-code)*
