@@ -1,9 +1,5 @@
 {
   "imports": {
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7"
-  },
-  "compilerOptions": {
-    "lib": ["deno.ns", "dom"],
-    "types": ["https://deno.land/x/xhr@0.3.0/mod.d.ts"]
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.39.7"
   }
 }
