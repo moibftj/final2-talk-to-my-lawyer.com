@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.ns", "dom"],
+    "allowJs": true,
+    "strict": true
+  },
+  "imports": {
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7"
+  },
+  "tasks": {
+    "test": "deno test --allow-all",
+    "lint": "deno lint",
+    "fmt": "deno fmt"
+  }
+}

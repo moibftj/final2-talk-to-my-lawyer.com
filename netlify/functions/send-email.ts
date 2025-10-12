@@ -108,9 +108,17 @@ export const handler: Handler = async (event, context) => {
       requestedBy: { id: user.id, role: profile?.role }
     }, corsHeaders)
 
-  } catch (error: any) {
-    const status = error?.statusCode || 500
-    const message = error?.message || 'Internal Server Error'
+  } catch (error: unknown) {
+    let status = 500
+    let message = 'Internal Server Error'
+    if (typeof error === 'object' && error !== null) {
+      if ('statusCode' in error && typeof (error as any).statusCode === 'number') {
+        status = (error as any).statusCode
+      }
+      if ('message' in error && typeof (error as any).message === 'string') {
+        message = (error as any).message
+      }
+    }
     if (status >= 500) {
       console.error('Error sending email:', error)
     }
