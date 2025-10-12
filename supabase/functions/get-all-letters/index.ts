@@ -1,6 +1,9 @@
 // Follow this guide to deploy the function to your Supabase project:
 // https://supabase.com/docs/guides/functions/deploy
 
+/// <reference types="https://deno.land/x/xhr@0.3.0/mod.d.ts" />
+/// <reference lib="deno.ns" />
+
 import { createClient } from '@supabase/supabase-js';
 import { requireAdmin } from '../../utils/auth.ts';
 
