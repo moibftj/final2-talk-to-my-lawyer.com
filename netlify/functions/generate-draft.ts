@@ -71,6 +71,15 @@ export const handler: Handler = async (event, context) => {
       length: length || 'medium',
     };
 
+    // SECURITY: Validate userId - ensure user can only create letters for themselves
+    const validatedUserId = userId || user.id;
+    if (validatedUserId !== user.id && profile?.role !== 'admin') {
+      return jsonResponse(403, {
+        success: false,
+        error: 'You can only create letters for yourself'
+      }, corsHeaders)
+    }
+
     // Create or update letter
     let currentLetterId = letterId;
     if (!letterId) {
@@ -186,25 +195,19 @@ Maintain a ${tone} tone throughout.
       throw updateError;
     }
 
-    return {
-      statusCode: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        success: true,
-        message: 'Letter draft generated successfully',
-        letterId: currentLetterId,
-        aiDraft,
-      }),
-    };
-  } catch (error) {
-    console.error('Error generating draft:', error);
-    return {
-      statusCode: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        success: false,
-        error: error.message,
-      }),
-    };
+    return jsonResponse(200, {
+      success: true,
+      message: 'Letter draft generated successfully',
+      letterId: currentLetterId,
+      aiDraft,
+      requestedBy: { id: user.id, role: profile?.role }
+    }, corsHeaders);
+  } catch (error: any) {
+    const status = error?.statusCode || 500
+    const message = error?.message || 'Internal Server Error'
+    if (status >= 500) {
+      console.error('Error generating draft:', error);
+    }
+    return jsonResponse(status, { success: false, error: message }, corsHeaders);
   }
 };

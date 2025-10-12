@@ -1,5 +1,6 @@
 import { Handler } from '@netlify/functions';
 import { getSupabaseAdmin } from '../../services/supabaseAdmin';
+import { getUserContext, jsonResponse } from './_auth';
 
 interface CouponRequest {
   couponCode: string;
