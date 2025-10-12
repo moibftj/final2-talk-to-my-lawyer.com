@@ -82,8 +82,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Get the letter details
-    const { data: letter, error: letterError } = await supabase
+    // Get additional letter details with user profile
+    const { data: letterWithProfile, error: profileError } = await supabase
       .from("letters")
       .select(`
         *,
@@ -92,12 +92,30 @@ Deno.serve(async (req: Request) => {
       .eq("id", letterId)
       .single();
 
-    if (letterError || !letter) {
-      throw new Error("Letter not found");
+    if (profileError || !letterWithProfile) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Error fetching letter details",
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
-    if (!letter.ai_draft) {
-      throw new Error("Letter draft not available");
+    if (!letterWithProfile.ai_draft) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Letter draft not available",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     // Prepare email content
