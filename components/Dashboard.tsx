@@ -24,7 +24,7 @@ import { CompletionBanner, useBanners } from './CompletionBanner';
 import { useAuth } from '../contexts/AuthContext';
 // import { letterStatusService } from '../services/letterStatusService';
 
-type View = 'dashboard' | 'subscription';
+type View = 'dashboard' | 'new_letter_form' | 'subscription';
 
 interface UserDashboardProps {
   currentView: View;

@@ -97,7 +97,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check for password recovery tokens in URL hash
     const checkForRecoveryToken = () => {
       const hash = window.location.hash;
+      console.log('Checking URL hash for recovery token:', hash);
       if (hash.includes('type=recovery') && hash.includes('access_token=')) {
+        console.log('Password recovery detected, setting auth event');
         setAuthEvent('PASSWORD_RECOVERY');
         // Clear the hash to clean up the URL
         window.history.replaceState(null, '', window.location.pathname);
