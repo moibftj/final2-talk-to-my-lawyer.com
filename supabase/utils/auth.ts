@@ -1,3 +1,4 @@
+/// <reference types="https://deno.land/x/deno@v1.32.0/cli/dts/lib.deno.d.ts" />
 import { createClient } from '@supabase/supabase-js';
 
 export async function requireAdmin(req: Request) {
