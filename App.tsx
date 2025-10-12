@@ -29,7 +29,7 @@ const ResetPasswordPage = lazy(() =>
   }))
 );
 
-type UserDashboardView = 'dashboard' | 'new_letter_form' | 'subscription';
+type UserDashboardView = 'dashboard' | 'subscription';
 type AppView = 'landing' | 'auth' | 'dashboard';
 type AuthView = 'login' | 'signup';
 
@@ -39,6 +39,23 @@ const App: React.FC = () => {
     useState<UserDashboardView>('dashboard');
   const [appView, setAppView] = useState<AppView>('landing');
   const [authView, setAuthView] = useState<AuthView>('signup');
+
+  // Check for password recovery in URL on mount
+  React.useEffect(() => {
+    const checkPasswordRecovery = () => {
+      const hash = window.location.hash;
+      const path = window.location.pathname;
+      
+      // Handle both hash-based and path-based recovery
+      if ((hash.includes('type=recovery') && hash.includes('access_token=')) || 
+          path.includes('reset-password')) {
+        // Allow the AuthContext to handle the token processing
+        return;
+      }
+    };
+    
+    checkPasswordRecovery();
+  }, []);
 
   if (isLoading) {
     return <Spinner />;
