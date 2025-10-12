@@ -188,12 +188,15 @@ Talk to My Lawyer Service
         status: 200,
       },
     );
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error sending email:", error);
+    const message = error instanceof Error
+      ? error.message
+      : "Internal Server Error";
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: message,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

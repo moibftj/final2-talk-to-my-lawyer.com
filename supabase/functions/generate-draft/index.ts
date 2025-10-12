@@ -25,7 +25,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     // SECURITY: Require user authentication
-    const { user, profile: _profile } = await getUserContext(req);
+    const { user: _user, profile: _profile } = await getUserContext(req);
 
     // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
