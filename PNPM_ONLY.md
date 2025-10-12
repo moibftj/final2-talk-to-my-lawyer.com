@@ -29,6 +29,7 @@ This project uses **PNPM exclusively** as its package manager.
 ## ✅ What's Configured
 
 ### 1. **package.json**
+
 ```json
 {
   "packageManager": "pnpm@9.12.3",
