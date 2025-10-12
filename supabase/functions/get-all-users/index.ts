@@ -3,6 +3,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "../../utils/auth.ts";
+import { createCorsResponse, createJsonResponse, createErrorResponse } from "../../utils/cors.ts";
 
 interface AuthUser {
   id: string;
@@ -22,14 +23,8 @@ interface CombinedUser {
 }
 
 Deno.serve(async (req: Request) => {
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type",
-  };
-
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return createCorsResponse();
   }
 
   try {
@@ -77,25 +72,15 @@ Deno.serve(async (req: Request) => {
     });
 
     // 5. Return the list of users
-    return new Response(
-      JSON.stringify({
+    return createJsonResponse(
+      {
         users: combinedUsers,
         requestedBy: { id: user.id, role: profile.role },
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
       },
+      200,
     );
   } catch (error: unknown) {
-    let message = "Internal Server Error";
-    if (typeof error === "object" && error !== null && "message" in error) {
-      message = String((error as { message?: string }).message);
-    }
     console.error("Error fetching users:", error);
-    return new Response(JSON.stringify({ error: message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return createErrorResponse(error);
   }
 });

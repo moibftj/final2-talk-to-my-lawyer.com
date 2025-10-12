@@ -1,5 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import { getUserContext } from "../../utils/auth.ts";
+import {
+  createCorsResponse,
+  createJsonResponse,
+  createErrorResponse,
+} from "../../utils/cors.ts";
 
 interface CouponRequest {
   couponCode: string;
@@ -8,15 +13,9 @@ interface CouponRequest {
   originalAmount: number;
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return createCorsResponse();
   }
 
   try {
@@ -37,29 +36,23 @@ Deno.serve(async (req: Request) => {
     }: CouponRequest = await req.json();
 
     if (!couponCode || !userId || !subscriptionType || !originalAmount) {
-      return new Response(
-        JSON.stringify({
+      return createJsonResponse(
+        {
           success: false,
           error: "Missing required fields",
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
+        400,
       );
     }
 
     // SECURITY: Validate userId - ensure user can only apply coupons for themselves
     if (userId !== user.id && profile?.role !== "admin") {
-      return new Response(
-        JSON.stringify({
+      return createJsonResponse(
+        {
           success: false,
           error: "You can only apply coupons for yourself",
-        }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
+        403,
       );
     }
 
@@ -77,29 +70,23 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (codeError || !employeeCoupon) {
-      return new Response(
-        JSON.stringify({
+      return createJsonResponse(
+        {
           success: false,
           error: "Invalid or inactive coupon code",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
         },
+        400,
       );
     }
 
     // Verify employee role
     if (employeeCoupon.profiles?.role !== "employee") {
-      return new Response(
-        JSON.stringify({
+      return createJsonResponse(
+        {
           success: false,
           error: "Coupon is not associated with a valid employee",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
         },
+        400,
       );
     }
 
@@ -202,40 +189,22 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Coupon applied successfully",
-        data: {
-          subscriptionId: subscription.id,
-          originalAmount,
-          discountAmount,
-          finalAmount,
-          discountPercentage,
-          commissionAmount,
-          employeeId: employeeCoupon.employee_id,
-          lettersAllowed: subscription.letters_allowed,
-        },
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
+    return createJsonResponse({
+      success: true,
+      message: "Coupon applied successfully",
+      data: {
+        subscriptionId: subscription.id,
+        originalAmount,
+        discountAmount,
+        finalAmount,
+        discountPercentage,
+        commissionAmount,
+        employeeId: employeeCoupon.employee_id,
+        lettersAllowed: subscription.letters_allowed,
       },
-    );
+    });
   } catch (error: unknown) {
     console.error("Error applying coupon:", error);
-    const message = error instanceof Error
-      ? error.message
-      : "Internal Server Error";
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: message,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      },
-    );
+    return createErrorResponse(error);
   }
 });

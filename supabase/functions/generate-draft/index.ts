@@ -1,5 +1,11 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { getUserContext } from "../../utils/auth.ts";
+import {
+  corsHeaders,
+  createCorsResponse,
+  createJsonResponse,
+  createErrorResponse,
+} from "../../utils/cors.ts";
 
 interface LetterRequest {
   senderName: string;
@@ -29,12 +35,6 @@ interface Config {
   supabaseServiceKey: string;
   openAiApiKey: string;
 }
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
 
 const DEFAULT_USER_ID = "adb39d17-16f5-44c7-968a-533fad7540c6";
 
@@ -237,43 +237,9 @@ function validateRequestBody(requestBody: RequestBody): void {
   }
 }
 
-// Create success response
-function createSuccessResponse(letterId: string, aiDraft: string): Response {
-  return new Response(
-    JSON.stringify({
-      success: true,
-      message: "Letter draft generated successfully",
-      letterId,
-      aiDraft,
-    }),
-    {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    },
-  );
-}
-
-// Create error response
-function createErrorResponse(error: unknown): Response {
-  console.error("Error generating draft:", error);
-  const message = error instanceof Error
-    ? error.message
-    : "Internal Server Error";
-  return new Response(
-    JSON.stringify({
-      success: false,
-      error: message,
-    }),
-    {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    },
-  );
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return createCorsResponse();
   }
 
   try {
@@ -313,8 +279,14 @@ Deno.serve(async (req: Request) => {
     // Update letter with AI draft
     await updateLetterWithDraft(supabase, currentLetterId!, aiDraft);
 
-    return createSuccessResponse(currentLetterId!, aiDraft);
+    return createJsonResponse({
+      success: true,
+      message: "Letter draft generated successfully",
+      letterId: currentLetterId,
+      aiDraft,
+    });
   } catch (error: unknown) {
+    console.error("Error generating draft:", error);
     return createErrorResponse(error);
   }
 });

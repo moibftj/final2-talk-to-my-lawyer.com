@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { getUserContext } from "../../utils/auth.ts";
+import { createCorsResponse, createJsonResponse, createErrorResponse } from "../../utils/cors.ts";
 
 interface StatusUpdateRequest {
   letterId: string;
@@ -17,12 +18,6 @@ interface UpdateData {
   due_date_internal?: string;
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
 // Valid status transitions
 const validStatuses = [
   "draft",
@@ -35,7 +30,7 @@ const validStatuses = [
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return createCorsResponse();
   }
 
   try {
@@ -44,14 +39,11 @@ Deno.serve(async (req) => {
 
     // SECURITY: Only admin and employee roles can update letter status
     if (profile.role !== "admin" && profile.role !== "employee") {
-      return new Response(
-        JSON.stringify({
-          error: "Insufficient permissions. Admin or employee role required.",
-        }),
+      return createJsonResponse(
         {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          error: "Insufficient permissions. Admin or employee role required.",
         },
+        403,
       );
     }
 
@@ -153,8 +145,8 @@ Deno.serve(async (req) => {
       throw finalFetchError;
     }
 
-    return new Response(
-      JSON.stringify({
+    return createJsonResponse(
+      {
         success: true,
         message: `Letter status updated to ${newStatus}`,
         data: {
@@ -162,27 +154,11 @@ Deno.serve(async (req) => {
           previousStatus: currentLetter.status,
           newStatus: newStatus,
         },
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
       },
+      200,
     );
   } catch (error: unknown) {
     console.error("Error updating letter status:", error);
-    let message = "Internal Server Error";
-    if (typeof error === "object" && error !== null && "message" in error) {
-      message = String(error.message);
-    }
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: message,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      },
-    );
+    return createErrorResponse(error);
   }
 });

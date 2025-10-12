@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { getUserContext } from "../../utils/auth.ts";
+import { createCorsResponse, createJsonResponse, createErrorResponse } from "../../utils/cors.ts";
 
 interface EmailRequest {
   letterId: string;
@@ -8,15 +9,9 @@ interface EmailRequest {
   attorneyEmail?: string;
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return createCorsResponse();
   }
 
   try {
@@ -33,15 +28,12 @@ Deno.serve(async (req: Request) => {
       EmailRequest = await req.json();
 
     if (!letterId || !recipientEmail) {
-      return new Response(
-        JSON.stringify({
+      return createJsonResponse(
+        {
           success: false,
           error: "Missing required fields: letterId or recipientEmail",
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
+        400,
       );
     }
 
@@ -53,15 +45,12 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (letterError || !letter) {
-      return new Response(
-        JSON.stringify({
+      return createJsonResponse(
+        {
           success: false,
           error: "Letter not found",
-        }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
+        404,
       );
     }
 
@@ -70,15 +59,12 @@ Deno.serve(async (req: Request) => {
       letter.user_id !== user.id &&
       !["admin", "employee"].includes(profile?.role || "")
     ) {
-      return new Response(
-        JSON.stringify({
+      return createJsonResponse(
+        {
           success: false,
           error: "You can only send your own letters",
-        }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
+        403,
       );
     }
 
@@ -93,28 +79,22 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (profileError || !letterWithProfile) {
-      return new Response(
-        JSON.stringify({
+      return createJsonResponse(
+        {
           success: false,
           error: "Error fetching letter details",
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
+        500,
       );
     }
 
     if (!letterWithProfile.ai_draft) {
-      return new Response(
-        JSON.stringify({
+      return createJsonResponse(
+        {
           success: false,
           error: "Letter draft not available",
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
+        400,
       );
     }
 
@@ -172,8 +152,8 @@ Talk to My Lawyer Service
       console.warn("Failed to log email activity:", logError);
     }
 
-    return new Response(
-      JSON.stringify({
+    return createJsonResponse(
+      {
         success: true,
         message: "Email sent successfully",
         data: {
@@ -182,27 +162,12 @@ Talk to My Lawyer Service
           subject,
           status: "sent",
         },
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
       },
+      200,
     );
   } catch (error: unknown) {
     console.error("Error sending email:", error);
-    const message = error instanceof Error
-      ? error.message
-      : "Internal Server Error";
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: message,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      },
-    );
+    return createErrorResponse(error);
   }
 });
 
