@@ -40,13 +40,13 @@ const App: React.FC = () => {
   const [appView, setAppView] = useState<AppView>('landing');
   const [authView, setAuthView] = useState<AuthView>('signup');
 
-  // Check for password recovery in URL on mount
+  // Check for email confirmation or password recovery in URL on mount
   React.useEffect(() => {
-    const checkPasswordRecovery = () => {
+    const checkAuthCallback = () => {
       const hash = window.location.hash;
       const path = window.location.pathname;
 
-      // Handle both hash-based and path-based recovery
+      // Handle password recovery
       if (
         (hash.includes('type=recovery') && hash.includes('access_token=')) ||
         path.includes('reset-password')
@@ -54,10 +54,25 @@ const App: React.FC = () => {
         // Allow the AuthContext to handle the token processing
         return;
       }
+
+      // Handle email confirmation redirect
+      if (hash.includes('type=signup') || hash.includes('type=email')) {
+        console.log('Email confirmation detected, user will be redirected to dashboard');
+        // Clean up the URL hash
+        window.history.replaceState(null, '', window.location.pathname);
+      }
     };
 
-    checkPasswordRecovery();
+    checkAuthCallback();
   }, []);
+
+  // Automatically show dashboard when user is authenticated (including after email confirmation)
+  React.useEffect(() => {
+    if (user && profile && appView === 'landing') {
+      console.log('User authenticated, redirecting to dashboard');
+      setAppView('dashboard');
+    }
+  }, [user, profile, appView]);
 
   if (isLoading) {
     return <Spinner />;
@@ -102,6 +117,9 @@ const App: React.FC = () => {
       <LandingPage onGetStarted={handleGetStarted} onLogin={handleLogin} />
     );
   }
+
+  // If user is authenticated, always show dashboard (not landing page)
+  // This handles post-confirmation redirects
 
   const renderDashboard = () => {
     return (

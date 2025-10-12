@@ -94,11 +94,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Check for password recovery tokens in URL hash
-    const checkForRecoveryToken = async () => {
+    // Check for authentication callbacks in URL hash (recovery, email confirmation, etc.)
+    const checkForAuthCallback = async () => {
       const hash = window.location.hash;
-      console.log('Checking URL hash for recovery token:', hash);
+      console.log('Checking URL hash for auth callback:', hash);
       
+      // Handle password recovery
       if (hash.includes('type=recovery') && hash.includes('access_token=')) {
         console.log('Password recovery detected');
         
@@ -132,10 +133,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           window.history.replaceState(null, '', window.location.pathname);
         }
       }
+      // Handle email confirmation
+      else if ((hash.includes('type=signup') || hash.includes('type=email')) && hash.includes('access_token=')) {
+        console.log('Email confirmation detected');
+        
+        try {
+          // Extract tokens from the hash
+          const params = new URLSearchParams(hash.substring(1));
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+          
+          if (accessToken) {
+            // Set the session for confirmed user
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || ''
+            });
+            
+            if (!error && data.session) {
+              console.log('Email confirmation session established successfully');
+              setAuthEvent('SIGNED_IN');
+              // Clear the hash to clean up the URL
+              window.history.replaceState(null, '', window.location.pathname);
+            } else {
+              console.error('Failed to establish confirmation session:', error);
+              window.history.replaceState(null, '', window.location.pathname);
+            }
+          }
+        } catch (error) {
+          console.error('Error processing email confirmation:', error);
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      }
     };
 
     // Check immediately
-    checkForRecoveryToken();
+    checkForAuthCallback();
 
     // Get initial session
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
