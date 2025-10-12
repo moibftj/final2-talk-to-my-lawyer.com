@@ -1,5 +1,6 @@
 import { Handler } from '@netlify/functions'
 import { getSupabaseAdmin } from '../../services/supabaseAdmin'
+import { getUserContext, jsonResponse } from './_auth'
 
 interface EmailRequest {
   letterId: string
@@ -24,14 +25,20 @@ export const handler: Handler = async (event, context) => {
   }
 
   try {
-  // Secure admin client
-  const supabase = getSupabaseAdmin()
+    // SECURITY: Require authentication
+    const { user, profile } = await getUserContext(event)
+
+    // Secure admin client (server-only) only after passing auth check
+    const supabase = getSupabaseAdmin()
 
     // Get request body
     const { letterId, recipientEmail, subject, senderEmail }: EmailRequest = JSON.parse(event.body || '{}')
 
     if (!letterId || !recipientEmail || !subject) {
-      throw new Error('Missing required fields')
+      return jsonResponse(400, { 
+        success: false, 
+        error: 'Missing required fields' 
+      }, corsHeaders)
     }
 
     // Get the letter content
@@ -42,7 +49,18 @@ export const handler: Handler = async (event, context) => {
       .single()
 
     if (letterError || !letter) {
-      throw new Error('Letter not found')
+      return jsonResponse(404, { 
+        success: false, 
+        error: 'Letter not found' 
+      }, corsHeaders)
+    }
+
+    // SECURITY: Ensure user can only send their own letters (unless admin/employee)
+    if (letter.user_id !== user.id && !['admin', 'employee'].includes(profile?.role || '')) {
+      return jsonResponse(403, {
+        success: false,
+        error: 'You can only send your own letters'
+      }, corsHeaders)
     }
 
     // Here you would integrate with an actual email service like SendGrid, Mailgun, etc.
@@ -82,26 +100,20 @@ export const handler: Handler = async (event, context) => {
       console.warn('Failed to log status history:', historyError)
     }
 
-    return {
-      statusCode: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        success: true,
-        message: 'Email sent successfully',
-        letterId: letterId,
-        sentTo: recipientEmail
-      })
-    }
+    return jsonResponse(200, {
+      success: true,
+      message: 'Email sent successfully',
+      letterId: letterId,
+      sentTo: recipientEmail,
+      requestedBy: { id: user.id, role: profile?.role }
+    }, corsHeaders)
 
-  } catch (error) {
-    console.error('Error sending email:', error)
-    return {
-      statusCode: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        success: false,
-        error: error.message
-      })
+  } catch (error: any) {
+    const status = error?.statusCode || 500
+    const message = error?.message || 'Internal Server Error'
+    if (status >= 500) {
+      console.error('Error sending email:', error)
     }
+    return jsonResponse(status, { success: false, error: message }, corsHeaders)
   }
 }

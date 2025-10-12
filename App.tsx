@@ -137,7 +137,7 @@ const App: React.FC = () => {
   };
 
   const getDescription = () => {
-    switch (user.role) {
+    switch (profile?.role) {  // ✅ FIXED: Use profile?.role consistently
       case 'admin':
         return 'Manage users, letters, and system settings.';
       case 'employee':
@@ -153,10 +153,10 @@ const App: React.FC = () => {
       <Spotlight className='relative flex h-96 w-full flex-col items-center justify-center overflow-hidden rounded-b-2xl border-b border-slate-800 bg-gradient-to-br from-gray-950 to-slate-900'>
         <Header
           userDashboardView={
-            user.role === 'user' ? userDashboardView : undefined
+            profile?.role === 'user' ? userDashboardView : undefined  // ✅ FIXED: Use profile?.role consistently
           }
           setUserDashboardView={
-            user.role === 'user' ? setUserDashboardView : undefined
+            profile?.role === 'user' ? setUserDashboardView : undefined  // ✅ FIXED: Use profile?.role consistently
           }
           onBackToLanding={handleBackToLanding}
         />
