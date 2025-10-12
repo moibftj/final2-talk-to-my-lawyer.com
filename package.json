@@ -38,7 +38,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "scoop": "^0.0.2",
-    "supabase": "^2.47.2",
+    "supabase": "^2.48.3",
     "tailwind-merge": "^2.6.0",
     "ts-node": "^10.9.2"
   },
