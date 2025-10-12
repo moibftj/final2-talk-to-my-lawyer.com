@@ -16,13 +16,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(errorMessage);
 }
 
-// Create Supabase client
+// Create Supabase client with enhanced error handling
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
+    storage: window.localStorage,
+    storageKey: 'supabase.auth.token',
+    // Reduce noisy error logging for expired tokens
+    debug: false,
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'law-letter-ai-web',
+    },
   },
 });
 

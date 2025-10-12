@@ -95,14 +95,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Check for password recovery tokens in URL hash
-    const checkForRecoveryToken = () => {
+    const checkForRecoveryToken = async () => {
       const hash = window.location.hash;
       console.log('Checking URL hash for recovery token:', hash);
+      
       if (hash.includes('type=recovery') && hash.includes('access_token=')) {
-        console.log('Password recovery detected, setting auth event');
-        setAuthEvent('PASSWORD_RECOVERY');
-        // Clear the hash to clean up the URL
-        window.history.replaceState(null, '', window.location.pathname);
+        console.log('Password recovery detected');
+        
+        try {
+          // Extract the access token from the hash
+          const params = new URLSearchParams(hash.substring(1));
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+          
+          if (accessToken) {
+            // Verify the session with Supabase
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || ''
+            });
+            
+            if (!error && data.session) {
+              console.log('Recovery session established successfully');
+              setAuthEvent('PASSWORD_RECOVERY');
+              // Clear the hash to clean up the URL
+              window.history.replaceState(null, '', window.location.pathname);
+            } else {
+              console.error('Failed to establish recovery session:', error);
+              // Clear the invalid hash
+              window.history.replaceState(null, '', window.location.pathname);
+            }
+          }
+        } catch (error) {
+          console.error('Error processing recovery token:', error);
+          // Clear the hash on error
+          window.history.replaceState(null, '', window.location.pathname);
+        }
       }
     };
 
@@ -110,7 +138,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkForRecoveryToken();
 
     // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (error) {
+        console.error('Error getting session:', error);
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
 
@@ -120,12 +152,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setLoading(false);
+    }).catch(err => {
+      console.error('Session check failed:', err);
+      setLoading(false);
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event);
+      
       setSession(session);
       setUser(session?.user ?? null);
       setAuthEvent(event);
