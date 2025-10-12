@@ -1,6 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
-import { getUserContext } from "../../utils/auth.ts";
-import { createCorsResponse, createJsonResponse, createErrorResponse } from "../../utils/cors.ts";
+import { createClient } from '@supabase/supabase-js';
+import { getUserContext } from '../../utils/auth.ts';
+import {
+  createCorsResponse,
+  createJsonResponse,
+  createErrorResponse,
+} from '../../utils/cors.ts';
 
 interface StatusUpdateRequest {
   letterId: string;
@@ -20,16 +24,16 @@ interface UpdateData {
 
 // Valid status transitions
 const validStatuses = [
-  "draft",
-  "submitted",
-  "in_review",
-  "approved",
-  "completed",
-  "cancelled",
+  'draft',
+  'submitted',
+  'in_review',
+  'approved',
+  'completed',
+  'cancelled',
 ];
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
+Deno.serve(async req => {
+  if (req.method === 'OPTIONS') {
     return createCorsResponse();
   }
 
@@ -38,18 +42,18 @@ Deno.serve(async (req) => {
     const { user: _user, profile } = await getUserContext(req);
 
     // SECURITY: Only admin and employee roles can update letter status
-    if (profile.role !== "admin" && profile.role !== "employee") {
+    if (profile.role !== 'admin' && profile.role !== 'employee') {
       return createJsonResponse(
         {
-          error: "Insufficient permissions. Admin or employee role required.",
+          error: 'Insufficient permissions. Admin or employee role required.',
         },
-        403,
+        403
       );
     }
 
     // Create Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get request body
@@ -62,25 +66,25 @@ Deno.serve(async (req) => {
     }: StatusUpdateRequest = await req.json();
 
     if (!letterId || !newStatus) {
-      throw new Error("Missing required fields: letterId or newStatus");
+      throw new Error('Missing required fields: letterId or newStatus');
     }
 
     // Validate status
     if (!validStatuses.includes(newStatus)) {
       throw new Error(
-        `Invalid status. Valid statuses are: ${validStatuses.join(", ")}`,
+        `Invalid status. Valid statuses are: ${validStatuses.join(', ')}`
       );
     }
 
     // Get current letter details
     const { data: currentLetter, error: fetchError } = await supabase
-      .from("letters")
-      .select("*")
-      .eq("id", letterId)
+      .from('letters')
+      .select('*')
+      .eq('id', letterId)
       .single();
 
     if (fetchError || !currentLetter) {
-      throw new Error("Letter not found");
+      throw new Error('Letter not found');
     }
 
     // Prepare update object
@@ -104,9 +108,9 @@ Deno.serve(async (req) => {
 
     // Update the letter
     const { error: updateError } = await supabase
-      .from("letters")
+      .from('letters')
       .update(updateData)
-      .eq("id", letterId);
+      .eq('id', letterId);
 
     if (updateError) {
       throw updateError;
@@ -116,7 +120,7 @@ Deno.serve(async (req) => {
     // But we can also manually add more detailed notes if needed
     if (adminNotes) {
       const { error: historyError } = await supabase
-        .from("letter_status_history")
+        .from('letter_status_history')
         .insert({
           letter_id: letterId,
           old_status: currentLetter.status,
@@ -126,19 +130,21 @@ Deno.serve(async (req) => {
         });
 
       if (historyError) {
-        console.warn("Failed to add detailed status history:", historyError);
+        console.warn('Failed to add detailed status history:', historyError);
       }
     }
 
     // Get updated letter with related data
     const { data: updatedLetter, error: finalFetchError } = await supabase
-      .from("letters")
-      .select(`
+      .from('letters')
+      .select(
+        `
         *,
         profiles:user_id (email, role),
         assigned_lawyer:assigned_lawyer_id (email)
-      `)
-      .eq("id", letterId)
+      `
+      )
+      .eq('id', letterId)
       .single();
 
     if (finalFetchError) {
@@ -155,10 +161,10 @@ Deno.serve(async (req) => {
           newStatus: newStatus,
         },
       },
-      200,
+      200
     );
   } catch (error: unknown) {
-    console.error("Error updating letter status:", error);
+    console.error('Error updating letter status:', error);
     return createErrorResponse(error);
   }
 });

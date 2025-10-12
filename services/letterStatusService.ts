@@ -38,14 +38,14 @@ export async function updateLetterStatus({
   letterId,
   status,
   notes,
-  userId
+  userId,
 }: StatusUpdateParams): Promise<{ success: boolean; error?: string }> {
   // Start a transaction to ensure both updates succeed or fail together
   const { data, error } = await supabase.rpc('update_letter_status', {
     p_letter_id: letterId,
     p_status: status,
     p_notes: notes || '',
-    p_user_id: userId || null
+    p_user_id: userId || null,
   });
 
   if (error) {
@@ -61,7 +61,9 @@ export async function updateLetterStatus({
  * @param letterId - The ID of the letter
  * @returns Array of status history records
  */
-export async function getLetterStatusHistory(letterId: string): Promise<StatusHistoryRecord[]> {
+export async function getLetterStatusHistory(
+  letterId: string
+): Promise<StatusHistoryRecord[]> {
   const { data, error } = await supabase
     .from('letter_status_history')
     .select('*')
@@ -81,7 +83,9 @@ export async function getLetterStatusHistory(letterId: string): Promise<StatusHi
  * @param letterId - The ID of the letter
  * @returns The current status or null if not found
  */
-export async function getCurrentLetterStatus(letterId: string): Promise<LetterStatus | null> {
+export async function getCurrentLetterStatus(
+  letterId: string
+): Promise<LetterStatus | null> {
   const { data, error } = await supabase
     .from('letters')
     .select('status')
@@ -102,39 +106,32 @@ export async function getCurrentLetterStatus(letterId: string): Promise<LetterSt
  * @param newStatus - The proposed new status
  * @returns Whether the transition is allowed
  */
-export function isValidStatusTransition(currentStatus: LetterStatus, newStatus: LetterStatus): boolean {
+export function isValidStatusTransition(
+  currentStatus: LetterStatus,
+  newStatus: LetterStatus
+): boolean {
   // Define valid transitions for each status
   const validTransitions: Record<LetterStatus, LetterStatus[]> = {
-    [LetterStatus.DRAFT]: [
-      LetterStatus.PENDING_REVIEW,
-      LetterStatus.CANCELLED
-    ],
+    [LetterStatus.DRAFT]: [LetterStatus.PENDING_REVIEW, LetterStatus.CANCELLED],
     [LetterStatus.PENDING_REVIEW]: [
       LetterStatus.UNDER_REVIEW,
       LetterStatus.DRAFT,
-      LetterStatus.CANCELLED
+      LetterStatus.CANCELLED,
     ],
     [LetterStatus.UNDER_REVIEW]: [
       LetterStatus.APPROVED,
       LetterStatus.REJECTED,
       LetterStatus.PENDING_REVIEW,
-      LetterStatus.CANCELLED
+      LetterStatus.CANCELLED,
     ],
     [LetterStatus.APPROVED]: [
       LetterStatus.COMPLETED,
       LetterStatus.UNDER_REVIEW,
-      LetterStatus.CANCELLED
+      LetterStatus.CANCELLED,
     ],
-    [LetterStatus.REJECTED]: [
-      LetterStatus.DRAFT,
-      LetterStatus.CANCELLED
-    ],
-    [LetterStatus.COMPLETED]: [
-      LetterStatus.CANCELLED
-    ],
-    [LetterStatus.CANCELLED]: [
-      LetterStatus.DRAFT
-    ]
+    [LetterStatus.REJECTED]: [LetterStatus.DRAFT, LetterStatus.CANCELLED],
+    [LetterStatus.COMPLETED]: [LetterStatus.CANCELLED],
+    [LetterStatus.CANCELLED]: [LetterStatus.DRAFT],
   };
 
   // Check if the transition is allowed
@@ -149,13 +146,16 @@ export function isValidStatusTransition(currentStatus: LetterStatus, newStatus: 
 export function getStatusDescription(status: LetterStatus): string {
   const descriptions: Record<LetterStatus, string> = {
     [LetterStatus.DRAFT]: 'Letter is in draft state and can be edited.',
-    [LetterStatus.PENDING_REVIEW]: 'Letter has been submitted and is waiting for review.',
-    [LetterStatus.UNDER_REVIEW]: 'Letter is currently being reviewed by a legal professional.',
-    [LetterStatus.APPROVED]: 'Letter has been approved and is ready for finalization.',
+    [LetterStatus.PENDING_REVIEW]:
+      'Letter has been submitted and is waiting for review.',
+    [LetterStatus.UNDER_REVIEW]:
+      'Letter is currently being reviewed by a legal professional.',
+    [LetterStatus.APPROVED]:
+      'Letter has been approved and is ready for finalization.',
     [LetterStatus.REJECTED]: 'Letter was rejected and needs revisions.',
     [LetterStatus.COMPLETED]: 'Letter has been finalized and completed.',
-    [LetterStatus.CANCELLED]: 'Letter request has been cancelled.'
+    [LetterStatus.CANCELLED]: 'Letter request has been cancelled.',
   };
-  
+
   return descriptions[status] || 'Unknown status';
 }

@@ -11,7 +11,7 @@ import {
   FileText,
   CreditCard,
   Scale,
-  Briefcase
+  Briefcase,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { LegalBrandHeader } from './ui/legal-theme';
@@ -56,44 +56,47 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const navigationItems = user && user.role === 'user' && setUserDashboardView ? [
-    {
-      id: 'dashboard',
-      label: 'My Letters',
-      icon: FileText,
-      active: userDashboardView === 'dashboard',
-      onClick: () => setUserDashboardView('dashboard')
-    },
-    {
-      id: 'subscription',
-      label: 'Subscription',
-      icon: CreditCard,
-      active: userDashboardView === 'subscription',
-      onClick: () => setUserDashboardView('subscription')
-    }
-  ] : [];
+  const navigationItems =
+    user && user.role === 'user' && setUserDashboardView
+      ? [
+          {
+            id: 'dashboard',
+            label: 'My Letters',
+            icon: FileText,
+            active: userDashboardView === 'dashboard',
+            onClick: () => setUserDashboardView('dashboard'),
+          },
+          {
+            id: 'subscription',
+            label: 'Subscription',
+            icon: CreditCard,
+            active: userDashboardView === 'subscription',
+            onClick: () => setUserDashboardView('subscription'),
+          },
+        ]
+      : [];
 
   return (
     <motion.header
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative z-50 w-full bg-white border-b border-slate-200 shadow-sm"
+      className='relative z-50 w-full bg-white border-b border-slate-200 shadow-sm'
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+        <div className='flex justify-between items-center h-16'>
           {/* Logo and Brand */}
-          <div className="flex items-center">
+          <div className='flex items-center'>
             <LegalBrandHeader
-              brandName="talk-to-my-lawyer"
-              tagline="Professional Legal Correspondence"
-              variant="compact"
-              className="cursor-pointer"
+              brandName='talk-to-my-lawyer'
+              tagline='Professional Legal Correspondence'
+              variant='compact'
+              className='cursor-pointer'
             />
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            {navigationItems.map((item) => {
+          <div className='hidden md:flex items-center space-x-1'>
+            {navigationItems.map(item => {
               const Icon = item.icon;
               return (
                 <motion.button
@@ -108,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                   )}
                 >
-                  <Icon className="w-4 h-4 mr-2" />
+                  <Icon className='w-4 h-4 mr-2' />
                   {item.label}
                 </motion.button>
               );
@@ -116,40 +119,44 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Right Section */}
-          <div className="flex items-center space-x-4">
+          <div className='flex items-center space-x-4'>
             {/* Notifications */}
             {user && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                className='relative p-2 text-slate-400 hover:text-slate-600 transition-colors'
               >
-                <Bell className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+                <Bell className='w-5 h-5' />
+                <span className='absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full'></span>
               </motion.button>
             )}
 
             {/* User Menu */}
             {user && (
-              <div className="relative">
+              <div className='relative'>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-50 transition-colors"
+                  className='flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-50 transition-colors'
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                    <User className="w-4 h-4 text-white" />
+                  <div className='w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center'>
+                    <User className='w-4 h-4 text-white' />
                   </div>
-                  <div className="hidden lg:block text-left">
-                    <p className="text-sm font-medium text-slate-700 truncate max-w-32">
+                  <div className='hidden lg:block text-left'>
+                    <p className='text-sm font-medium text-slate-700 truncate max-w-32'>
                       {user.email.split('@')[0]}
                     </p>
-                    <div className={cn(
-                      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
-                      getRoleBadgeColor(user.role)
-                    )}>
-                      {React.createElement(getRoleIcon(user.role), { className: 'w-3 h-3 mr-1' })}
+                    <div
+                      className={cn(
+                        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
+                        getRoleBadgeColor(user.role)
+                      )}
+                    >
+                      {React.createElement(getRoleIcon(user.role), {
+                        className: 'w-3 h-3 mr-1',
+                      })}
                       {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                     </div>
                   </div>
@@ -163,51 +170,59 @@ export const Header: React.FC<HeaderProps> = ({
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -10 }}
                       transition={{ duration: 0.1 }}
-                      className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50"
+                      className='absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50'
                       onMouseLeave={() => setIsMenuOpen(false)}
                     >
                       {/* User Info */}
-                      <div className="px-4 py-3 border-b border-slate-100">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                            <User className="w-5 h-5 text-white" />
+                      <div className='px-4 py-3 border-b border-slate-100'>
+                        <div className='flex items-center space-x-3'>
+                          <div className='w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center'>
+                            <User className='w-5 h-5 text-white' />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-slate-900 truncate" title={user.email}>
+                          <div className='flex-1 min-w-0'>
+                            <p
+                              className='font-medium text-slate-900 truncate'
+                              title={user.email}
+                            >
                               {user.email}
                             </p>
-                            <div className={cn(
-                              'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border mt-1',
-                              getRoleBadgeColor(user.role)
-                            )}>
-                              {React.createElement(getRoleIcon(user.role), { className: 'w-3 h-3 mr-1' })}
-                              {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                            <div
+                              className={cn(
+                                'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border mt-1',
+                                getRoleBadgeColor(user.role)
+                              )}
+                            >
+                              {React.createElement(getRoleIcon(user.role), {
+                                className: 'w-3 h-3 mr-1',
+                              })}
+                              {user.role.charAt(0).toUpperCase() +
+                                user.role.slice(1)}
                             </div>
                           </div>
                         </div>
                       </div>
 
                       {/* Menu Items */}
-                      <div className="py-1">
-                        <button className="w-full flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                          <Settings className="w-4 h-4 mr-3 text-slate-400" />
+                      <div className='py-1'>
+                        <button className='w-full flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors'>
+                          <Settings className='w-4 h-4 mr-3 text-slate-400' />
                           Account Settings
                         </button>
-                        <button className="w-full flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                          <Bell className="w-4 h-4 mr-3 text-slate-400" />
+                        <button className='w-full flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors'>
+                          <Bell className='w-4 h-4 mr-3 text-slate-400' />
                           Notifications
                         </button>
                       </div>
 
-                      <div className="border-t border-slate-100 py-1">
+                      <div className='border-t border-slate-100 py-1'>
                         <button
                           onClick={() => {
                             logout();
                             setIsMenuOpen(false);
                           }}
-                          className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          className='w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors'
                         >
-                          <LogOut className="w-4 h-4 mr-3" />
+                          <LogOut className='w-4 h-4 mr-3' />
                           Sign Out
                         </button>
                       </div>
@@ -218,17 +233,17 @@ export const Header: React.FC<HeaderProps> = ({
             )}
 
             {/* Mobile Menu Button */}
-            <div className="md:hidden">
+            <div className='md:hidden'>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 text-slate-600 hover:text-slate-900 transition-colors"
+                className='p-2 text-slate-600 hover:text-slate-900 transition-colors'
               >
                 {isMobileMenuOpen ? (
-                  <X className="w-6 h-6" />
+                  <X className='w-6 h-6' />
                 ) : (
-                  <Menu className="w-6 h-6" />
+                  <Menu className='w-6 h-6' />
                 )}
               </motion.button>
             </div>
@@ -243,10 +258,10 @@ export const Header: React.FC<HeaderProps> = ({
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="md:hidden border-t border-slate-200 py-4"
+              className='md:hidden border-t border-slate-200 py-4'
             >
-              <div className="space-y-2">
-                {navigationItems.map((item) => {
+              <div className='space-y-2'>
+                {navigationItems.map(item => {
                   const Icon = item.icon;
                   return (
                     <motion.button
@@ -264,7 +279,7 @@ export const Header: React.FC<HeaderProps> = ({
                           : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                       )}
                     >
-                      <Icon className="w-5 h-5 mr-3" />
+                      <Icon className='w-5 h-5 mr-3' />
                       {item.label}
                     </motion.button>
                   );

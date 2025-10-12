@@ -45,15 +45,17 @@ const App: React.FC = () => {
     const checkPasswordRecovery = () => {
       const hash = window.location.hash;
       const path = window.location.pathname;
-      
+
       // Handle both hash-based and path-based recovery
-      if ((hash.includes('type=recovery') && hash.includes('access_token=')) || 
-          path.includes('reset-password')) {
+      if (
+        (hash.includes('type=recovery') && hash.includes('access_token=')) ||
+        path.includes('reset-password')
+      ) {
         // Allow the AuthContext to handle the token processing
         return;
       }
     };
-    
+
     checkPasswordRecovery();
   }, []);
 
@@ -137,7 +139,9 @@ const App: React.FC = () => {
   };
 
   const getDescription = () => {
-    switch (profile?.role) {  // ✅ FIXED: Use profile?.role consistently
+    switch (
+      profile?.role // ✅ FIXED: Use profile?.role consistently
+    ) {
       case 'admin':
         return 'Manage users, letters, and system settings.';
       case 'employee':
@@ -153,10 +157,10 @@ const App: React.FC = () => {
       <Spotlight className='relative flex h-96 w-full flex-col items-center justify-center overflow-hidden rounded-b-2xl border-b border-slate-800 bg-gradient-to-br from-gray-950 to-slate-900'>
         <Header
           userDashboardView={
-            profile?.role === 'user' ? userDashboardView : undefined  // ✅ FIXED: Use profile?.role consistently
+            profile?.role === 'user' ? userDashboardView : undefined // ✅ FIXED: Use profile?.role consistently
           }
           setUserDashboardView={
-            profile?.role === 'user' ? setUserDashboardView : undefined  // ✅ FIXED: Use profile?.role consistently
+            profile?.role === 'user' ? setUserDashboardView : undefined // ✅ FIXED: Use profile?.role consistently
           }
           onBackToLanding={handleBackToLanding}
         />

@@ -1,11 +1,11 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { getUserContext } from "../../utils/auth.ts";
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getUserContext } from '../../utils/auth.ts';
 import {
   corsHeaders,
   createCorsResponse,
   createJsonResponse,
   createErrorResponse,
-} from "../../utils/cors.ts";
+} from '../../utils/cors.ts';
 
 interface LetterRequest {
   senderName: string;
@@ -36,20 +36,20 @@ interface Config {
   openAiApiKey: string;
 }
 
-const DEFAULT_USER_ID = "adb39d17-16f5-44c7-968a-533fad7540c6";
+const DEFAULT_USER_ID = 'adb39d17-16f5-44c7-968a-533fad7540c6';
 
 // Configuration validation
 function getConfig(): Config {
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const openAiApiKey = Deno.env.get("OPENAI_API_KEY");
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const openAiApiKey = Deno.env.get('OPENAI_API_KEY');
 
   if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error("Missing required Supabase configuration");
+    throw new Error('Missing required Supabase configuration');
   }
 
   if (!openAiApiKey) {
-    throw new Error("OPENAI_API_KEY environment variable is not set");
+    throw new Error('OPENAI_API_KEY environment variable is not set');
   }
 
   return { supabaseUrl, supabaseServiceKey, openAiApiKey };
@@ -60,16 +60,15 @@ async function createLetter(
   supabase: SupabaseClient,
   letterRequest: LetterRequest,
   userId: string,
-  requestBody: RequestBody,
+  requestBody: RequestBody
 ): Promise<string> {
   const { data: newLetter, error: createError } = await supabase
-    .from("letters")
+    .from('letters')
     .insert({
-      title:
-        `Letter to ${letterRequest.recipientName} - ${letterRequest.matter}`,
-      letter_type: letterRequest.letterType || "general",
-      status: "submitted",
-      timeline_status: "received",
+      title: `Letter to ${letterRequest.recipientName} - ${letterRequest.matter}`,
+      letter_type: letterRequest.letterType || 'general',
+      status: 'submitted',
+      timeline_status: 'received',
       user_id: userId,
       sender_name: letterRequest.senderName,
       sender_address: letterRequest.senderAddress,
@@ -77,22 +76,22 @@ async function createLetter(
       recipient_name: letterRequest.recipientName,
       matter: letterRequest.matter,
       desired_resolution: letterRequest.desiredResolution,
-      priority: letterRequest.priority || "medium",
+      priority: letterRequest.priority || 'medium',
       content: JSON.stringify(requestBody),
     })
     .select()
     .single();
 
   if (createError) {
-    console.error("Create letter error:", createError);
+    console.error('Create letter error:', createError);
     throw createError;
   }
 
   // Create initial timeline entry
-  await supabase.rpc("update_letter_timeline", {
+  await supabase.rpc('update_letter_timeline', {
     letter_id_param: newLetter.id,
-    new_status: "received",
-    message_param: "Letter request received and processing started",
+    new_status: 'received',
+    message_param: 'Letter request received and processing started',
   });
 
   return newLetter.id;
@@ -101,20 +100,20 @@ async function createLetter(
 // Update an existing letter
 async function updateLetterStatus(
   supabase: SupabaseClient,
-  letterId: string,
+  letterId: string
 ): Promise<void> {
   await supabase
-    .from("letters")
+    .from('letters')
     .update({
-      status: "submitted",
-      timeline_status: "under_review",
+      status: 'submitted',
+      timeline_status: 'under_review',
     })
-    .eq("id", letterId);
+    .eq('id', letterId);
 
-  await supabase.rpc("update_letter_timeline", {
+  await supabase.rpc('update_letter_timeline', {
     letter_id_param: letterId,
-    new_status: "under_review",
-    message_param: "Letter is under attorney review",
+    new_status: 'under_review',
+    message_param: 'Letter is under attorney review',
   });
 }
 
@@ -122,32 +121,39 @@ async function updateLetterStatus(
 async function updateLetterWithDraft(
   supabase: SupabaseClient,
   letterId: string,
-  aiDraft: string,
+  aiDraft: string
 ): Promise<void> {
   const { error: updateError } = await supabase
-    .from("letters")
+    .from('letters')
     .update({
       ai_draft: aiDraft,
-      status: "completed",
-      timeline_status: "posted",
+      status: 'completed',
+      timeline_status: 'posted',
       updated_at: new Date().toISOString(),
     })
-    .eq("id", letterId);
+    .eq('id', letterId);
 
   if (updateError) {
     throw updateError;
   }
 
-  await supabase.rpc("update_letter_timeline", {
+  await supabase.rpc('update_letter_timeline', {
     letter_id_param: letterId,
-    new_status: "posted",
-    message_param: "Letter draft completed and ready for review",
+    new_status: 'posted',
+    message_param: 'Letter draft completed and ready for review',
   });
 }
 
 // Generate prompt for OpenAI based on request type
 function generatePrompt(requestBody: RequestBody): string {
-  const { letterRequest, title, templateBody, additionalContext, tone, length } = requestBody;
+  const {
+    letterRequest,
+    title,
+    templateBody,
+    additionalContext,
+    tone,
+    length,
+  } = requestBody;
 
   if (letterRequest) {
     return `
@@ -174,7 +180,7 @@ The letter should be comprehensive but concise, typically 1-2 pages when printed
   }
 
   return `
-You are a professional letter writer. Generate a ${tone || "formal"} letter based on the following information:
+You are a professional letter writer. Generate a ${tone || 'formal'} letter based on the following information:
 
 Title: ${title}
 Template: ${templateBody}
@@ -184,37 +190,34 @@ Length: ${length}
 
 Please create a professional letter that incorporates the template and additional context.
 Replace any placeholders in brackets with appropriate content based on the context provided.
-Maintain a ${tone || "formal"} tone throughout.
+Maintain a ${tone || 'formal'} tone throughout.
     `;
 }
 
 // Call OpenAI API to generate letter draft
 async function generateAIDraft(
   prompt: string,
-  openAiApiKey: string,
+  openAiApiKey: string
 ): Promise<string> {
-  const response = await fetch(
-    "https://api.openai.com/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openAiApiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        temperature: 0.4,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are OpenAI Codex assisting legal professionals by drafting polished, accurate, and compliant correspondence.",
-          },
-          { role: "user", content: prompt },
-        ],
-      }),
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${openAiApiKey}`,
     },
-  );
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      temperature: 0.4,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are OpenAI Codex assisting legal professionals by drafting polished, accurate, and compliant correspondence.',
+        },
+        { role: 'user', content: prompt },
+      ],
+    }),
+  });
 
   if (!response.ok) {
     throw new Error(`OpenAI API error: ${response.statusText}`);
@@ -224,7 +227,7 @@ async function generateAIDraft(
   const aiDraft = data.choices?.[0]?.message?.content?.trim();
 
   if (!aiDraft) {
-    throw new Error("Failed to generate AI draft");
+    throw new Error('Failed to generate AI draft');
   }
 
   return aiDraft;
@@ -233,12 +236,12 @@ async function generateAIDraft(
 // Validate request body
 function validateRequestBody(requestBody: RequestBody): void {
   if (!requestBody.title && !requestBody.letterRequest) {
-    throw new Error("Missing required fields: title or letterRequest");
+    throw new Error('Missing required fields: title or letterRequest');
   }
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return createCorsResponse();
   }
 
@@ -248,11 +251,14 @@ Deno.serve(async (req: Request) => {
 
     // Get configuration
     const config = getConfig();
-    const supabase = createClient(config.supabaseUrl, config.supabaseServiceKey);
+    const supabase = createClient(
+      config.supabaseUrl,
+      config.supabaseServiceKey
+    );
 
     // Get and validate request body
     const requestBody: RequestBody = await req.json();
-    console.log("Request body received:", requestBody);
+    console.log('Request body received:', requestBody);
     validateRequestBody(requestBody);
 
     // Extract request parameters
@@ -266,7 +272,7 @@ Deno.serve(async (req: Request) => {
         supabase,
         letterRequest,
         effectiveUserId,
-        requestBody,
+        requestBody
       );
     } else if (letterId) {
       await updateLetterStatus(supabase, letterId);
@@ -281,12 +287,12 @@ Deno.serve(async (req: Request) => {
 
     return createJsonResponse({
       success: true,
-      message: "Letter draft generated successfully",
+      message: 'Letter draft generated successfully',
       letterId: currentLetterId,
       aiDraft,
     });
   } catch (error: unknown) {
-    console.error("Error generating draft:", error);
+    console.error('Error generating draft:', error);
     return createErrorResponse(error);
   }
 });

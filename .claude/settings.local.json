@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(npm run lint)",
+      "Bash(lsof:*)",
+      "Bash(npm run dev)",
+      "mcp__ide__getDiagnostics",
+      "Bash(deno check:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

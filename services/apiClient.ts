@@ -64,7 +64,7 @@ async function fetchWithAuth<T>(
 
     // Execute request
     const response = await fetch(url, requestOptions);
-    
+
     // Parse response
     let data: any;
     const contentType = response.headers.get('content-type');
@@ -98,18 +98,18 @@ async function fetchWithAuth<T>(
 
 // Export convenience methods for different HTTP verbs
 export const apiClient = {
-  get: <T>(endpoint: string, options?: RequestOptions) => 
+  get: <T>(endpoint: string, options?: RequestOptions) =>
     fetchWithAuth<T>(endpoint, 'GET', undefined, options),
-  
-  post: <T>(endpoint: string, data?: any, options?: RequestOptions) => 
+
+  post: <T>(endpoint: string, data?: any, options?: RequestOptions) =>
     fetchWithAuth<T>(endpoint, 'POST', data, options),
-  
-  put: <T>(endpoint: string, data?: any, options?: RequestOptions) => 
+
+  put: <T>(endpoint: string, data?: any, options?: RequestOptions) =>
     fetchWithAuth<T>(endpoint, 'PUT', data, options),
-  
-  delete: <T>(endpoint: string, options?: RequestOptions) => 
+
+  delete: <T>(endpoint: string, options?: RequestOptions) =>
     fetchWithAuth<T>(endpoint, 'DELETE', undefined, options),
-  
+
   // Helper for checking if the API is available
   checkHealth: async (): Promise<boolean> => {
     try {

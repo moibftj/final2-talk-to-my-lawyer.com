@@ -19,7 +19,8 @@ export default {
         shiny: 'shimmer-kf 1.2s linear infinite',
         'spin-around': 'spin-around calc(var(--speed) * 2) linear infinite',
         grid: 'grid 150s linear infinite',
-        'background-position-spin': 'background-position-spin 3s linear infinite',
+        'background-position-spin':
+          'background-position-spin 3s linear infinite',
       },
       keyframes: {
         'shimmer-kf': {

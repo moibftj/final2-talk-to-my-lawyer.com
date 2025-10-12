@@ -1,6 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
-import { getUserContext } from "../../utils/auth.ts";
-import { createCorsResponse, createJsonResponse, createErrorResponse } from "../../utils/cors.ts";
+import { createClient } from '@supabase/supabase-js';
+import { getUserContext } from '../../utils/auth.ts';
+import {
+  createCorsResponse,
+  createJsonResponse,
+  createErrorResponse,
+} from '../../utils/cors.ts';
 
 interface EmailRequest {
   letterId: string;
@@ -10,7 +14,7 @@ interface EmailRequest {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return createCorsResponse();
   }
 
@@ -19,72 +23,78 @@ Deno.serve(async (req: Request) => {
     const { user, profile } = await getUserContext(req);
 
     // Create Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get request body
-    const { letterId, recipientEmail, senderEmail, attorneyEmail }:
-      EmailRequest = await req.json();
+    const {
+      letterId,
+      recipientEmail,
+      senderEmail,
+      attorneyEmail,
+    }: EmailRequest = await req.json();
 
     if (!letterId || !recipientEmail) {
       return createJsonResponse(
         {
           success: false,
-          error: "Missing required fields: letterId or recipientEmail",
+          error: 'Missing required fields: letterId or recipientEmail',
         },
-        400,
+        400
       );
     }
 
     // Get the letter content
     const { data: letter, error: letterError } = await supabase
-      .from("letters")
-      .select("*")
-      .eq("id", letterId)
+      .from('letters')
+      .select('*')
+      .eq('id', letterId)
       .single();
 
     if (letterError || !letter) {
       return createJsonResponse(
         {
           success: false,
-          error: "Letter not found",
+          error: 'Letter not found',
         },
-        404,
+        404
       );
     }
 
     // SECURITY: Ensure user can only send their own letters (unless admin/employee)
     if (
       letter.user_id !== user.id &&
-      !["admin", "employee"].includes(profile?.role || "")
+      !['admin', 'employee'].includes(profile?.role || '')
     ) {
       return createJsonResponse(
         {
           success: false,
-          error: "You can only send your own letters",
+          error: 'You can only send your own letters',
         },
-        403,
+        403
       );
     }
 
     // Get additional letter details with user profile
     const { data: letterWithProfile, error: profileError } = await supabase
-      .from("letters")
-      .select(`
+      .from('letters')
+      .select(
+        `
         *,
         profiles:user_id (email)
-      `)
-      .eq("id", letterId)
+      `
+      )
+      .eq('id', letterId)
       .single();
 
     if (profileError || !letterWithProfile) {
       return createJsonResponse(
         {
           success: false,
-          error: "Error fetching letter details",
+          error: 'Error fetching letter details',
         },
-        500,
+        500
       );
     }
 
@@ -92,9 +102,9 @@ Deno.serve(async (req: Request) => {
       return createJsonResponse(
         {
           success: false,
-          error: "Letter draft not available",
+          error: 'Letter draft not available',
         },
-        400,
+        400
       );
     }
 
@@ -117,21 +127,21 @@ Talk to My Lawyer Service
 
     // For demo purposes, we'll simulate sending the email
     // In production, integrate with a real email service like SendGrid, Mailgun, or AWS SES
-    console.log("Simulating email send:", {
+    console.log('Simulating email send:', {
       to: recipientEmail,
-      from: attorneyEmail || senderEmail || "noreply@talktomylawyer.com",
+      from: attorneyEmail || senderEmail || 'noreply@talktomylawyer.com',
       subject,
       body: emailBody,
     });
 
     // Update letter status to 'sent'
     const { error: updateError } = await supabase
-      .from("letters")
+      .from('letters')
       .update({
-        status: "completed",
+        status: 'completed',
         updated_at: new Date().toISOString(),
       })
-      .eq("id", letterId);
+      .eq('id', letterId);
 
     if (updateError) {
       throw updateError;
@@ -139,34 +149,34 @@ Talk to My Lawyer Service
 
     // Log the email sending activity
     const { error: logError } = await supabase
-      .from("letter_status_history")
+      .from('letter_status_history')
       .insert({
         letter_id: letterId,
-        old_status: "approved",
-        new_status: "completed",
+        old_status: 'approved',
+        new_status: 'completed',
         changed_by: letter.user_id,
         notes: `Email sent to ${recipientEmail}`,
       });
 
     if (logError) {
-      console.warn("Failed to log email activity:", logError);
+      console.warn('Failed to log email activity:', logError);
     }
 
     return createJsonResponse(
       {
         success: true,
-        message: "Email sent successfully",
+        message: 'Email sent successfully',
         data: {
           letterId,
           recipientEmail,
           subject,
-          status: "sent",
+          status: 'sent',
         },
       },
-      200,
+      200
     );
   } catch (error: unknown) {
-    console.error("Error sending email:", error);
+    console.error('Error sending email:', error);
     return createErrorResponse(error);
   }
 });

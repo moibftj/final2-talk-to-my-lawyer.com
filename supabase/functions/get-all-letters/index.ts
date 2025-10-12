@@ -6,7 +6,11 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { requireAdmin } from '../../utils/auth.ts';
-import { createCorsResponse, createJsonResponse, createErrorResponse } from "../../utils/cors.ts";
+import {
+  createCorsResponse,
+  createJsonResponse,
+  createErrorResponse,
+} from '../../utils/cors.ts';
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -33,10 +37,13 @@ Deno.serve(async (req: Request) => {
       throw error;
     }
 
-    return createJsonResponse({
-      letters,
-      requestedBy: { id: user.id, role: profile.role }
-    }, 200);
+    return createJsonResponse(
+      {
+        letters,
+        requestedBy: { id: user.id, role: profile.role },
+      },
+      200
+    );
   } catch (error: unknown) {
     console.error('Error fetching letters:', error);
     return createErrorResponse(error);
