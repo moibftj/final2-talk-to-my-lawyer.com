@@ -301,6 +301,7 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
                         errors.title ? 'border-red-500' : 'border-slate-300'
                       }`}
                       placeholder="Brief description of your letter"
+                      autoComplete="off"
                     />
                     {errors.title && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -361,6 +362,7 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
                           errors.senderName ? 'border-red-500' : 'border-slate-300'
                         }`}
                         placeholder="Your full name"
+                        autoComplete="name"
                       />
                       {errors.senderName && (
                         <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -383,6 +385,7 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
                           errors.recipientName ? 'border-red-500' : 'border-slate-300'
                         }`}
                         placeholder="Recipient's full name"
+                        autoComplete="off"
                       />
                       {errors.recipientName && (
                         <p className="mt-1 text-sm text-red-600 flex items-center">

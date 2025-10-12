@@ -215,6 +215,7 @@ function SubscriptionForm({ onComplete }: SubscriptionFormProps) {
               onChange={(e) => setDiscountCode(e.target.value)}
               className="flex-grow"
               disabled={isValidatingCode}
+              autoComplete="off"
             />
             <Button
               onClick={handleValidateCode}
