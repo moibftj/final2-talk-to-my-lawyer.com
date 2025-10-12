@@ -26,8 +26,11 @@ export const handler: Handler = async (event, context) => {
   }
 
   try {
-  // Secure admin client
-  const supabase = getSupabaseAdmin();
+    // SECURITY: Require user authentication
+    const { user, profile } = await getUserContext(event)
+
+    // Secure admin client (server-only) only after passing auth check
+    const supabase = getSupabaseAdmin();
 
     // Get request body
     const {
@@ -38,7 +41,18 @@ export const handler: Handler = async (event, context) => {
     }: CouponRequest = JSON.parse(event.body || '{}');
 
     if (!couponCode || !userId || !subscriptionType || !originalAmount) {
-      throw new Error('Missing required fields');
+      return jsonResponse(400, { 
+        success: false, 
+        error: 'Missing required fields' 
+      }, corsHeaders)
+    }
+
+    // SECURITY: Validate userId - ensure user can only apply coupons for themselves
+    if (userId !== user.id && profile?.role !== 'admin') {
+      return jsonResponse(403, {
+        success: false,
+        error: 'You can only apply coupons for yourself'
+      }, corsHeaders)
     }
 
     // Validate and get discount code
@@ -131,31 +145,25 @@ export const handler: Handler = async (event, context) => {
       }
     }
 
-    return {
-      statusCode: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        success: true,
-        message: 'Coupon applied successfully',
-        data: {
-          subscriptionId: subscription.id,
-          originalAmount,
-          discountAmount,
-          finalAmount,
-          discountPercentage,
-          commissionAmount,
-        },
-      }),
-    };
-  } catch (error) {
-    console.error('Error applying coupon:', error);
-    return {
-      statusCode: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        success: false,
-        error: error.message,
-      }),
-    };
+    return jsonResponse(200, {
+      success: true,
+      message: 'Coupon applied successfully',
+      requestedBy: { id: user.id, role: profile?.role },
+      data: {
+        subscriptionId: subscription.id,
+        originalAmount,
+        discountAmount,
+        finalAmount,
+        discountPercentage,
+        commissionAmount,
+      }
+    }, corsHeaders);
+  } catch (error: any) {
+    const status = error?.statusCode || 500
+    const message = error?.message || 'Internal Server Error'
+    if (status >= 500) {
+      console.error('Error applying coupon:', error);
+    }
+    return jsonResponse(status, { success: false, error: message }, corsHeaders);
   }
 };
