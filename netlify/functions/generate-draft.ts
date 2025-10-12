@@ -1,5 +1,6 @@
 import { Handler } from '@netlify/functions';
 import { getSupabaseAdmin } from '../../services/supabaseAdmin';
+import { getUserContext, jsonResponse } from './_auth';
 
 interface LetterRequest {
   senderName: string;
@@ -28,6 +29,9 @@ export const handler: Handler = async (event, context) => {
   }
 
   try {
+    // SECURITY: Require user authentication
+    const { user, profile } = await getUserContext(event)
+
     // Secure admin client & OpenAI key
     const openAiApiKey = process.env.OPENAI_API_KEY;
 

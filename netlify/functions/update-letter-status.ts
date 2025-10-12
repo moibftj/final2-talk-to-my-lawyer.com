@@ -114,19 +114,17 @@ export const handler: Handler = async (event, context) => {
         success: true,
         message: 'Letter status updated successfully',
         letterId: letterId,
-        newStatus: status
+        newStatus: status,
+        requestedBy: { id: user.id, role: profile?.role }
       })
     }
 
-  } catch (error) {
-    console.error('Error updating letter status:', error)
-    return {
-      statusCode: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        success: false,
-        error: error.message
-      })
+  } catch (error: any) {
+    const status = error?.statusCode || 500
+    const message = error?.message || 'Internal Server Error'
+    if (status >= 500) {
+      console.error('Error updating letter status:', error)
     }
+    return jsonResponse(status, { success: false, error: message }, corsHeaders)
   }
 }
