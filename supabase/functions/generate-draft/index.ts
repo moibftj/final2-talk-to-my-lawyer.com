@@ -1,6 +1,5 @@
-/// <reference types="https://raw.githubusercontent.com/denoland/deno/v1.40.2/cli/dts/lib.deno.ns.d.ts" />
-
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
+import { getUserContext } from "../../utils/auth.ts";
 
 interface LetterRequest {
   senderName: string;
@@ -14,31 +13,34 @@ interface LetterRequest {
 }
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(async req => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
+    // SECURITY: Require user authentication
+    const { user, profile: _profile } = await getUserContext(req);
+
     // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const openAiApiKey = Deno.env.get('OPENAI_API_KEY');
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const openAiApiKey = Deno.env.get("OPENAI_API_KEY");
 
     if (!openAiApiKey) {
-      throw new Error('OPENAI_API_KEY environment variable is not set');
+      throw new Error("OPENAI_API_KEY environment variable is not set");
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get request body
     const requestBody = await req.json();
-    console.log('Request body received:', requestBody);
+    console.log("Request body received:", requestBody);
 
     // Handle both test format and production format
     const {
@@ -47,23 +49,23 @@ Deno.serve(async req => {
       letterId,
       title,
       templateBody,
-      templateFields,
+      templateFields: _templateFields,
       additionalContext,
       tone,
       length,
     } = requestBody;
 
     if (!title && !letterRequest) {
-      throw new Error('Missing required fields: title or letterRequest');
+      throw new Error("Missing required fields: title or letterRequest");
     }
 
     // Use test format if available, otherwise use production format
-    const letterData = letterRequest || {
+    const _letterData = letterRequest || {
       title: title,
       content: templateBody,
       additionalContext: additionalContext,
-      tone: tone || 'formal',
-      length: length || 'medium',
+      tone: tone || "formal",
+      length: length || "medium",
     };
 
     // Create or update letter with enhanced three-tier schema
@@ -71,53 +73,54 @@ Deno.serve(async req => {
     if (!letterId && letterRequest) {
       // Create a new letter with all enhanced fields
       const { data: newLetter, error: createError } = await supabase
-        .from('letters')
+        .from("letters")
         .insert({
-          title: `Letter to ${letterRequest.recipientName} - ${letterRequest.matter}`,
-          letter_type: letterRequest.letterType || 'general',
-          status: 'submitted',
-          timeline_status: 'received',
-          user_id: userId || 'adb39d17-16f5-44c7-968a-533fad7540c6', // fallback for testing
+          title:
+            `Letter to ${letterRequest.recipientName} - ${letterRequest.matter}`,
+          letter_type: letterRequest.letterType || "general",
+          status: "submitted",
+          timeline_status: "received",
+          user_id: userId || "adb39d17-16f5-44c7-968a-533fad7540c6", // fallback for testing
           sender_name: letterRequest.senderName,
           sender_address: letterRequest.senderAddress,
           attorney_name: letterRequest.attorneyName,
           recipient_name: letterRequest.recipientName,
           matter: letterRequest.matter,
           desired_resolution: letterRequest.desiredResolution,
-          priority: letterRequest.priority || 'medium',
+          priority: letterRequest.priority || "medium",
           content: JSON.stringify(requestBody),
         })
         .select()
         .single();
 
       if (createError) {
-        console.error('Create letter error:', createError);
+        console.error("Create letter error:", createError);
         throw createError;
       } else {
         currentLetterId = newLetter.id;
 
         // Create initial timeline entry
-        await supabase.rpc('update_letter_timeline', {
+        await supabase.rpc("update_letter_timeline", {
           letter_id_param: newLetter.id,
-          new_status: 'received',
-          message_param: 'Letter request received and processing started',
+          new_status: "received",
+          message_param: "Letter request received and processing started",
         });
       }
     } else if (letterId) {
       // Update existing letter status
       await supabase
-        .from('letters')
+        .from("letters")
         .update({
-          status: 'submitted',
-          timeline_status: 'under_review',
+          status: "submitted",
+          timeline_status: "under_review",
         })
-        .eq('id', letterId);
+        .eq("id", letterId);
 
       // Update timeline
-      await supabase.rpc('update_letter_timeline', {
+      await supabase.rpc("update_letter_timeline", {
         letter_id_param: letterId,
-        new_status: 'under_review',
-        message_param: 'Letter is under attorney review',
+        new_status: "under_review",
+        message_param: "Letter is under attorney review",
       });
     }
 
@@ -160,26 +163,26 @@ Maintain a ${tone} tone throughout.
 
     // Call OpenAI API
     const openAiResponse = await fetch(
-      'https://api.openai.com/v1/chat/completions',
+      "https://api.openai.com/v1/chat/completions",
       {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${openAiApiKey}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: "gpt-4o-mini",
           temperature: 0.4,
           messages: [
             {
-              role: 'system',
+              role: "system",
               content:
-                'You are OpenAI Codex assisting legal professionals by drafting polished, accurate, and compliant correspondence.',
+                "You are OpenAI Codex assisting legal professionals by drafting polished, accurate, and compliant correspondence.",
             },
-            { role: 'user', content: prompt },
+            { role: "user", content: prompt },
           ],
         }),
-      }
+      },
     );
 
     if (!openAiResponse.ok) {
@@ -190,54 +193,57 @@ Maintain a ${tone} tone throughout.
     const aiDraft = openAiData.choices?.[0]?.message?.content?.trim();
 
     if (!aiDraft) {
-      throw new Error('Failed to generate AI draft');
+      throw new Error("Failed to generate AI draft");
     }
 
     // Update letter with AI draft and change status to 'posted'
     const { error: updateError } = await supabase
-      .from('letters')
+      .from("letters")
       .update({
         ai_draft: aiDraft,
-        status: 'completed',
-        timeline_status: 'posted',
+        status: "completed",
+        timeline_status: "posted",
         updated_at: new Date().toISOString(),
       })
-      .eq('id', currentLetterId);
+      .eq("id", currentLetterId);
 
     if (updateError) {
       throw updateError;
     }
 
     // Update timeline to 'posted' status
-    await supabase.rpc('update_letter_timeline', {
+    await supabase.rpc("update_letter_timeline", {
       letter_id_param: currentLetterId,
-      new_status: 'posted',
-      message_param: 'Letter draft completed and ready for review',
+      new_status: "posted",
+      message_param: "Letter draft completed and ready for review",
     });
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Letter draft generated successfully',
+        message: "Letter draft generated successfully",
         letterId: currentLetterId,
         aiDraft,
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
-      }
+      },
     );
-  } catch (error) {
-    console.error('Error generating draft:', error);
+  } catch (error: unknown) {
+    console.error("Error generating draft:", error);
+    const message = error instanceof Error
+      ? error.message
+      : "Internal Server Error";
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: message,
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
-      }
+      },
     );
   }
 });

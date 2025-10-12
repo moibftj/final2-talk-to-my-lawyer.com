@@ -224,7 +224,9 @@ Deno.serve(async (req: Request) => {
     );
   } catch (error: unknown) {
     console.error("Error applying coupon:", error);
-    const message = error instanceof Error ? error.message : 'Internal Server Error';
+    const message = error instanceof Error
+      ? error.message
+      : "Internal Server Error";
     return new Response(
       JSON.stringify({
         success: false,

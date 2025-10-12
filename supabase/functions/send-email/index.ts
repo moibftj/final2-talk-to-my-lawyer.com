@@ -1,57 +1,107 @@
-/// <reference types="https://raw.githubusercontent.com/denoland/deno/v1.40.2/cli/dts/lib.deno.ns.d.ts" />
-
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from "@supabase/supabase-js";
+import { getUserContext } from "../../utils/auth.ts";
 
 interface EmailRequest {
-  letterId: string
-  recipientEmail: string
-  senderEmail?: string
-  attorneyEmail?: string
+  letterId: string;
+  recipientEmail: string;
+  senderEmail?: string;
+  attorneyEmail?: string;
 }
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
+    // SECURITY: Require user authentication
+    const { user, profile } = await getUserContext(req);
+
     // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get request body
-    const { letterId, recipientEmail, senderEmail, attorneyEmail }: EmailRequest = await req.json()
+    const { letterId, recipientEmail, senderEmail, attorneyEmail }:
+      EmailRequest = await req.json();
 
     if (!letterId || !recipientEmail) {
-      throw new Error('Missing required fields: letterId or recipientEmail')
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Missing required fields: letterId or recipientEmail",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Get the letter content
+    const { data: letter, error: letterError } = await supabase
+      .from("letters")
+      .select("*")
+      .eq("id", letterId)
+      .single();
+
+    if (letterError || !letter) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Letter not found",
+        }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // SECURITY: Ensure user can only send their own letters (unless admin/employee)
+    if (
+      letter.user_id !== user.id &&
+      !["admin", "employee"].includes(profile?.role || "")
+    ) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "You can only send your own letters",
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     // Get the letter details
     const { data: letter, error: letterError } = await supabase
-      .from('letters')
+      .from("letters")
       .select(`
         *,
         profiles:user_id (email)
       `)
-      .eq('id', letterId)
-      .single()
+      .eq("id", letterId)
+      .single();
 
     if (letterError || !letter) {
-      throw new Error('Letter not found')
+      throw new Error("Letter not found");
     }
 
     if (!letter.ai_draft) {
-      throw new Error('Letter draft not available')
+      throw new Error("Letter draft not available");
     }
 
     // Prepare email content
-    const subject = `Legal Letter: ${letter.title}`
+    const subject = `Legal Letter: ${letter.title}`;
     const emailBody = `
 Dear Recipient,
 
@@ -65,76 +115,75 @@ If you have any questions, please contact the sender or attorney directly.
 
 Best regards,
 Talk to My Lawyer Service
-    `
+    `;
 
     // For demo purposes, we'll simulate sending the email
     // In production, integrate with a real email service like SendGrid, Mailgun, or AWS SES
-    console.log('Simulating email send:', {
+    console.log("Simulating email send:", {
       to: recipientEmail,
-      from: attorneyEmail || senderEmail || 'noreply@talktomylawyer.com',
+      from: attorneyEmail || senderEmail || "noreply@talktomylawyer.com",
       subject,
-      body: emailBody
-    })
+      body: emailBody,
+    });
 
     // Update letter status to 'sent'
     const { error: updateError } = await supabase
-      .from('letters')
+      .from("letters")
       .update({
-        status: 'completed',
-        updated_at: new Date().toISOString()
+        status: "completed",
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', letterId)
+      .eq("id", letterId);
 
     if (updateError) {
-      throw updateError
+      throw updateError;
     }
 
     // Log the email sending activity
     const { error: logError } = await supabase
-      .from('letter_status_history')
+      .from("letter_status_history")
       .insert({
         letter_id: letterId,
-        old_status: 'approved',
-        new_status: 'completed',
+        old_status: "approved",
+        new_status: "completed",
         changed_by: letter.user_id,
-        notes: `Email sent to ${recipientEmail}`
-      })
+        notes: `Email sent to ${recipientEmail}`,
+      });
 
     if (logError) {
-      console.warn('Failed to log email activity:', logError)
+      console.warn("Failed to log email activity:", logError);
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Email sent successfully',
+        message: "Email sent successfully",
         data: {
           letterId,
           recipientEmail,
           subject,
-          status: 'sent'
-        }
+          status: "sent",
+        },
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
-      }
-    )
-
+      },
+    );
   } catch (error) {
-    console.error('Error sending email:', error)
+    console.error("Error sending email:", error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message
+        error: error.message,
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
-      }
-    )
+      },
+    );
   }
-})
+});
 
 /*
 TODO: Integrate with a real email service provider
