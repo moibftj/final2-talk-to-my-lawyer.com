@@ -1,5 +1,6 @@
 import { Handler } from '@netlify/functions'
 import { getSupabaseAdmin } from '../../services/supabaseAdmin'
+import { getUserContext, requireAdmin, jsonResponse } from './_auth'
 
 interface StatusUpdateRequest {
   letterId: string
@@ -25,8 +26,19 @@ export const handler: Handler = async (event, context) => {
   }
 
   try {
-  // Secure admin client
-  const supabase = getSupabaseAdmin()
+    // SECURITY: Require admin or employee authentication for status updates
+    const { user, profile } = await getUserContext(event)
+    
+    // Only admins and employees can update letter status
+    if (!profile || !profile.role || !['admin', 'employee'].includes(profile.role)) {
+      return jsonResponse(403, { 
+        success: false, 
+        error: 'Admin or employee role required to update letter status' 
+      }, corsHeaders)
+    }
+
+    // Secure admin client (server-only) only after passing auth check
+    const supabase = getSupabaseAdmin()
 
     // Get request body
     const { letterId, status, lawyerNotes, assignedLawyerId, dueDate }: StatusUpdateRequest = JSON.parse(event.body || '{}')
