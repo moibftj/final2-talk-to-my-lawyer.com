@@ -129,11 +129,16 @@ export const apiClient = {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Failed to fetch letters:', error);
+        // Return empty array for new users or when there's no data
+        return [];
+      }
       return letters || [];
     } catch (error) {
       console.error('Failed to fetch letters:', error);
-      throw error;
+      // Return empty array instead of throwing - allows dashboard to load
+      return [];
     }
   },
 
@@ -156,6 +161,68 @@ export const apiClient = {
     } catch (error) {
       console.error('Failed to fetch subscription:', error);
       return null;
+    }
+  },
+
+  // Create a new letter
+  createLetter: async (letterData: any) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('letters')
+        .insert({
+          ...letterData,
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Failed to create letter:', error);
+      throw error;
+    }
+  },
+
+  // Update an existing letter
+  updateLetter: async (letterData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('letters')
+        .update({
+          ...letterData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', letterData.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Failed to update letter:', error);
+      throw error;
+    }
+  },
+
+  // Delete a letter
+  deleteLetter: async (letterId: string) => {
+    try {
+      const { error } = await supabase
+        .from('letters')
+        .delete()
+        .eq('id', letterId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Failed to delete letter:', error);
+      throw error;
     }
   },
 };

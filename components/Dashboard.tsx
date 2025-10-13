@@ -101,12 +101,16 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
               break;
           }
           setRemainingLetters(Math.max(0, totalAllowed - usedLetters));
-        }
-
-        if (fetchedLetters.length > 0) {
           showSuccess(
             'Dashboard Loaded',
-            `Found ${fetchedLetters.length} letter${fetchedLetters.length !== 1 ? 's' : ''} and ${remainingLetters} remaining credits.`
+            `You have ${Math.max(0, totalAllowed - usedLetters)} letter credits remaining.`
+          );
+        } else {
+          // New user without subscription
+          setRemainingLetters(0);
+          showInfo(
+            'Welcome!',
+            'Get started by subscribing to a plan to generate your first letter.'
           );
         }
       } catch (error) {
