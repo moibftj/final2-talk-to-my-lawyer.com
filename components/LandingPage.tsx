@@ -4,6 +4,7 @@ import { ShinyButton } from './magicui/shiny-button';
 import { SparklesText } from './magicui/sparkles-text';
 import { Spotlight } from './magicui/spotlight';
 import { GradientButton } from './ui/gradient-button';
+import { Logo } from './Logo';
 import { IconLogo, IconFilePlus, IconUsers, IconStar } from '../constants';
 
 interface LandingPageProps {
@@ -21,12 +22,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <div className='relative'>
         {/* Navigation overlay */}
         <nav className='absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-4 sm:p-6 lg:p-8'>
-          <div className='flex items-center gap-2 sm:gap-3'>
-            <IconLogo className='h-6 w-6 sm:h-8 sm:w-8 text-blue-400' />
-            <span className='text-lg sm:text-xl lg:text-2xl font-bold text-white'>
-              Talk to My Lawyer
-            </span>
-          </div>
+          <Logo 
+            size="md"
+            showText={true}
+            variant="light"
+          />
 
           <div className='flex items-center gap-3 sm:gap-4'>
             <button
