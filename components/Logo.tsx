@@ -1,6 +1,24 @@
 import React from 'react';
-import { Scale } from 'lucide-react';
 import { cn } from '../lib/utils';
+
+// SVG Scales Icon Component
+const ScalesIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M12 3v18" />
+    <path d="M5 9h14" />
+    <path d="M5 21h14" />
+    <path d="M6 9l-3 6h6l-3-6z" />
+    <path d="M15 9l-3 6h6l-3-6z" />
+  </svg>
+);
 
 interface LogoProps {
   className?: string;
@@ -48,7 +66,7 @@ export const Logo: React.FC<LogoProps> = ({
         'relative rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-2 shadow-lg',
         sizeClasses[size]
       )}>
-        <Scale className={cn(
+        <ScalesIcon className={cn(
           'text-amber-400',
           size === 'sm' && 'h-4 w-4',
           size === 'md' && 'h-5 w-5',
