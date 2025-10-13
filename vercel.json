@@ -31,10 +31,5 @@
       "VITE_SUPABASE_ANON_KEY": "@vite_supabase_anon_key",
       "VITE_API_URL": "@vite_api_url"
     }
-  },
-  "functions": {
-    "netlify/functions/*.ts": {
-      "runtime": "nodejs18.x"
-    }
   }
 }
