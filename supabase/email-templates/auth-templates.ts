@@ -1,5 +1,13 @@
 // Custom Email Templates for Talk to My Lawyer
-// These templates can be uploaded to Supabase Auth settings
+// These templates have been converted to HTML files and configured in supabase/config.toml
+// 
+// ✅ COMPLETED SETUP:
+// - supabase/templates/confirmation.html
+// - supabase/templates/recovery.html  
+// - supabase/templates/invite.html
+// - supabase/templates/email_change.html
+//
+// See EMAIL_TEMPLATES_SETUP_GUIDE.md for deployment instructions
 
 export const EMAIL_TEMPLATES = {
   // Email Confirmation Template

@@ -71,9 +71,6 @@ importers:
       scoop:
         specifier: ^0.0.2
         version: 0.0.2
-      supabase:
-        specifier: ^2.48.3
-        version: 2.48.3
       tailwind-merge:
         specifier: ^2.6.0
         version: 2.6.0
@@ -105,6 +102,9 @@ importers:
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
+      supabase:
+        specifier: ^2.48.3
+        version: 2.48.3
       tailwindcss:
         specifier: ^3.4.17
         version: 3.4.18(yaml@2.8.1)
