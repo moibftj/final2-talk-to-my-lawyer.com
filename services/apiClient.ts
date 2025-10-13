@@ -120,6 +120,44 @@ export const apiClient = {
       return false;
     }
   },
+
+  // Fetch letters for the current user
+  fetchLetters: async () => {
+    try {
+      const { data: letters, error } = await supabase
+        .from('letters')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return letters || [];
+    } catch (error) {
+      console.error('Failed to fetch letters:', error);
+      throw error;
+    }
+  },
+
+  // Get user subscription
+  getUserSubscription: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: subscriptions, error } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+      return subscriptions?.[0] || null;
+    } catch (error) {
+      console.error('Failed to fetch subscription:', error);
+      return null;
+    }
+  },
 };
 
 export default apiClient;
