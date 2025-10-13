@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
+    base: '/', // Ensure relative paths for assets
     server: {
       port: 5174,
       strictPort: true,
@@ -37,6 +38,10 @@ export default defineConfig(({ mode }) => {
             vendor: ['react', 'react-dom'],
             supabase: ['@supabase/supabase-js'],
           },
+          // Add hash to filenames for better cache busting
+          entryFileNames: 'assets/[name].[hash].js',
+          chunkFileNames: 'assets/[name].[hash].js',
+          assetFileNames: 'assets/[name].[hash].[ext]',
         },
       },
       chunkSizeWarningLimit: 1000,
