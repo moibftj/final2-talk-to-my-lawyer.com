@@ -178,10 +178,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check immediately
     checkForAuthCallback();
 
+    // Add a timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      logger.warn('Auth loading timeout - forcing loading to false');
+      setLoading(false);
+    }, 5000); // 5 second timeout
+
     // Get initial session
     supabase.auth
       .getSession()
       .then(async ({ data: { session }, error }) => {
+        clearTimeout(loadingTimeout);
+        
         if (error) {
           logger.error('Error getting session:', error);
         }
@@ -197,6 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       })
       .catch(err => {
+        clearTimeout(loadingTimeout);
         logger.error('Session check failed:', err);
         setLoading(false);
       });
