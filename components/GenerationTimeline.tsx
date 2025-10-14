@@ -44,14 +44,14 @@ export const GenerationTimeline: React.FC<GenerationTimelineProps> = ({
       title: 'Attorneys are reviewing your request',
       description: 'Our legal team is analyzing your requirements',
       icon: FileText,
-      duration: 3000, // 3 seconds for review step
+      duration: 3000, // 3 seconds for review step - AI generation starts here
     },
     {
       id: 2,
       title: 'Your Letter 1st Draft is Generated',
       description: 'AI-powered draft has been created with legal language',
       icon: FileText,
-      duration: 2000,
+      duration: 120000, // 2 minutes (120 seconds) for AI generation to complete
     },
     {
       id: 3,
@@ -67,8 +67,9 @@ export const GenerationTimeline: React.FC<GenerationTimelineProps> = ({
   useEffect(() => {
     if (currentStep < steps.length) {
       const timer = setTimeout(async () => {
-        // Trigger letter generation at step 2 (Draft Creation)
-        if (currentStep === 2 && onGenerateLetter && !isGenerating) {
+        // Trigger letter generation at step 1 (Attorney Review)
+        // Generation happens in background while showing step 2 progress
+        if (currentStep === 1 && onGenerateLetter && !isGenerating) {
           setIsGenerating(true);
           try {
             await onGenerateLetter();
@@ -227,7 +228,7 @@ export const GenerationTimeline: React.FC<GenerationTimelineProps> = ({
                     >
                       <Clock className="w-4 h-4 animate-spin" />
                       <span>
-                        {index === 1 ? 'Expected: 2-3 minutes' : 'Processing...'}
+                        {index === 1 ? 'Expected: 2-3 minutes' : index === 2 ? 'Generating draft...' : 'Processing...'}
                       </span>
                     </motion.div>
                   )}
