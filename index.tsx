@@ -3,37 +3,36 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 
-// Clear all caches on app start
-async function clearAllCaches() {
-  try {
-    // Clear service workers
-    if ('serviceWorker' in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      for (const registration of registrations) {
-        await registration.unregister();
-        console.log('Service worker unregistered');
+// Clear caches in background after app loads (non-blocking)
+setTimeout(() => {
+  (async () => {
+    try {
+      // Clear service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+          console.log('Service worker unregistered');
+        }
       }
+
+      // Clear all cache storage
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(
+          cacheNames.map(cacheName => {
+            console.log('Deleting cache:', cacheName);
+            return caches.delete(cacheName);
+          })
+        );
+      }
+
+      console.log('All caches cleared successfully');
+    } catch (error) {
+      console.error('Error clearing caches:', error);
     }
-
-    // Clear all cache storage
-    if ('caches' in window) {
-      const cacheNames = await caches.keys();
-      await Promise.all(
-        cacheNames.map(cacheName => {
-          console.log('Deleting cache:', cacheName);
-          return caches.delete(cacheName);
-        })
-      );
-    }
-
-    console.log('All caches cleared successfully');
-  } catch (error) {
-    console.error('Error clearing caches:', error);
-  }
-}
-
-// Run cache clearing on app start
-clearAllCaches();
+  })();
+}, 100); // Delay cache clearing to avoid blocking initial render
 
 // Debug environment variables
 console.log('Environment Variables:', {
