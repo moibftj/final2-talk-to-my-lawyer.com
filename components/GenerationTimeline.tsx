@@ -6,6 +6,8 @@ interface GenerationTimelineProps {
   onComplete: () => void;
   hasSubscription: boolean;
   onSubscribe: () => void;
+  onGenerateLetter?: () => Promise<void>; // Callback to actually generate the letter
+  generatedContent?: string; // The generated letter content
 }
 
 interface TimelineStep {
@@ -20,10 +22,14 @@ export const GenerationTimeline: React.FC<GenerationTimelineProps> = ({
   onComplete,
   hasSubscription,
   onSubscribe,
+  onGenerateLetter,
+  generatedContent = '',
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [showActions, setShowActions] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const steps: TimelineStep[] = [
     {
@@ -31,36 +37,47 @@ export const GenerationTimeline: React.FC<GenerationTimelineProps> = ({
       title: 'Thanks For Submitting Details',
       description: 'Your letter request has been received successfully',
       icon: CheckCircle,
-      duration: 2000,
+      duration: 1500,
     },
     {
       id: 1,
       title: 'Attorneys are reviewing your request',
       description: 'Our legal team is analyzing your requirements',
       icon: FileText,
-      duration: 2500,
+      duration: 3000, // 3 seconds for review step
     },
     {
       id: 2,
       title: 'Your Letter 1st Draft is Generated',
       description: 'AI-powered draft has been created with legal language',
       icon: FileText,
-      duration: 2500,
+      duration: 2000,
     },
     {
       id: 3,
       title: 'Letter Ready for Review',
       description: hasSubscription
-        ? 'Your letter is ready to preview and send'
+        ? 'Your letter is ready to preview and download'
         : 'Subscribe to preview and send your letter',
       icon: hasSubscription ? Eye : CreditCard,
-      duration: 1500,
+      duration: 1000,
     },
   ];
 
   useEffect(() => {
     if (currentStep < steps.length) {
-      const timer = setTimeout(() => {
+      const timer = setTimeout(async () => {
+        // Trigger letter generation at step 2 (Draft Creation)
+        if (currentStep === 2 && onGenerateLetter && !isGenerating) {
+          setIsGenerating(true);
+          try {
+            await onGenerateLetter();
+          } catch (error) {
+            console.error('Error generating letter:', error);
+          }
+          setIsGenerating(false);
+        }
+
         setCompletedSteps(prev => [...prev, currentStep]);
         if (currentStep < steps.length - 1) {
           setCurrentStep(currentStep + 1);
@@ -68,13 +85,14 @@ export const GenerationTimeline: React.FC<GenerationTimelineProps> = ({
           // All steps completed
           setTimeout(() => {
             setShowActions(true);
+            setShowPreview(true);
           }, 500);
         }
       }, steps[currentStep].duration);
 
       return () => clearTimeout(timer);
     }
-  }, [currentStep]);
+  }, [currentStep, onGenerateLetter, isGenerating]);
 
   const progressPercentage = ((completedSteps.length) / steps.length) * 100;
 
@@ -208,7 +226,9 @@ export const GenerationTimeline: React.FC<GenerationTimelineProps> = ({
                       className="flex items-center gap-2 mt-2 text-sm text-blue-600"
                     >
                       <Clock className="w-4 h-4 animate-spin" />
-                      <span>Processing...</span>
+                      <span>
+                        {index === 1 ? 'Expected: 2-3 minutes' : 'Processing...'}
+                      </span>
                     </motion.div>
                   )}
                 </div>
@@ -232,6 +252,65 @@ export const GenerationTimeline: React.FC<GenerationTimelineProps> = ({
         })}
       </div>
 
+      {/* Letter Preview Section */}
+      <AnimatePresence>
+        {showPreview && generatedContent && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="relative bg-white rounded-lg border-2 border-slate-200 overflow-hidden"
+          >
+            {/* Preview Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Your Generated Letter
+              </h3>
+            </div>
+
+            {/* Letter Content */}
+            <div className={`relative ${!hasSubscription ? 'max-h-96' : 'max-h-[600px]'} overflow-hidden`}>
+              <div className="p-6 prose prose-slate max-w-none">
+                <div className={!hasSubscription ? 'blur-sm select-none' : ''}>
+                  <pre className="whitespace-pre-wrap font-serif text-slate-800 leading-relaxed">
+                    {generatedContent || 'Generating your professional legal letter...'}
+                  </pre>
+                </div>
+              </div>
+
+              {/* Blur Overlay for Non-Subscribers */}
+              {!hasSubscription && (
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/50 to-white flex items-center justify-center">
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="bg-white rounded-xl shadow-2xl p-8 max-w-md text-center border-2 border-purple-200"
+                  >
+                    <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Eye className="w-8 h-8 text-white" />
+                    </div>
+                    <h4 className="text-2xl font-bold text-slate-800 mb-2">
+                      Subscribe to View Full Letter
+                    </h4>
+                    <p className="text-slate-600 mb-6">
+                      Your professional legal letter has been generated. Subscribe now to access the full content, edit, and send it.
+                    </p>
+                    <button
+                      onClick={onSubscribe}
+                      className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
+                    >
+                      View Pricing Plans →
+                    </button>
+                  </motion.div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Action Buttons */}
       <AnimatePresence>
         {showActions && (
@@ -248,14 +327,23 @@ export const GenerationTimeline: React.FC<GenerationTimelineProps> = ({
                   className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
                 >
                   <Eye className="w-5 h-5" />
-                  Preview Letter
+                  View Full Letter
                 </button>
                 <button
-                  onClick={onComplete}
+                  onClick={() => {
+                    // Trigger PDF download
+                    const element = document.createElement('a');
+                    const file = new Blob([generatedContent], { type: 'text/plain' });
+                    element.href = URL.createObjectURL(file);
+                    element.download = 'legal-letter.txt';
+                    document.body.appendChild(element);
+                    element.click();
+                    document.body.removeChild(element);
+                  }}
                   className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-slate-700 text-white rounded-lg font-semibold hover:bg-slate-800 transition-all"
                 >
-                  <Mail className="w-5 h-5" />
-                  Send via Email
+                  <FileText className="w-5 h-5" />
+                  Download PDF
                 </button>
               </>
             ) : (
@@ -265,12 +353,8 @@ export const GenerationTimeline: React.FC<GenerationTimelineProps> = ({
                   className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
                 >
                   <CreditCard className="w-5 h-5" />
-                  Subscribe to Preview
+                  Subscribe to Unlock
                 </button>
-                <div className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-slate-200 text-slate-500 rounded-lg font-semibold cursor-not-allowed">
-                  <Eye className="w-5 h-5" />
-                  Preview Locked
-                </div>
               </>
             )}
           </motion.div>

@@ -304,7 +304,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   const recentLetters = letters.slice(0, 3);
   const completedLetters = letters.filter(l => l.status === 'completed').length;
   const pendingLetters = letters.filter(
-    l => l.status === 'pending' || l.status === 'underReview' || l.status === 'under_review'
+    l => l.status === 'pending' || l.status === 'under_review'
   ).length;
 
   return (

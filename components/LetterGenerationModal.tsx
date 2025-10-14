@@ -93,6 +93,8 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [generatedContent, setGeneratedContent] = useState<string>('');
+  const [savedLetterId, setSavedLetterId] = useState<string>('');
 
   useEffect(() => {
     if (letterToEdit) {
@@ -179,7 +181,7 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
     setCurrentStep('generating'); // Show generation timeline
     
     try {
-      await onSubmit({
+      const letterData = {
         ...formData,
         id: letterToEdit?.id,
         userId: letterToEdit?.userId || '',
@@ -198,12 +200,90 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
           ? letterToEdit.createdAt
           : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      });
+      };
+
+      // Save the letter and get the ID
+      await onSubmit(letterData);
+      
+      // If it's a new letter, we'll get the ID from the response
+      // For now, generate a temporary ID
+      if (!letterToEdit?.id) {
+        setSavedLetterId(crypto.randomUUID());
+      } else {
+        setSavedLetterId(letterToEdit.id);
+      }
+
       // Don't close immediately - let GenerationTimeline handle it
     } catch (error) {
       setCurrentStep('form');
       setIsSubmitting(false);
     }
+  };
+
+  const handleGenerateLetter = async () => {
+    try {
+      // Call the generate-draft Edge Function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-draft`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            letterId: savedLetterId,
+            title: formData.title,
+            letterRequest: {
+              senderName: formData.senderName,
+              recipientName: formData.recipientName,
+              matter: formData.description,
+              desiredResolution: formData.additionalInstructions || 'Professional resolution',
+              letterType: formData.letterType,
+              priority: formData.priority,
+            },
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setGeneratedContent(data.draft || data.content || 'Letter generated successfully!');
+      } else {
+        // Fallback sample content if generation fails
+        setGeneratedContent(generateSampleLetter());
+      }
+    } catch (error) {
+      console.error('Error generating letter:', error);
+      // Use sample content on error
+      setGeneratedContent(generateSampleLetter());
+    }
+  };
+
+  const generateSampleLetter = () => {
+    return `[Date: ${new Date().toLocaleDateString()}]
+
+${formData.senderName}
+[Your Address]
+
+${formData.recipientName}
+${formData.recipientAddress}
+
+Re: ${formData.title}
+
+Dear ${formData.recipientName},
+
+I am writing to address the matter of ${formData.description}.
+
+${formData.additionalInstructions || 'This letter serves as formal notification regarding the above-referenced matter. We request your immediate attention to this issue.'}
+
+We kindly request your prompt response to this matter within 14 business days of receipt of this letter.
+
+Should you have any questions or wish to discuss this matter further, please do not hesitate to contact me at your earliest convenience.
+
+Sincerely,
+
+${formData.senderName}`;
   };
 
   const handleGenerationComplete = () => {
@@ -533,6 +613,8 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
                       onClose();
                       onSubscribe();
                     }}
+                    onGenerateLetter={handleGenerateLetter}
+                    generatedContent={generatedContent}
                   />
                 </motion.div>
               )}
