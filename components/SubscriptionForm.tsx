@@ -65,11 +65,11 @@ const PLANS: Plan[] = [
   },
 ];
 
-interface SubscriptionFormProps {
-  onComplete?: () => void;
+export interface SubscriptionFormProps {
+  onSubscribe?: (planId: string, discountCode?: string) => Promise<void>;
 }
 
-function SubscriptionForm({ onComplete }: SubscriptionFormProps) {
+function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
   const { user } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [discountCode, setDiscountCode] = useState('');
@@ -129,8 +129,8 @@ function SubscriptionForm({ onComplete }: SubscriptionFormProps) {
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Call onComplete callback if provided
-      if (onComplete) {
-        onComplete();
+      if (onSubscribe) {
+        onSubscribe(selectedPlan.id, discountCode);
       }
     } catch (error) {
       console.error('Subscription error:', error);

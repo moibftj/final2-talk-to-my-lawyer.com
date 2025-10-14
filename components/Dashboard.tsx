@@ -282,7 +282,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   };
 
   if (currentView === 'subscription') {
-    return <SubscriptionForm onSubscribe={handleSubscribe} />;
+    return <SubscriptionForm />;
   }
 
   const getStatusColor = (status: string) => {
@@ -290,6 +290,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
       case 'completed':
         return 'text-green-600 bg-green-100';
       case 'under_review':
+      case 'underReview':
         return 'text-blue-600 bg-blue-100';
       case 'pending':
         return 'text-orange-600 bg-orange-100';
@@ -303,7 +304,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   const recentLetters = letters.slice(0, 3);
   const completedLetters = letters.filter(l => l.status === 'completed').length;
   const pendingLetters = letters.filter(
-    l => l.status === 'pending' || l.status === 'under_review'
+    l => l.status === 'pending' || l.status === 'underReview' || l.status === 'under_review'
   ).length;
 
   return (
