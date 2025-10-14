@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { logger } from '../lib/logger';
 
 // Define API base URL - uses environment variable or default
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -116,7 +117,7 @@ export const apiClient = {
       const response = await fetch(`${API_BASE_URL}/health`);
       return response.ok;
     } catch (error) {
-      console.error('API health check failed:', error);
+      logger.error('API health check failed:', error);
       return false;
     }
   },
@@ -130,13 +131,13 @@ export const apiClient = {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Failed to fetch letters:', error);
+        logger.error('Failed to fetch letters:', error);
         // Return empty array for new users or when there's no data
         return [];
       }
       return letters || [];
     } catch (error) {
-      console.error('Failed to fetch letters:', error);
+      logger.error('Failed to fetch letters:', error);
       // Return empty array instead of throwing - allows dashboard to load
       return [];
     }
@@ -159,7 +160,7 @@ export const apiClient = {
       if (error) throw error;
       return subscriptions?.[0] || null;
     } catch (error) {
-      console.error('Failed to fetch subscription:', error);
+      logger.error('Failed to fetch subscription:', error);
       return null;
     }
   },
@@ -184,7 +185,7 @@ export const apiClient = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Failed to create letter:', error);
+      logger.error('Failed to create letter:', error);
       throw error;
     }
   },
@@ -205,7 +206,7 @@ export const apiClient = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Failed to update letter:', error);
+      logger.error('Failed to update letter:', error);
       throw error;
     }
   },
@@ -221,7 +222,7 @@ export const apiClient = {
       if (error) throw error;
       return true;
     } catch (error) {
-      console.error('Failed to delete letter:', error);
+      logger.error('Failed to delete letter:', error);
       throw error;
     }
   },

@@ -22,6 +22,7 @@ import type { LetterRequest, Subscription } from '../types';
 import { ConfirmationModal } from './ConfirmationModal';
 import { CompletionBanner, useBanners } from './CompletionBanner';
 import { useAuth } from '../contexts/AuthContext';
+import { logger } from '../lib/logger';
 // import { letterStatusService } from '../services/letterStatusService';
 
 type View = 'dashboard' | 'new_letter_form' | 'subscription';
@@ -114,7 +115,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
           );
         }
       } catch (error) {
-        console.error('Failed to fetch user data:', error);
+        logger.error('Failed to fetch user data:', error);
         showError(
           'Loading Failed',
           'Unable to load your dashboard. Please refresh the page.'
@@ -174,7 +175,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
         'The letter has been permanently removed from your dashboard.'
       );
     } catch (error) {
-      console.error('Failed to delete letter:', error);
+      logger.error('Failed to delete letter:', error);
       showError(
         'Delete Failed',
         'Unable to delete the letter. Please try again.'
@@ -230,7 +231,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
         window.location.reload(); // Simple reload for now, can be optimized later
       }
     } catch (error) {
-      console.error('Failed to save letter:', error);
+      logger.error('Failed to save letter:', error);
       showError('Save Failed', 'Unable to save the letter. Please try again.');
     }
   };
@@ -265,7 +266,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
       // Navigate back to dashboard
       navigateTo('dashboard');
     } catch (error) {
-      console.error('Subscription error:', error);
+      logger.error('Subscription error:', error);
       showError(
         'Subscription Failed',
         'Unable to process subscription. Please try again.'

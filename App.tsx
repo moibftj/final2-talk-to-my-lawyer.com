@@ -6,6 +6,7 @@ import { useAuth } from './contexts/AuthContext';
 import { AuthPage } from './components/AuthPage';
 import { LandingPage } from './components/LandingPage';
 import { Spinner } from './components/Spinner';
+import { logger } from './lib/logger';
 
 // Lazy load role-specific dashboards for code splitting
 const UserDashboard = lazy(() =>
@@ -57,7 +58,7 @@ const App: React.FC = () => {
 
       // Handle email confirmation redirect
       if (hash.includes('type=signup') || hash.includes('type=email')) {
-        console.log('Email confirmation detected, user will be redirected to dashboard');
+        logger.info('Email confirmation detected, user will be redirected to dashboard');
         // Clean up the URL hash
         window.history.replaceState(null, '', window.location.pathname);
       }
@@ -69,7 +70,7 @@ const App: React.FC = () => {
   // Automatically show dashboard when user is authenticated (including after email confirmation)
   React.useEffect(() => {
     if (user && profile && appView === 'landing') {
-      console.log('User authenticated, redirecting to dashboard');
+      logger.info('User authenticated, redirecting to dashboard');
       setAppView('dashboard');
     }
   }, [user, profile, appView]);

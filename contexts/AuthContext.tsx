@@ -8,6 +8,7 @@ import React, {
 import { supabase } from '../services/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { UserRole } from '../types';
+import { logger } from '../lib/logger';
 
 interface UserProfile {
   id: string;
@@ -74,13 +75,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (error || !data) {
-        console.error('Error fetching user profile:', error);
+        logger.error('Error fetching user profile:', error);
         return null;
       }
 
       return data as UserProfile;
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      logger.error('Error fetching user profile:', error);
       return null;
     }
   };
@@ -97,71 +98,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check for authentication callbacks in URL hash (recovery, email confirmation, etc.)
     const checkForAuthCallback = async () => {
       const hash = window.location.hash;
-      console.log('Checking URL hash for auth callback:', hash);
-      
+      logger.logAuth('Checking URL hash for auth callback', { hasHash: !!hash });
+
       // Handle password recovery
       if (hash.includes('type=recovery') && hash.includes('access_token=')) {
-        console.log('Password recovery detected');
-        
+        logger.info('Password recovery detected');
+
         try {
           // Extract the access token from the hash
           const params = new URLSearchParams(hash.substring(1));
           const accessToken = params.get('access_token');
           const refreshToken = params.get('refresh_token');
-          
+
           if (accessToken) {
             // Verify the session with Supabase
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken || ''
             });
-            
+
             if (!error && data.session) {
-              console.log('Recovery session established successfully');
+              logger.info('Recovery session established successfully');
               setAuthEvent('PASSWORD_RECOVERY');
               // Clear the hash to clean up the URL
               window.history.replaceState(null, '', window.location.pathname);
             } else {
-              console.error('Failed to establish recovery session:', error);
+              logger.error('Failed to establish recovery session:', error);
               // Clear the invalid hash
               window.history.replaceState(null, '', window.location.pathname);
             }
           }
         } catch (error) {
-          console.error('Error processing recovery token:', error);
+          logger.error('Error processing recovery token:', error);
           // Clear the hash on error
           window.history.replaceState(null, '', window.location.pathname);
         }
       }
       // Handle email confirmation
       else if ((hash.includes('type=signup') || hash.includes('type=email')) && hash.includes('access_token=')) {
-        console.log('Email confirmation detected');
-        
+        logger.info('Email confirmation detected');
+
         try {
           // Extract tokens from the hash
           const params = new URLSearchParams(hash.substring(1));
           const accessToken = params.get('access_token');
           const refreshToken = params.get('refresh_token');
-          
+
           if (accessToken) {
             // Set the session for confirmed user
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken || ''
             });
-            
+
             if (!error && data.session) {
-              console.log('Email confirmation session established successfully');
+              logger.info('Email confirmation session established successfully');
               setAuthEvent('SIGNED_IN');
               // Clear the hash to clean up the URL
               window.history.replaceState(null, '', window.location.pathname);
             } else {
-              console.error('Failed to establish confirmation session:', error);
+              logger.error('Failed to establish confirmation session:', error);
               window.history.replaceState(null, '', window.location.pathname);
             }
           }
         } catch (error) {
-          console.error('Error processing email confirmation:', error);
+          logger.error('Error processing email confirmation:', error);
           window.history.replaceState(null, '', window.location.pathname);
         }
       }
@@ -173,9 +174,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Get initial session
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
-        console.error('Error getting session:', error);
+        logger.error('Error getting session:', error);
       }
-      
+
       setSession(session);
       setUser(session?.user ?? null);
 
@@ -186,7 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setLoading(false);
     }).catch(err => {
-      console.error('Session check failed:', err);
+      logger.error('Session check failed:', err);
       setLoading(false);
     });
 
@@ -194,8 +195,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event);
-      
+      logger.logAuth('Auth state changed', { event });
+
       setSession(session);
       setUser(session?.user ?? null);
       setAuthEvent(event);
@@ -255,13 +256,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               });
 
             if (referralError) {
-              console.error('Error processing referral:', referralError);
+              logger.error('Error processing referral:', referralError);
               // Don't fail signup for referral errors, just log
             } else if (referralResult?.success) {
-              console.log('Referral processed successfully:', referralResult);
+              logger.info('Referral processed successfully:', referralResult);
             }
           } catch (referralError) {
-            console.error('Error processing referral:', referralError);
+            logger.error('Error processing referral:', referralError);
             // Don't fail signup for referral errors
           }
         }
