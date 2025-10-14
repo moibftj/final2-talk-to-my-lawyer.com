@@ -16,15 +16,18 @@ import {
   Send,
 } from 'lucide-react';
 import type { LetterRequest } from '../types';
+import { GenerationTimeline } from './GenerationTimeline';
 
 interface LetterGenerationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (letterData: Partial<LetterRequest>) => void;
   letterToEdit?: LetterRequest | null;
+  hasSubscription?: boolean;
+  onSubscribe?: () => void;
 }
 
-type StepType = 'form' | 'timeline' | 'preview';
+type StepType = 'form' | 'generating' | 'timeline' | 'preview';
 
 interface FormData {
   title: string;
@@ -73,6 +76,8 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
   onClose,
   onSubmit,
   letterToEdit,
+  hasSubscription = false,
+  onSubscribe = () => {},
 }) => {
   const [currentStep, setCurrentStep] = useState<StepType>('form');
   const [formData, setFormData] = useState<FormData>({
@@ -171,6 +176,8 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
     if (!validateForm()) return;
 
     setIsSubmitting(true);
+    setCurrentStep('generating'); // Show generation timeline
+    
     try {
       await onSubmit({
         ...formData,
@@ -192,10 +199,22 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
           : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
-      onClose();
-    } finally {
+      // Don't close immediately - let GenerationTimeline handle it
+    } catch (error) {
+      setCurrentStep('form');
       setIsSubmitting(false);
     }
+  };
+
+  const handleGenerationComplete = () => {
+    if (hasSubscription) {
+      // Show preview for subscribers
+      setCurrentStep('preview');
+    } else {
+      // Close modal and dashboard will handle showing subscription
+      onClose();
+    }
+    setIsSubmitting(false);
   };
 
   const priorityColors = {
@@ -497,6 +516,24 @@ export const LetterGenerationModal: React.FC<LetterGenerationModalProps> = ({
                       placeholder='Any specific requirements or additional context...'
                     />
                   </div>
+                </motion.div>
+              )}
+
+              {currentStep === 'generating' && (
+                <motion.div
+                  key='generating'
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <GenerationTimeline
+                    onComplete={handleGenerationComplete}
+                    hasSubscription={hasSubscription}
+                    onSubscribe={() => {
+                      onClose();
+                      onSubscribe();
+                    }}
+                  />
                 </motion.div>
               )}
 

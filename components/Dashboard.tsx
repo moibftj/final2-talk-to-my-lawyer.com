@@ -153,13 +153,8 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   };
 
   const handleNewLetter = () => {
-    if (remainingLetters <= 0) {
-      showError(
-        'No Credits Remaining',
-        'Please upgrade your subscription to create more letters.'
-      );
-      return;
-    }
+    // Allow all users (including non-subscribers) to start the letter generation process
+    // Subscription check will happen after generation to view/send the letter
     setEditingLetter(null);
     setShowLetterModal(true);
   };
@@ -208,15 +203,6 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
 
   const handleSaveLetter = async (letterData: Partial<LetterRequest>) => {
     try {
-      // Check if user has remaining letters for new letter creation
-      if (!letterData.id && remainingLetters <= 0) {
-        showError(
-          'No Credits Remaining',
-          'You have used all your letter credits. Please upgrade your subscription.'
-        );
-        return;
-      }
-
       if (letterData.id) {
         // Update existing letter
         showInfo('Updating Letter', 'Saving your changes...');
@@ -226,14 +212,24 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
           'Your changes have been saved successfully.'
         );
       } else {
-        // Create new letter and decrement remaining count
-        showInfo('Creating Letter', 'Saving your new letter...');
+        // Create new letter - allow for both subscribers and non-subscribers
+        // Non-subscribers will be prompted to subscribe after generation
+        showInfo('Creating Letter', 'Generating your legal letter...');
         await apiClient.createLetter(letterData);
-        setRemainingLetters(prev => prev - 1);
-        showSuccess(
-          'Letter Created',
-          `Your new letter has been saved. ${remainingLetters - 1} credits remaining.`
-        );
+        
+        if (subscription) {
+          // Only decrement for subscribers
+          setRemainingLetters(prev => Math.max(0, prev - 1));
+          showSuccess(
+            'Letter Created',
+            `Your letter has been generated. ${Math.max(0, remainingLetters - 1)} credits remaining.`
+          );
+        } else {
+          showSuccess(
+            'Letter Generated',
+            'Subscribe now to preview and send your letter!'
+          );
+        }
       }
       setEditingLetter(null);
       setShowLetterModal(false);
@@ -655,6 +651,8 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
         onClose={handleCloseModal}
         onSubmit={handleSaveLetter}
         letterToEdit={editingLetter}
+        hasSubscription={!!subscription}
+        onSubscribe={() => navigateTo('subscription')}
       />
 
       {/* Render all banners */}
