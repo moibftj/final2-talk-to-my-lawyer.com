@@ -146,7 +146,9 @@ export const apiClient = {
   // Get user subscription
   getUserSubscription: async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return null;
 
       const { data: subscriptions, error } = await supabase
@@ -168,7 +170,9 @@ export const apiClient = {
   // Create a new letter
   createLetter: async (letterData: any) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase

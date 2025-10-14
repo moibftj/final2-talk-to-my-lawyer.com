@@ -58,7 +58,9 @@ const App: React.FC = () => {
 
       // Handle email confirmation redirect
       if (hash.includes('type=signup') || hash.includes('type=email')) {
-        logger.info('Email confirmation detected, user will be redirected to dashboard');
+        logger.info(
+          'Email confirmation detected, user will be redirected to dashboard'
+        );
         // Clean up the URL hash
         window.history.replaceState(null, '', window.location.pathname);
       }

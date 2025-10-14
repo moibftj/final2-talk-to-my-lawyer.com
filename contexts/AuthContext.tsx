@@ -98,7 +98,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check for authentication callbacks in URL hash (recovery, email confirmation, etc.)
     const checkForAuthCallback = async () => {
       const hash = window.location.hash;
-      logger.logAuth('Checking URL hash for auth callback', { hasHash: !!hash });
+      logger.logAuth('Checking URL hash for auth callback', {
+        hasHash: !!hash,
+      });
 
       // Handle password recovery
       if (hash.includes('type=recovery') && hash.includes('access_token=')) {
@@ -114,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Verify the session with Supabase
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
-              refresh_token: refreshToken || ''
+              refresh_token: refreshToken || '',
             });
 
             if (!error && data.session) {
@@ -135,7 +137,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
       // Handle email confirmation
-      else if ((hash.includes('type=signup') || hash.includes('type=email')) && hash.includes('access_token=')) {
+      else if (
+        (hash.includes('type=signup') || hash.includes('type=email')) &&
+        hash.includes('access_token=')
+      ) {
         logger.info('Email confirmation detected');
 
         try {
@@ -148,11 +153,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Set the session for confirmed user
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
-              refresh_token: refreshToken || ''
+              refresh_token: refreshToken || '',
             });
 
             if (!error && data.session) {
-              logger.info('Email confirmation session established successfully');
+              logger.info(
+                'Email confirmation session established successfully'
+              );
               setAuthEvent('SIGNED_IN');
               // Clear the hash to clean up the URL
               window.history.replaceState(null, '', window.location.pathname);
@@ -172,24 +179,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkForAuthCallback();
 
     // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      if (error) {
-        logger.error('Error getting session:', error);
-      }
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session }, error }) => {
+        if (error) {
+          logger.error('Error getting session:', error);
+        }
 
-      setSession(session);
-      setUser(session?.user ?? null);
+        setSession(session);
+        setUser(session?.user ?? null);
 
-      if (session?.user) {
-        const userProfile = await fetchUserProfile(session.user.id);
-        setProfile(userProfile);
-      }
+        if (session?.user) {
+          const userProfile = await fetchUserProfile(session.user.id);
+          setProfile(userProfile);
+        }
 
-      setLoading(false);
-    }).catch(err => {
-      logger.error('Session check failed:', err);
-      setLoading(false);
-    });
+        setLoading(false);
+      })
+      .catch(err => {
+        logger.error('Session check failed:', err);
+        setLoading(false);
+      });
 
     // Listen for auth changes
     const {

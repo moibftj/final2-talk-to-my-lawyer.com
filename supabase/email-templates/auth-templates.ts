@@ -1,9 +1,9 @@
 // Custom Email Templates for Talk to My Lawyer
 // These templates have been converted to HTML files and configured in supabase/config.toml
-// 
+//
 // ✅ COMPLETED SETUP:
 // - supabase/templates/confirmation.html
-// - supabase/templates/recovery.html  
+// - supabase/templates/recovery.html
 // - supabase/templates/invite.html
 // - supabase/templates/email_change.html
 //

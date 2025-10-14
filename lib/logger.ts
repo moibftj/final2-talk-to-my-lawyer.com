@@ -10,7 +10,8 @@ class Logger {
   private isDevelopment: boolean;
 
   constructor() {
-    this.isDevelopment = import.meta.env.DEV || import.meta.env.MODE === 'development';
+    this.isDevelopment =
+      import.meta.env.DEV || import.meta.env.MODE === 'development';
   }
 
   /**
@@ -71,7 +72,9 @@ class Logger {
   /**
    * Remove sensitive fields from log data
    */
-  private sanitizeSensitiveData(data: Record<string, unknown>): Record<string, unknown> {
+  private sanitizeSensitiveData(
+    data: Record<string, unknown>
+  ): Record<string, unknown> {
     const sensitiveKeys = [
       'access_token',
       'refresh_token',
@@ -85,10 +88,14 @@ class Logger {
     const sanitized: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(data)) {
-      if (sensitiveKeys.some(sensitive => key.toLowerCase().includes(sensitive))) {
+      if (
+        sensitiveKeys.some(sensitive => key.toLowerCase().includes(sensitive))
+      ) {
         sanitized[key] = '[REDACTED]';
       } else if (typeof value === 'object' && value !== null) {
-        sanitized[key] = this.sanitizeSensitiveData(value as Record<string, unknown>);
+        sanitized[key] = this.sanitizeSensitiveData(
+          value as Record<string, unknown>
+        );
       } else {
         sanitized[key] = value;
       }
