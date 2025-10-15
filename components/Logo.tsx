@@ -121,7 +121,7 @@ export const LogoImage: React.FC<LogoImageProps> = ({
       <img 
         src="/images/talk-to-my-lawyer-logo.png" 
         alt="Talk to My Lawyer" 
-        className={cn('object-contain', sizeClasses[size])}
+        className={cn('object-contain', sizeClasses[size] || sizeClasses['default'])}
       />
       
       {showText && (
