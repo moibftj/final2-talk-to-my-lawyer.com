@@ -223,7 +223,7 @@ function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
             <span>Total:</span>
             <span>
               ${finalPrice}/
-              {selectedPlan.period === 'monthly' ? 'month' : 'year'}
+              {selectedPlan.period === 'month' ? 'month' : 'year'}
             </span>
           </div>
 
@@ -233,8 +233,8 @@ function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
             disabled={isSubscribing}
           >
             {isSubscribing
-              ? 'Processing...'
-              : `Subscribe Now - $${finalPrice}/${selectedPlan.period === 'monthly' ? 'month' : 'year'}`}
+              ? 'Redirecting to secure payment...'
+              : `Subscribe Now - $${finalPrice}/${selectedPlan.period === 'month' ? 'month' : 'year'}`}
           </Button>
 
           <p className='text-center text-sm text-gray-500 mt-4'>

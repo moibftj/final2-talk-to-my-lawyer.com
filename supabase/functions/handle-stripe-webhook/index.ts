@@ -102,9 +102,8 @@ async function verifyStripeSignature(
 }
 
 // Map Stripe price to plan type
-function mapPriceToPlanType(priceId: string, amount: number): string {
-  // This would be based on your actual Stripe price IDs
-  // For now, we'll use amount to determine plan type
+function mapPriceToPlanType(amount: number): string {
+  // Map amounts to plan types based on cents
   if (amount === 1999) return 'one_letter'; // $19.99
   if (amount === 4999) return 'four_monthly'; // $49.99
   if (amount === 19999) return 'eight_yearly'; // $199.99
@@ -125,7 +124,7 @@ async function handleSubscriptionCreated(
   }
 
   const priceItem = subscription.items.data[0];
-  const planType = mapPriceToPlanType(priceItem.price.id, priceItem.price.unit_amount);
+  const planType = mapPriceToPlanType(priceItem.price.unit_amount);
 
   // Create subscription record
   const { error: subError } = await supabase
