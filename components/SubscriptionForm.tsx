@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { validateDiscountCode } from '../services/discountService';
 import {
-  redirectToCheckout,
+  createDummyCheckoutSession,
   SUBSCRIPTION_PLANS,
   getPlanById,
   formatPrice,
   calculateFinalPrice,
-  validateStripeConfig
-} from '../services/stripeService';
+  validateDummyConfig,
+  type SubscriptionPlan
+} from '../services/dummyCheckoutService';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { supabase } from '../services/supabase';
 
 export interface SubscriptionFormProps {
   onSubscribe?: (planId: string, discountCode?: string) => Promise<void>;
@@ -18,13 +20,17 @@ export interface SubscriptionFormProps {
 
 function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
   const { user } = useAuth();
-  const [selectedPlan, setSelectedPlan] = useState<ReturnType<typeof getPlanById>>(null);
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [discountCode, setDiscountCode] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
   const [isValidatingCode, setIsValidatingCode] = useState(false);
   const [discountError, setDiscountError] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [showAnnual, setShowAnnual] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
+  const [paymentError, setPaymentError] = useState('');
 
   // Calculate the final price after discount
   const finalPrice = selectedPlan
@@ -66,22 +72,120 @@ function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
     }
 
     setIsSubscribing(true);
+    setPaymentStatus('idle');
+    setPaymentError('');
 
     try {
-      // Validate Stripe configuration
-      validateStripeConfig();
+      // Validate dummy configuration
+      validateDummyConfig();
 
-      // Redirect to Stripe Checkout
-      await redirectToCheckout(selectedPlan.id, user.id, discountCode || undefined);
+      // Show payment modal
+      setShowPaymentModal(true);
 
     } catch (error) {
       console.error('Subscription error:', error);
-      // Fallback to callback if Stripe fails
+      setPaymentError(error instanceof Error ? error.message : 'An error occurred');
+
+      // Fallback to callback if dummy checkout fails
       if (onSubscribe) {
         await onSubscribe(selectedPlan.id, discountCode);
       }
     } finally {
       setIsSubscribing(false);
+    }
+  };
+
+  // Process dummy payment
+  const handleProcessPayment = async () => {
+    if (!selectedPlan || !user) return;
+
+    setIsProcessingPayment(true);
+    setPaymentStatus('processing');
+
+    try {
+      // Create dummy checkout session
+      const session = await createDummyCheckoutSession(
+        selectedPlan.id,
+        user.id,
+        discountCode || undefined
+      );
+
+      // Create subscription record in database
+      const { data: subscription, error: subscriptionError } = await supabase
+        .from('subscriptions')
+        .insert({
+          user_id: user.id,
+          plan_id: selectedPlan.id,
+          status: 'active',
+          current_period_start: new Date().toISOString(),
+          current_period_end: new Date(
+            Date.now() + (selectedPlan.period === 'month' ? 30 : 365) * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          stripe_subscription_id: session.id, // Use session ID as subscription ID
+          discount_code: discountCode || null,
+          price_amount: parseFloat(finalPrice) * 100, // Convert to cents
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (subscriptionError) {
+        throw new Error('Failed to create subscription');
+      }
+
+      // Create commission record if discount code was used
+      if (discountCode) {
+        try {
+          const { data: discountData } = await supabase
+            .from('discount_codes')
+            .select('employee_id')
+            .eq('code', discountCode.toUpperCase())
+            .single();
+
+          if (discountData?.employee_id) {
+            await supabase
+              .from('commissions')
+              .insert({
+                employee_id: discountData.employee_id,
+                user_id: user.id,
+                subscription_id: subscription.id,
+                plan_id: selectedPlan.id,
+                commission_amount: selectedPlan.price * 0.1 * 100, // 10% commission in cents
+                discount_code: discountCode,
+                status: 'paid',
+                created_at: new Date().toISOString(),
+              });
+
+            // Update discount code usage
+            await supabase
+              .from('discount_codes')
+              .update({ usage_count: supabase.rpc('increment', { amount: 1 }) })
+              .eq('code', discountCode.toUpperCase());
+          }
+        } catch (commissionError) {
+          console.error('Error creating commission record:', commissionError);
+        }
+      }
+
+      setPaymentStatus('success');
+
+      // Call completion callback
+      if (onSubscribe) {
+        await onSubscribe(selectedPlan.id, discountCode);
+      }
+
+      // Close modal after success
+      setTimeout(() => {
+        setShowPaymentModal(false);
+        setPaymentStatus('idle');
+      }, 3000);
+
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      setPaymentStatus('error');
+      setPaymentError(error instanceof Error ? error.message : 'Payment failed');
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -92,9 +196,16 @@ function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
 
   return (
     <div className='w-full max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md'>
-      <h2 className='text-2xl font-bold text-center mb-8'>
-        Choose Your Subscription Plan
-      </h2>
+      <div className='text-center mb-8'>
+        <h2 className='text-2xl font-bold mb-2'>
+          Choose Your Subscription Plan
+        </h2>
+        <p className='text-gray-600'>
+          <span className='inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800'>
+            ⚠️ Demo Mode - No actual charges
+          </span>
+        </p>
+      </div>
 
       {/* Period toggle */}
       <div className='flex justify-center mb-8'>
@@ -233,14 +344,94 @@ function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
             disabled={isSubscribing}
           >
             {isSubscribing
-              ? 'Redirecting to secure payment...'
-              : `Subscribe Now - $${finalPrice}/${selectedPlan.period === 'month' ? 'month' : 'year'}`}
+              ? 'Preparing checkout...'
+              : `Subscribe Now - $${finalPrice}/${selectedPlan.period === 'month' ? 'month' : 'year'} (Demo)`}
           </Button>
 
           <p className='text-center text-sm text-gray-500 mt-4'>
-            You can cancel your subscription at any time. By subscribing, you
-            agree to our Terms of Service and Privacy Policy.
+            <strong>Demo Mode:</strong> No actual payment will be processed.
+            This is for testing the subscription flow and commission system.
           </p>
+        </div>
+      )}
+
+      {/* Payment Modal */}
+      {showPaymentModal && selectedPlan && (
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+          <div className='bg-white rounded-lg p-8 max-w-md w-full mx-4'>
+            <h3 className='text-xl font-bold mb-4'>
+              Demo Payment Processing
+            </h3>
+
+            {paymentStatus === 'idle' && (
+              <div>
+                <p className='mb-6'>
+                  Processing payment for {selectedPlan.name} plan - ${finalPrice}
+                </p>
+                <div className='flex gap-2'>
+                  <Button
+                    className='flex-1 bg-blue-600 hover:bg-blue-700'
+                    onClick={handleProcessPayment}
+                    disabled={isProcessingPayment}
+                  >
+                    {isProcessingPayment ? 'Processing...' : 'Complete Demo Payment'}
+                  </Button>
+                  <Button
+                    variant='outline'
+                    onClick={() => setShowPaymentModal(false)}
+                    disabled={isProcessingPayment}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {paymentStatus === 'processing' && (
+              <div className='text-center py-8'>
+                <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4'></div>
+                <p>Processing payment...</p>
+              </div>
+            )}
+
+            {paymentStatus === 'success' && (
+              <div className='text-center py-8'>
+                <div className='w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+                  <svg className='w-8 h-8 text-green-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M5 13l4 4L19 7'></path>
+                  </svg>
+                </div>
+                <p className='text-green-600 font-medium mb-2'>Payment Successful!</p>
+                <p className='text-sm text-gray-600'>Subscription activated</p>
+              </div>
+            )}
+
+            {paymentStatus === 'error' && (
+              <div className='text-center py-8'>
+                <div className='w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+                  <svg className='w-8 h-8 text-red-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M6 18L18 6M6 6l12 12'></path>
+                  </svg>
+                </div>
+                <p className='text-red-600 font-medium mb-2'>Payment Failed</p>
+                <p className='text-sm text-gray-600 mb-4'>{paymentError}</p>
+                <div className='flex gap-2'>
+                  <Button
+                    className='flex-1 bg-blue-600 hover:bg-blue-700'
+                    onClick={handleProcessPayment}
+                  >
+                    Try Again
+                  </Button>
+                  <Button
+                    variant='outline'
+                    onClick={() => setShowPaymentModal(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
