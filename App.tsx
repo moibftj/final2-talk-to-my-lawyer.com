@@ -4,6 +4,7 @@ import { Spotlight } from './components/magicui/spotlight';
 import { SparklesText } from './components/magicui/sparkles-text';
 import { useAuth } from './contexts/AuthContext';
 import { AuthPage } from './components/AuthPage';
+import { AdminAuthPage } from './components/admin/AdminAuthPage';
 import { LandingPage } from './components/LandingPage';
 import { Spinner } from './components/Spinner';
 import { logger } from './lib/logger';
@@ -31,7 +32,7 @@ const ResetPasswordPage = lazy(() =>
 );
 
 type UserDashboardView = 'dashboard' | 'new_letter_form' | 'subscription';
-type AppView = 'landing' | 'auth' | 'dashboard';
+type AppView = 'landing' | 'auth' | 'dashboard' | 'admin-auth';
 type AuthView = 'login' | 'signup';
 
 const App: React.FC = () => {
@@ -41,11 +42,18 @@ const App: React.FC = () => {
   const [appView, setAppView] = useState<AppView>('landing');
   const [authView, setAuthView] = useState<AuthView>('signup');
 
-  // Check for email confirmation or password recovery in URL on mount
+  // Check for email confirmation, password recovery, or admin login in URL on mount
   React.useEffect(() => {
     const checkAuthCallback = () => {
       const hash = window.location.hash;
       const path = window.location.pathname;
+
+      // Handle admin login route
+      if (path.includes('/admin/login')) {
+        logger.info('Admin login route detected');
+        setAppView('admin-auth');
+        return;
+      }
 
       // Handle password recovery
       if (
@@ -71,9 +79,11 @@ const App: React.FC = () => {
 
   // Automatically show dashboard when user is authenticated (including after email confirmation)
   React.useEffect(() => {
-    if (user && profile && appView === 'landing') {
-      logger.info('User authenticated, redirecting to dashboard');
-      setAppView('dashboard');
+    if (user && profile) {
+      if (appView === 'landing' || appView === 'admin-auth') {
+        logger.info('User authenticated, redirecting to dashboard');
+        setAppView('dashboard');
+      }
     }
   }, [user, profile, appView]);
 
@@ -106,6 +116,11 @@ const App: React.FC = () => {
     setAppView('landing');
   };
 
+  const handleAdminLoginSuccess = () => {
+    logger.info('Admin login successful, redirecting to admin dashboard');
+    setAppView('dashboard');
+  };
+
   // Show landing page if no user and not in auth view
   if (!user) {
     if (appView === 'auth') {
@@ -113,6 +128,14 @@ const App: React.FC = () => {
         <AuthPage
           initialView={authView}
           onBackToLanding={handleBackToLanding}
+        />
+      );
+    }
+    if (appView === 'admin-auth') {
+      return (
+        <AdminAuthPage
+          onBackToLanding={handleBackToLanding}
+          onSuccess={handleAdminLoginSuccess}
         />
       );
     }

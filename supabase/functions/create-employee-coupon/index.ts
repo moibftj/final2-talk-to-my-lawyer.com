@@ -17,8 +17,10 @@ function generateCouponCode(userId: string): string {
 }
 
 Deno.serve(async (req: Request) => {
+  const origin = req.headers.get('origin');
+
   if (req.method === 'OPTIONS') {
-    return createCorsResponse();
+    return createCorsResponse(origin);
   }
 
   try {

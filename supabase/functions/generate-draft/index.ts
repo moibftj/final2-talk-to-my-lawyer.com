@@ -37,7 +37,6 @@ interface Config {
   geminiApiKey: string;
 }
 
-const DEFAULT_USER_ID = 'adb39d17-16f5-44c7-968a-533fad7540c6';
 
 // Configuration validation
 function getConfig(): Config {
@@ -238,13 +237,19 @@ function validateRequestBody(requestBody: RequestBody): void {
 }
 
 Deno.serve(async (req: Request) => {
+  const origin = req.headers.get('origin');
+
   if (req.method === 'OPTIONS') {
-    return createCorsResponse();
+    return createCorsResponse(origin);
   }
 
   try {
     // SECURITY: Require user authentication
-    const { user: _user, profile: _profile } = await getUserContext(req);
+    const { user: authUser } = await getUserContext(req);
+
+    if (!authUser || !authUser.id) {
+      throw new Error('User authentication required');
+    }
 
     // Get configuration
     const config = getConfig();
@@ -260,7 +265,9 @@ Deno.serve(async (req: Request) => {
 
     // Extract request parameters
     const { letterRequest, userId, letterId } = requestBody;
-    const effectiveUserId = userId || DEFAULT_USER_ID;
+
+    // Use the authenticated user's ID, or the provided userId if it matches the authenticated user
+    const effectiveUserId = userId || authUser.id;
 
     // Create or update letter
     let currentLetterId = letterId;
@@ -290,9 +297,9 @@ Deno.serve(async (req: Request) => {
       message: 'Letter draft generated successfully',
       letterId: currentLetterId,
       aiDraft,
-    });
+    }, 200, origin || undefined);
   } catch (error: unknown) {
     console.error('Error generating draft:', error);
-    return createErrorResponse(error);
+    return createErrorResponse(error, 500, origin || undefined);
   }
 });

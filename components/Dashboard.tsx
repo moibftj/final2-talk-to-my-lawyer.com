@@ -23,7 +23,7 @@ import { ConfirmationModal } from './ConfirmationModal';
 import { CompletionBanner, useBanners } from './CompletionBanner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
-// import { letterStatusService } from '../services/letterStatusService';
+import { supabase } from '../services/supabase';
 
 type View = 'dashboard' | 'new_letter_form' | 'subscription';
 
@@ -50,26 +50,69 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   const { banners, showSuccess, showError, showInfo } = useBanners();
 
   useEffect(() => {
-    // TODO: Subscribe to real-time status updates
-    // const unsubscribe = letterStatusService.subscribeToStatusUpdates(
-    //   payload => {
-    //     setLetters(prev =>
-    //       prev.map(letter =>
-    //         letter.id === payload.letterId
-    //           ? {
-    //               ...letter,
-    //               status: payload.newStatus,
-    //               updatedAt: payload.timestamp,
-    //             }
-    //           : letter
-    //       )
-    //     );
-    //     showInfo(
-    //       'Status Update',
-    //       `Letter status updated to ${payload.newStatus.replace('_', ' ')}`
-    //     );
-    //   }
-    // );
+    let subscription: any = null;
+
+    const setupRealtimeSubscription = () => {
+      if (!user) return;
+
+      // Subscribe to real-time changes on letter_requests table
+      subscription = supabase
+        .channel('letter-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'letter_requests',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            if (payload.eventType === 'INSERT') {
+              // New letter created
+              const newLetter = payload.new as LetterRequest;
+              setLetters(prev => [newLetter, ...prev]);
+              showInfo(
+                'New Letter Created',
+                `Letter "${newLetter.title}" has been created and is being processed.`
+              );
+            } else if (payload.eventType === 'UPDATE') {
+              // Letter updated
+              const updatedLetter = payload.new as LetterRequest;
+
+              setLetters(prev =>
+                prev.map(letter =>
+                  letter.id === updatedLetter.id
+                    ? {
+                        ...letter,
+                        status: updatedLetter.status,
+                        updatedAt: updatedLetter.updatedAt,
+                        aiGeneratedContent: updatedLetter.aiGeneratedContent,
+                        finalContent: updatedLetter.finalContent,
+                      }
+                    : letter
+                )
+              );
+
+              // Show notification for status changes
+              if (payload.old.status !== updatedLetter.status) {
+                showInfo(
+                  'Status Update',
+                  `Letter "${updatedLetter.title}" status updated to ${updatedLetter.status.replace('_', ' ')}`
+                );
+              }
+            } else if (payload.eventType === 'DELETE') {
+              // Letter deleted
+              const deletedLetter = payload.old as LetterRequest;
+              setLetters(prev => prev.filter(letter => letter.id !== deletedLetter.id));
+              showInfo(
+                'Letter Deleted',
+                `Letter "${deletedLetter.title}" has been removed.`
+              );
+            }
+          }
+        )
+        .subscribe();
+    };
 
     const loadUserData = async () => {
       setIsLoading(true);
@@ -137,13 +180,16 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     };
     if (currentView === 'dashboard') {
       loadUserData();
+      setupRealtimeSubscription();
     }
 
     // Cleanup subscription on unmount
-    // return () => {
-    //   unsubscribe();
-    // };
-  }, [currentView]);
+    return () => {
+      if (subscription) {
+        supabase.removeChannel(subscription);
+      }
+    };
+  }, [currentView, user]);
 
   const navigateTo = (view: View) => setCurrentView(view);
 

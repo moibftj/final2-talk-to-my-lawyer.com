@@ -1,20 +1,9 @@
 import jsPDF from 'jspdf';
+import type { LetterRequest } from '../types';
 
-interface Letter {
-  id: string;
-  attorney_name: string;
-  sender_name: string;
-  sender_address: string;
-  recipient_name: string;
-  matter: string;
-  ai_draft: string;
-  created_at: string;
-  status: string;
-}
-
-export const generateLetterPDF = (letter: Letter): void => {
+export const generateLetterPDF = (letter: LetterRequest): void => {
   const doc = new jsPDF();
-  
+
   // Set up page margins
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -22,10 +11,18 @@ export const generateLetterPDF = (letter: Letter): void => {
   const lineHeight = 7;
   let currentY = margin;
 
+  // Extract information from letter
+  const senderInfo = letter.senderInfo || {};
+  const recipientInfo = letter.recipientInfo || {};
+  const senderName = senderInfo.name || 'Sender';
+  const senderAddress = senderInfo.address || 'Address not available';
+  const recipientName = recipientInfo.name || 'Recipient';
+  const matter = letter.title || 'Legal Letter';
+
   // Add letterhead - Attorney/Law Firm Name
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text(letter.attorney_name, margin, currentY);
+  doc.text('Legal Letter Service', margin, currentY);
   currentY += lineHeight + 3;
 
   // Add horizontal line
@@ -36,7 +33,7 @@ export const generateLetterPDF = (letter: Letter): void => {
   // Add date
   doc.setFontSize(12);
   doc.setFont('helvetica', 'normal');
-  const formattedDate = new Date(letter.created_at).toLocaleDateString('en-US', {
+  const formattedDate = new Date(letter.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -45,22 +42,23 @@ export const generateLetterPDF = (letter: Letter): void => {
   currentY += lineHeight + 3;
 
   // Add recipient info
-  doc.text(`To: ${letter.recipient_name}`, margin, currentY);
+  doc.text(`To: ${recipientName}`, margin, currentY);
   currentY += lineHeight;
 
   // Add subject/matter
   doc.setFont('helvetica', 'bold');
-  doc.text(`Re: ${letter.matter}`, margin, currentY);
+  doc.text(`Re: ${matter}`, margin, currentY);
   currentY += lineHeight + 5;
 
   // Add letter body (AI-generated content)
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
-  
+
   // Split text to fit page width
   const maxWidth = pageWidth - (margin * 2);
-  const splitText = doc.splitTextToSize(letter.ai_draft, maxWidth);
-  
+  const letterContent = letter.aiGeneratedContent || letter.finalContent || 'Letter content not available';
+  const splitText = doc.splitTextToSize(letterContent, maxWidth);
+
   // Add text with page breaks if needed
   splitText.forEach((line: string) => {
     if (currentY > pageHeight - margin - 10) {
@@ -77,30 +75,32 @@ export const generateLetterPDF = (letter: Letter): void => {
     doc.addPage();
     currentY = margin;
   }
-  
+
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text('Sincerely,', margin, currentY);
   currentY += lineHeight * 2;
-  
+
   doc.setFont('helvetica', 'bold');
-  doc.text(letter.sender_name, margin, currentY);
+  doc.text(senderName, margin, currentY);
   currentY += lineHeight;
-  
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  const addressLines = doc.splitTextToSize(letter.sender_address, maxWidth);
+  const addressLines = doc.splitTextToSize(senderAddress, maxWidth);
   addressLines.forEach((line: string) => {
     doc.text(line, margin, currentY);
     currentY += lineHeight - 1;
   });
 
   // Download the PDF
-  const filename = `letter-${letter.recipient_name.replace(/\s+/g, '-')}-${new Date().getTime()}.pdf`;
+  const filename = `letter-${recipientName.replace(/\s+/g, '-')}-${new Date().getTime()}.pdf`;
   doc.save(filename);
 };
 
 // Helper function to check if letter is ready for download
-export const isLetterReadyForDownload = (letter: Letter): boolean => {
-  return letter.status === 'completed' && letter.ai_draft && letter.ai_draft.length > 0;
+export const isLetterReadyForDownload = (letter: LetterRequest): boolean => {
+  return letter.status === 'completed' &&
+         (letter.aiGeneratedContent || letter.finalContent) &&
+         (letter.aiGeneratedContent || letter.finalContent)!.length > 0;
 };

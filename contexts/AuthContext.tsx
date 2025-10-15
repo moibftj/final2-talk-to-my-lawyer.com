@@ -36,7 +36,7 @@ interface AuthContextType {
     password: string,
     role?: UserRole,
     couponCode?: string
-  ) => Promise<{ error: any; user: User | null }>;
+  ) => Promise<{ error: any; user: User | null; couponCode?: string }>;
   adminSignIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
@@ -48,7 +48,7 @@ interface AuthContextType {
     password: string,
     role?: UserRole,
     couponCode?: string
-  ) => Promise<User | null>;
+  ) => Promise<{ user: User | null; couponCode?: string }>;
   requestPasswordReset: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserPassword: (newPassword: string) => Promise<void>;
@@ -263,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error, user: null };
       }
 
-      // If user is created, create profile entry
+      // If user is created, create profile entry and handle role-specific setup
       if (data.user) {
         // Process referral if coupon code provided and user is signing up as 'user'
         if (couponCode && role === 'user') {
@@ -285,9 +285,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Don't fail signup for referral errors
           }
         }
+
+        // Create employee coupon if signing up as employee
+        let employeeCouponCode: string | undefined;
+        if (role === 'employee') {
+          try {
+            const supabaseUrl = Deno?.env?.get('SUPABASE_URL') ||
+                              process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const supabaseAnonKey = Deno?.env?.get('SUPABASE_ANON_KEY') ||
+                                 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+            if (supabaseUrl && supabaseAnonKey) {
+              const response = await fetch(`${supabaseUrl}/functions/v1/create-employee-coupon`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${supabaseAnonKey}`,
+                },
+                body: JSON.stringify({
+                  userId: data.user.id,
+                  email: email,
+                }),
+              });
+
+              if (response.ok) {
+                const result = await response.json();
+                employeeCouponCode = result.code;
+                logger.info('Employee coupon created successfully:', result);
+              } else {
+                logger.error('Failed to create employee coupon:', await response.text());
+              }
+            } else {
+              logger.error('Missing Supabase configuration for employee coupon creation');
+            }
+          } catch (couponError) {
+            logger.error('Error creating employee coupon:', couponError);
+            // Don't fail signup for coupon creation errors
+          }
+        }
       }
 
-      return { error: null, user: data.user };
+      return { error: null, user: data.user, couponCode: employeeCouponCode };
     } catch (error) {
       return { error, user: null };
     }
@@ -306,7 +344,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role: UserRole = 'user',
     couponCode?: string
   ) => {
-    const { error, user: newUser } = await signUp(
+    const { error, user: newUser, couponCode: employeeCouponCode } = await signUp(
       email,
       password,
       role,
@@ -315,7 +353,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       throw error;
     }
-    return newUser;
+    return { user: newUser, couponCode: employeeCouponCode };
   };
 
   const requestPasswordReset = async (email: string) => {

@@ -12,7 +12,7 @@ CLAUDE_DIR="$HOME/.claude"
 mkdir -p "$CLAUDE_DIR"
 
 # Your Z.AI API key
-ZAI_API_KEY="8398aa79f8d040dda0d7abe3a5eba843.hNUNIJz1hZuzxGXa"
+ZAI_API_KEY="d1dcbd4b831a44caa6fb1749a3be0444.6c2hi0jaLKN1aQyp"
 
 # Create or update settings.json
 SETTINGS_FILE="$CLAUDE_DIR/settings.json"
