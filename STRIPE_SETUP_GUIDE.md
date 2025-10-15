@@ -34,7 +34,7 @@ npm install @stripe/stripe-js
 
 In your Stripe Dashboard, create these products:
 
-#### Basic Plan - One Letter ($19.99)
+2
 - **Name**: Basic Plan - One Letter
 - **Description**: Single legal letter generation with basic features
 - **Price**: $19.99 USD

@@ -27,7 +27,12 @@
       "Bash(curl:*)",
       "Bash(sh:*)",
       "Bash(docker:*)",
-      "Bash(deno:*)"
+      "Bash(deno:*)",
+      "Bash(pnpm supabase status:*)",
+      "Bash(pnpm supabase projects list:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_dbf771ea6d20cdc1704bc45d47381626ccc1b1e7 pnpm supabase link:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_dbf771ea6d20cdc1704bc45d47381626ccc1b1e7 pnpm supabase functions deploy:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_dbf771ea6d20cdc1704bc45d47381626ccc1b1e7 pnpm supabase login:*)"
     ],
     "deny": [],
     "ask": []
