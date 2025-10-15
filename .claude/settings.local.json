@@ -15,7 +15,9 @@
       "Bash(pnpm run format:check)",
       "Bash(pnpm run format)",
       "Bash(vercel:*)",
-      "Bash(pnpm run build)"
+      "Bash(pnpm run build)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm add:*)"
     ],
     "deny": [],
     "ask": []
