@@ -14,7 +14,7 @@ import {
   Briefcase,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { LegalBrandHeader } from './ui/legal-theme';
+import { Logo } from './Logo';
 import { cn } from '../lib/utils';
 
 interface HeaderProps {
@@ -85,6 +85,12 @@ export const Header: React.FC<HeaderProps> = ({
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='flex justify-between items-center h-16'>
           {/* Logo and Brand */}
+          <div className="flex items-center">
+            <Logo 
+              size="md"
+              showText={true}
+              variant="default"
+              className="cursor-pointer"
           <div className='flex items-center'>
             <LegalBrandHeader
               brandName='talk-to-my-lawyer'

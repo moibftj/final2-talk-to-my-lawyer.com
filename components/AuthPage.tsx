@@ -10,7 +10,7 @@ import {
 } from './Card';
 import { ShinyButton } from './magicui/shiny-button';
 import { ShimmerButton } from './magicui/shimmer-button';
-import { IconLogo } from '../constants';
+import { Logo } from './Logo';
 import type { UserRole } from '../types';
 import { isValidEmail } from '../lib/utils';
 import { Tooltip } from './Tooltip';
@@ -436,11 +436,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </button>
         </div>
       )}
-      <div className='flex flex-col sm:flex-row items-center gap-2 sm:gap-3 mb-4 sm:mb-6 lg:mb-8'>
-        <IconLogo className='h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-blue-600 dark:text-blue-400' />
-        <span className='text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white text-center'>
-          Law Letter AI
-        </span>
+      <div className='flex justify-center mb-4 sm:mb-6 lg:mb-8'>
+        <Logo 
+          size="lg"
+          showText={true}
+          variant="default"
+        />
       </div>
       <Card className='w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl mx-auto'>
         {renderContent()}

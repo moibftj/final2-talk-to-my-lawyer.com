@@ -32,6 +32,10 @@ dist-ssr
 .env.production
 .env.development
 
+# Lock files (keep only pnpm-lock.yaml)
+package-lock.json
+yarn.lock
+
 # Local Netlify folder
 .netlify
 .vercel

@@ -6,8 +6,10 @@
   "packageManager": "pnpm@9.12.3",
   "engines": {
     "node": ">=20.19.0",
+    "pnpm": ">=8.0.0"
     "pnpm": ">=9.0.0"
   },
+  "packageManager": "pnpm@10.10.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "dev": "vite",

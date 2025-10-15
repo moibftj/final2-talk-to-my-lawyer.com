@@ -77,6 +77,9 @@ importers:
       scoop:
         specifier: ^0.0.2
         version: 0.0.2
+      supabase:
+        specifier: ^2.47.2
+        version: 2.48.3
       tailwind-merge:
         specifier: ^2.6.0
         version: 2.6.0
@@ -1533,11 +1536,9 @@ packages:
 
   '@so-ric/colorspace@1.1.6':
     resolution: {integrity: sha512-/KiKkpHNOBgkFJwu9sh48LkHSMYGyuTcSFK/qMBdnOAlrRJzRSXAOFB5qwzaVQuDl8wAvHVMkaASQDReTahxuw==}
-
   '@stripe/stripe-js@8.0.0':
     resolution: {integrity: sha512-dLvD55KT1cBmrqzgYRgY42qNcw6zW4HS5oRZs0xRvHw9gBWig5yDnWNop/E+/t2JK+OZO30zsnupVBN2MqW2mg==}
     engines: {node: '>=12.16'}
-
   '@supabase/auth-js@2.75.0':
     resolution: {integrity: sha512-J8TkeqCOMCV4KwGKVoxmEBuDdHRwoInML2vJilthOo7awVCro2SM+tOcpljORwuBQ1vHUtV62Leit+5wlxrNtw==}
 
@@ -5577,9 +5578,8 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
 
   '@floating-ui/utils@0.2.10': {}
-
   '@google/generative-ai@0.24.1': {}
-
+  
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.7':
