@@ -4,8 +4,10 @@ import { Spotlight } from './components/magicui/spotlight';
 import { SparklesText } from './components/magicui/sparkles-text';
 import { useAuth } from './contexts/AuthContext';
 import { AuthPage } from './components/AuthPage';
+import { AdminAuthPage } from './components/admin/AdminAuthPage';
 import { LandingPage } from './components/LandingPage';
 import { Spinner } from './components/Spinner';
+import { logger } from './lib/logger';
 
 // Lazy load role-specific dashboards for code splitting
 const UserDashboard = lazy(() =>
@@ -30,7 +32,7 @@ const ResetPasswordPage = lazy(() =>
 );
 
 type UserDashboardView = 'dashboard' | 'new_letter_form' | 'subscription';
-type AppView = 'landing' | 'auth' | 'dashboard';
+type AppView = 'landing' | 'auth' | 'dashboard' | 'admin-auth';
 type AuthView = 'login' | 'signup';
 
 const App: React.FC = () => {
@@ -40,22 +42,50 @@ const App: React.FC = () => {
   const [appView, setAppView] = useState<AppView>('landing');
   const [authView, setAuthView] = useState<AuthView>('signup');
 
-  // Check for password recovery in URL on mount
+  // Check for email confirmation, password recovery, or admin login in URL on mount
   React.useEffect(() => {
-    const checkPasswordRecovery = () => {
+    const checkAuthCallback = () => {
       const hash = window.location.hash;
       const path = window.location.pathname;
-      
-      // Handle both hash-based and path-based recovery
-      if ((hash.includes('type=recovery') && hash.includes('access_token=')) || 
-          path.includes('reset-password')) {
+
+      // Handle admin login route
+      if (path.includes('/admin/login')) {
+        logger.info('Admin login route detected');
+        setAppView('admin-auth');
+        return;
+      }
+
+      // Handle password recovery
+      if (
+        (hash.includes('type=recovery') && hash.includes('access_token=')) ||
+        path.includes('reset-password')
+      ) {
         // Allow the AuthContext to handle the token processing
         return;
       }
+
+      // Handle email confirmation redirect
+      if (hash.includes('type=signup') || hash.includes('type=email')) {
+        logger.info(
+          'Email confirmation detected, user will be redirected to dashboard'
+        );
+        // Clean up the URL hash
+        window.history.replaceState(null, '', window.location.pathname);
+      }
     };
-    
-    checkPasswordRecovery();
+
+    checkAuthCallback();
   }, []);
+
+  // Automatically show dashboard when user is authenticated (including after email confirmation)
+  React.useEffect(() => {
+    if (user && profile) {
+      if (appView === 'landing' || appView === 'admin-auth') {
+        logger.info('User authenticated, redirecting to dashboard');
+        setAppView('dashboard');
+      }
+    }
+  }, [user, profile, appView]);
 
   if (isLoading) {
     return <Spinner />;
@@ -86,6 +116,11 @@ const App: React.FC = () => {
     setAppView('landing');
   };
 
+  const handleAdminLoginSuccess = () => {
+    logger.info('Admin login successful, redirecting to admin dashboard');
+    setAppView('dashboard');
+  };
+
   // Show landing page if no user and not in auth view
   if (!user) {
     if (appView === 'auth') {
@@ -96,10 +131,21 @@ const App: React.FC = () => {
         />
       );
     }
+    if (appView === 'admin-auth') {
+      return (
+        <AdminAuthPage
+          onBackToLanding={handleBackToLanding}
+          onSuccess={handleAdminLoginSuccess}
+        />
+      );
+    }
     return (
       <LandingPage onGetStarted={handleGetStarted} onLogin={handleLogin} />
     );
   }
+
+  // If user is authenticated, always show dashboard (not landing page)
+  // This handles post-confirmation redirects
 
   const renderDashboard = () => {
     return (
@@ -137,7 +183,9 @@ const App: React.FC = () => {
   };
 
   const getDescription = () => {
-    switch (user.role) {
+    switch (
+      profile?.role // ✅ FIXED: Use profile?.role consistently
+    ) {
       case 'admin':
         return 'Manage users, letters, and system settings.';
       case 'employee':
@@ -153,10 +201,10 @@ const App: React.FC = () => {
       <Spotlight className='relative flex h-96 w-full flex-col items-center justify-center overflow-hidden rounded-b-2xl border-b border-slate-800 bg-gradient-to-br from-gray-950 to-slate-900'>
         <Header
           userDashboardView={
-            user.role === 'user' ? userDashboardView : undefined
+            profile?.role === 'user' ? userDashboardView : undefined // ✅ FIXED: Use profile?.role consistently
           }
           setUserDashboardView={
-            user.role === 'user' ? setUserDashboardView : undefined
+            profile?.role === 'user' ? setUserDashboardView : undefined // ✅ FIXED: Use profile?.role consistently
           }
           onBackToLanding={handleBackToLanding}
         />

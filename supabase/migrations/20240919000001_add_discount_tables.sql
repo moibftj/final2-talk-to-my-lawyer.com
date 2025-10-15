@@ -60,14 +60,23 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Add updated_at triggers
-CREATE TRIGGER update_discount_codes_updated_at
-    BEFORE UPDATE ON discount_codes
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_subscriptions_updated_at
-    BEFORE UPDATE ON subscriptions
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Add updated_at triggers (conditionally)
+DO $$
+BEGIN
+    -- Create discount_codes trigger if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_discount_codes_updated_at') THEN
+        CREATE TRIGGER update_discount_codes_updated_at
+            BEFORE UPDATE ON discount_codes
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+    
+    -- Create subscriptions trigger if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_subscriptions_updated_at') THEN
+        CREATE TRIGGER update_subscriptions_updated_at
+            BEFORE UPDATE ON subscriptions
+            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+    END IF;
+END $$;
 
 -- Add Row Level Security (RLS) policies
 
@@ -76,54 +85,63 @@ ALTER TABLE discount_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE discount_usage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 
--- Discount codes policies
+-- Discount codes policies (drop existing first)
 -- Employees can view and manage their own discount codes
+DROP POLICY IF EXISTS "Employees can view their own discount codes" ON discount_codes;
 CREATE POLICY "Employees can view their own discount codes"
     ON discount_codes FOR SELECT
     USING (employee_id = auth.uid());
 
+DROP POLICY IF EXISTS "Employees can insert their own discount codes" ON discount_codes;
 CREATE POLICY "Employees can insert their own discount codes"
     ON discount_codes FOR INSERT
     WITH CHECK (employee_id = auth.uid());
 
+DROP POLICY IF EXISTS "Employees can update their own discount codes" ON discount_codes;
 CREATE POLICY "Employees can update their own discount codes"
     ON discount_codes FOR UPDATE
     USING (employee_id = auth.uid())
     WITH CHECK (employee_id = auth.uid());
 
--- Anyone can validate discount codes (for checkout)
+-- Allow anyone to read active discount codes for validation
+DROP POLICY IF EXISTS "Anyone can validate active discount codes" ON discount_codes;
 CREATE POLICY "Anyone can validate active discount codes"
     ON discount_codes FOR SELECT
     USING (is_active = true);
 
--- Admins can view all discount codes
+-- Admin can view all discount codes
+DROP POLICY IF EXISTS "Admins can view all discount codes" ON discount_codes;
 CREATE POLICY "Admins can view all discount codes"
     ON discount_codes FOR ALL
     USING (
         EXISTS (
-            SELECT 1 FROM auth.users
-            WHERE auth.uid() = auth.users.id
-            AND auth.users.raw_user_meta_data->>'role' = 'admin'
+            SELECT 1 FROM profiles 
+            WHERE profiles.id = auth.uid() 
+            AND profiles.role = 'admin'
         )
     );
 
--- Discount usage policies
+-- Discount usage policies (drop existing first)
 -- Employees can view their own discount usage
+DROP POLICY IF EXISTS "Employees can view their discount usage" ON discount_usage;
 CREATE POLICY "Employees can view their discount usage"
     ON discount_usage FOR SELECT
     USING (employee_id = auth.uid());
 
 -- Users can view their own discount usage
+DROP POLICY IF EXISTS "Users can view their own discount usage" ON discount_usage;
 CREATE POLICY "Users can view their own discount usage"
     ON discount_usage FOR SELECT
     USING (user_id = auth.uid());
 
 -- System can insert discount usage records
+DROP POLICY IF EXISTS "System can insert discount usage" ON discount_usage;
 CREATE POLICY "System can insert discount usage"
     ON discount_usage FOR INSERT
     WITH CHECK (true);
 
 -- Admins can view all discount usage
+DROP POLICY IF EXISTS "Admins can view all discount usage" ON discount_usage;
 CREATE POLICY "Admins can view all discount usage"
     ON discount_usage FOR ALL
     USING (
@@ -134,24 +152,28 @@ CREATE POLICY "Admins can view all discount usage"
         )
     );
 
--- Subscription policies
+-- Subscription policies (drop existing first)
 -- Users can view their own subscriptions
+DROP POLICY IF EXISTS "Users can view their own subscriptions" ON subscriptions;
 CREATE POLICY "Users can view their own subscriptions"
     ON subscriptions FOR SELECT
     USING (user_id = auth.uid());
 
 -- Users can insert their own subscriptions
+DROP POLICY IF EXISTS "Users can insert their own subscriptions" ON subscriptions;
 CREATE POLICY "Users can insert their own subscriptions"
     ON subscriptions FOR INSERT
     WITH CHECK (user_id = auth.uid());
 
 -- Users can update their own subscriptions
+DROP POLICY IF EXISTS "Users can update their own subscriptions" ON subscriptions;
 CREATE POLICY "Users can update their own subscriptions"
     ON subscriptions FOR UPDATE
     USING (user_id = auth.uid())
     WITH CHECK (user_id = auth.uid());
 
 -- Admins can view all subscriptions
+DROP POLICY IF EXISTS "Admins can view all subscriptions" ON subscriptions;
 CREATE POLICY "Admins can view all subscriptions"
     ON subscriptions FOR ALL
     USING (
