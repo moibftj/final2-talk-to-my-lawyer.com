@@ -1,3 +1,4 @@
 - the project name on vercel is talk-to-my-lawyer and id is prj_XbNkLkGVKX5h0m6SFbTZfCI790JS
 - We are using VITE & Supabase structure
 - Instead of Using Stripe we will use a dummy checkout to complete the subscription process so employees could be awarded commision and flow will be tested
+- we are using pnpm
