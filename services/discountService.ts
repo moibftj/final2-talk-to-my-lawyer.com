@@ -41,12 +41,12 @@ export async function getEmployeeDiscountCodes(employeeId: string): Promise<{
       total_discounts: codes?.length || 0,
       total_revenue_generated: 0, // This would need to be calculated from actual revenue
       total_usage: codes?.reduce((sum, code) => sum + code.usage_count, 0) || 0,
-      active_codes: codes?.filter(code => code.is_active).length || 0
+      active_codes: codes?.filter(code => code.is_active).length || 0,
     };
 
     return {
       codes: codes || [],
-      stats
+      stats,
     };
   } catch (error) {
     console.error('Error fetching employee discount codes:', error);
@@ -55,11 +55,14 @@ export async function getEmployeeDiscountCodes(employeeId: string): Promise<{
 }
 
 // Generate a new discount code for an employee
-export async function generateDiscountCode(employeeId: string): Promise<string> {
+export async function generateDiscountCode(
+  employeeId: string
+): Promise<string> {
   try {
     // Use the database function to generate coupon
-    const { data, error } = await supabase
-      .rpc('generate_employee_coupon', { employee_uuid: employeeId });
+    const { data, error } = await supabase.rpc('generate_employee_coupon', {
+      employee_uuid: employeeId,
+    });
 
     if (error) {
       throw error;
@@ -90,20 +93,20 @@ export async function validateDiscountCode(code: string): Promise<{
     if (error || !data) {
       return {
         isValid: false,
-        error: 'Invalid or inactive coupon code'
+        error: 'Invalid or inactive coupon code',
       };
     }
 
     return {
       isValid: true,
       percent_off: data.discount_percentage,
-      employee_id: data.employee_id
+      employee_id: data.employee_id,
     };
   } catch (error) {
     console.error('Error validating discount code:', error);
     return {
       isValid: false,
-      error: 'Error validating coupon code'
+      error: 'Error validating coupon code',
     };
   }
 }
@@ -125,8 +128,8 @@ export async function applyDiscountCode(
         couponCode: code,
         userId,
         subscriptionType,
-        originalAmount
-      })
+        originalAmount,
+      }),
     });
 
     if (!response.ok) {
@@ -143,9 +146,7 @@ export async function applyDiscountCode(
 // Get admin discount analytics
 export async function getAdminDiscountAnalytics(): Promise<any> {
   try {
-    const { data, error } = await supabase
-      .from('employee_coupons')
-      .select(`
+    const { data, error } = await supabase.from('employee_coupons').select(`
         *,
         profiles!employee_id (email, points, commission_earned)
       `);
@@ -159,7 +160,8 @@ export async function getAdminDiscountAnalytics(): Promise<any> {
       total_codes: data?.length || 0,
       total_usage: data?.reduce((sum, code) => sum + code.usage_count, 0) || 0,
       active_codes: data?.filter(code => code.is_active).length || 0,
-      top_performers: data?.sort((a, b) => b.usage_count - a.usage_count).slice(0, 5) || []
+      top_performers:
+        data?.sort((a, b) => b.usage_count - a.usage_count).slice(0, 5) || [],
     };
 
     return analytics;

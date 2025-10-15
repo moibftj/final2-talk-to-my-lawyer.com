@@ -1,6 +1,10 @@
-/// <reference types="https://raw.githubusercontent.com/denoland/deno/v1.40.2/cli/dts/lib.deno.ns.d.ts" />
-
 import { createClient } from '@supabase/supabase-js';
+import { getUserContext } from '../../utils/auth.ts';
+import {
+  createCorsResponse,
+  createJsonResponse,
+  createErrorResponse,
+} from '../../utils/cors.ts';
 
 interface CouponRequest {
   couponCode: string;
@@ -9,18 +13,15 @@ interface CouponRequest {
   originalAmount: number;
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
-};
-
-Deno.serve(async req => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return createCorsResponse();
   }
 
   try {
+    // SECURITY: Require user authentication
+    const { user, profile } = await getUserContext(req);
+
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -35,7 +36,24 @@ Deno.serve(async req => {
     }: CouponRequest = await req.json();
 
     if (!couponCode || !userId || !subscriptionType || !originalAmount) {
-      throw new Error('Missing required fields');
+      return createJsonResponse(
+        {
+          success: false,
+          error: 'Missing required fields',
+        },
+        400
+      );
+    }
+
+    // SECURITY: Validate userId - ensure user can only apply coupons for themselves
+    if (userId !== user.id && profile?.role !== 'admin') {
+      return createJsonResponse(
+        {
+          success: false,
+          error: 'You can only apply coupons for yourself',
+        },
+        403
+      );
     }
 
     // Validate and get employee coupon using new three-tier schema
@@ -52,29 +70,23 @@ Deno.serve(async req => {
       .single();
 
     if (codeError || !employeeCoupon) {
-      return new Response(
-        JSON.stringify({
+      return createJsonResponse(
+        {
           success: false,
           error: 'Invalid or inactive coupon code',
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        }
+        },
+        400
       );
     }
 
     // Verify employee role
     if (employeeCoupon.profiles?.role !== 'employee') {
-      return new Response(
-        JSON.stringify({
+      return createJsonResponse(
+        {
           success: false,
           error: 'Coupon is not associated with a valid employee',
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        }
+        },
+        400
       );
     }
 
@@ -178,37 +190,22 @@ Deno.serve(async req => {
       );
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Coupon applied successfully',
-        data: {
-          subscriptionId: subscription.id,
-          originalAmount,
-          discountAmount,
-          finalAmount,
-          discountPercentage,
-          commissionAmount,
-          employeeId: employeeCoupon.employee_id,
-          lettersAllowed: subscription.letters_allowed,
-        },
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    );
-  } catch (error) {
+    return createJsonResponse({
+      success: true,
+      message: 'Coupon applied successfully',
+      data: {
+        subscriptionId: subscription.id,
+        originalAmount,
+        discountAmount,
+        finalAmount,
+        discountPercentage,
+        commissionAmount,
+        employeeId: employeeCoupon.employee_id,
+        lettersAllowed: subscription.letters_allowed,
+      },
+    });
+  } catch (error: unknown) {
     console.error('Error applying coupon:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
-    );
+    return createErrorResponse(error);
   }
 });

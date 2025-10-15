@@ -16,9 +16,20 @@ CREATE INDEX IF NOT EXISTS idx_profiles_referred_by ON public.profiles(referred_
 CREATE INDEX IF NOT EXISTS idx_profiles_subscription_status ON public.profiles(subscription_status);
 CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
 
--- Add constraints
-ALTER TABLE public.profiles ADD CONSTRAINT IF NOT EXISTS check_points_non_negative CHECK (points >= 0);
-ALTER TABLE public.profiles ADD CONSTRAINT IF NOT EXISTS check_commission_non_negative CHECK (commission_earned >= 0);
+-- Add constraints (drop first if exists)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_points_non_negative' AND conrelid = 'public.profiles'::regclass) THEN
+        ALTER TABLE public.profiles ADD CONSTRAINT check_points_non_negative CHECK (points >= 0);
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_commission_non_negative' AND conrelid = 'public.profiles'::regclass) THEN
+        ALTER TABLE public.profiles ADD CONSTRAINT check_commission_non_negative CHECK (commission_earned >= 0);
+    END IF;
+END $$;
 
 -- Add comments
 COMMENT ON COLUMN public.profiles.points IS 'Points earned by employees for referrals and activities';

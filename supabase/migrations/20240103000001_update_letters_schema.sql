@@ -12,8 +12,15 @@ ADD COLUMN IF NOT EXISTS ai_generated_content TEXT,
 ADD COLUMN IF NOT EXISTS template_data JSONB DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS final_content TEXT;
 
--- Rename existing columns to match application expectations
-ALTER TABLE public.letters RENAME COLUMN content TO ai_draft;
+-- Check if content column exists and rename it to ai_draft if ai_draft doesn't exist
+DO $$
+BEGIN
+    -- Only rename if content column exists and ai_draft doesn't exist
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'letters' AND column_name = 'content') 
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'letters' AND column_name = 'ai_draft') THEN
+        ALTER TABLE public.letters RENAME COLUMN content TO ai_draft;
+    END IF;
+END $$;
 
 -- Update the status constraint to match the new workflow
 ALTER TABLE public.letters

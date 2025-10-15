@@ -8,14 +8,14 @@ This guide covers everything you need to run the project locally with OpenAI Cod
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
+**Prerequisites:**  Node.js 20+ and PNPM 9+
 
 
 1. Install dependencies:
-   `npm install`
+   `pnpm install`
 2. Set the `OPENAI_API_KEY` in `.env.local` (or your shell) to your OpenAI key
 3. Run the app:
-   `npm run dev`
+   `pnpm dev`
 ## Deploy to Netlify (approved-my-lawyer)
 
 You can deploy this project to Netlify with a single script. The site name requested: `approved My Lawyer` (Netlify slug will become `approved-my-lawyer`).
@@ -45,7 +45,7 @@ Alternatively, copy `.env.example` to `.env` and fill in values (for local dev o
 ```
 
 The script will:
-1. Ensure the project is built (`npm run build` if `dist/` missing)
+1. Ensure the project is built (`pnpm build` if `dist/` missing)
 2. Create the site `approved-my-lawyer` if it does not exist
 3. Push environment variables to Netlify (only those present in your shell)
 4. Trigger a production deploy

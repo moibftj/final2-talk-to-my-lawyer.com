@@ -1,23 +1,40 @@
-// FIX: Replaced unsupported 'lib' reference with a 'types' reference to a stable Deno types URL to resolve TypeScript errors.
-/// <reference types="https://raw.githubusercontent.com/denoland/deno/v1.40.2/cli/dts/lib.deno.ns.d.ts" />
-
 // Follow this guide to deploy the function to your Supabase project:
 // https://supabase.com/docs/guides/functions/deploy
 
 import { createClient } from '@supabase/supabase-js';
+import { requireAdmin } from '../../utils/auth.ts';
+import {
+  createCorsResponse,
+  createJsonResponse,
+  createErrorResponse,
+} from '../../utils/cors.ts';
 
-Deno.serve(async req => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers':
-      'authorization, x-client-info, apikey, content-type',
-  };
+interface AuthUser {
+  id: string;
+  email?: string;
+  [key: string]: unknown;
+}
 
+interface UserProfile {
+  id: string;
+  role: string;
+}
+
+interface CombinedUser {
+  id: string;
+  email: string;
+  role: string;
+}
+
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return createCorsResponse();
   }
 
   try {
+    // SECURITY: Require admin authentication
+    const { user, profile } = await requireAdmin(req);
+
     // 1. Create a Supabase client with the service_role key
     // This will bypass all RLS policies and allow you to read all data.
     const supabaseAdmin = createClient(
@@ -47,24 +64,25 @@ Deno.serve(async req => {
     }
 
     // 4. Combine user and profile data
-    const combinedUsers = users.map(user => {
-      const profile = profiles.find(p => p.id === user.id);
+    const combinedUsers: CombinedUser[] = users.map(user => {
+      const profile = (profiles as UserProfile[])?.find(p => p.id === user.id);
       return {
         id: user.id,
-        email: user.email,
+        email: user.email || '',
         role: profile?.role || 'user', // Default to 'user' if no profile found
       };
     });
 
     // 5. Return the list of users
-    return new Response(JSON.stringify({ users: combinedUsers }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    return createJsonResponse(
+      {
+        users: combinedUsers,
+        requestedBy: { id: user.id, role: profile.role },
+      },
+      200
+    );
+  } catch (error: unknown) {
+    console.error('Error fetching users:', error);
+    return createErrorResponse(error);
   }
 });
