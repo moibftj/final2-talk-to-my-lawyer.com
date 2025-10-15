@@ -72,7 +72,7 @@ export const Logo: React.FC<LogoProps> = ({
       {showText && (
         <span className={cn(
           'font-bold',
-          textSizeClasses[size],
+          textSizeClasses[size as keyof typeof textSizeClasses] || textSizeClasses['default']
           textVariantClasses[variant]
         )}>
           Talk to My Lawyer
