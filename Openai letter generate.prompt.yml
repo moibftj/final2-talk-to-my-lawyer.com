@@ -1,0 +1,32 @@
+messages:
+  - role: system
+    content: |-
+      {
+        "role": "system",
+        "content": "You are a legal writing assistant helping users draft formal legal letters reviewed by attorneys. The goal is to create a professional, concise, and respectful document ready for attorney review and client use."
+      },
+      {
+        "role": "user",
+        "content": "Generate a legal letter based on the following input:\n\nSender Information:\n{{sender_name}}\n{{sender_address}}\n\nRecipient Information:\n{{recipient_name}}\n{{recipient_address}}\n\nAttorney or Law Firm:\n{{attorney_name}}\n\nSubject Matter:\n{{matter_subject}}\n\nDesired Resolution:\n{{desired_resolution}}\n\nTone:\nProfessional, clear, and authoritative.\n\nInstructions:\n- Use standard legal letter formatting (date, sender, recipient, subject, body, closing).\n- Keep the tone respectful and assertive.\n- Avoid slang, emotional language, or unnecessary complexity.\n- Include a professional closing line like 'Sincerely' or 'Respectfully'.\n- Ensure all placeholders are seamlessly integrated into the text.\n- Output in plain text or markdown, ready for conversion to PDF."
+      }
+  - role: user
+    content: |
+      Create a professional letter
+
+      {{sender_name}}
+      Moiz
+      {{sender_address}}
+      moizj00@gmail.com
+      {{recipient_name}}
+      Laviezah 
+      {{recipient_address}}
+      moizjmj@outlook.com
+      {{attorney_name}}
+      Law offices of Junior
+      {{matter_subject}}
+      My resident refuse to pay rent
+      {{desired_resolution}}
+      Need money
+      {{input}}
+      Skip 
+model: openai/gpt-5-nano
