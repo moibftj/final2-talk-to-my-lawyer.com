@@ -1,69 +1,16 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { validateDiscountCode } from '../services/discountService';
+import {
+  redirectToCheckout,
+  SUBSCRIPTION_PLANS,
+  getPlanById,
+  formatPrice,
+  calculateFinalPrice,
+  validateStripeConfig
+} from '../services/stripeService';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-
-// Subscription plan interface
-interface Plan {
-  id: string;
-  name: string;
-  price: number;
-  features: string[];
-  period: 'monthly' | 'annual';
-}
-
-// Available plans
-const PLANS: Plan[] = [
-  {
-    id: 'basic-monthly',
-    name: 'Basic',
-    price: 19.99,
-    period: 'monthly',
-    features: [
-      'Up to 5 legal letter drafts per month',
-      'Basic document review',
-      'Email support',
-    ],
-  },
-  {
-    id: 'pro-monthly',
-    name: 'Professional',
-    price: 49.99,
-    period: 'monthly',
-    features: [
-      'Unlimited legal letter drafts',
-      'Priority document review',
-      'Phone and email support',
-      'Document storage',
-    ],
-  },
-  {
-    id: 'basic-annual',
-    name: 'Basic Annual',
-    price: 199.99,
-    period: 'annual',
-    features: [
-      'Up to 5 legal letter drafts per month',
-      'Basic document review',
-      'Email support',
-      'Save over 15% compared to monthly',
-    ],
-  },
-  {
-    id: 'pro-annual',
-    name: 'Professional Annual',
-    price: 499.99,
-    period: 'annual',
-    features: [
-      'Unlimited legal letter drafts',
-      'Priority document review',
-      'Phone and email support',
-      'Document storage',
-      'Save over 15% compared to monthly',
-    ],
-  },
-];
 
 export interface SubscriptionFormProps {
   onSubscribe?: (planId: string, discountCode?: string) => Promise<void>;
@@ -71,7 +18,7 @@ export interface SubscriptionFormProps {
 
 function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
   const { user } = useAuth();
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<ReturnType<typeof getPlanById>>(null);
   const [discountCode, setDiscountCode] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
   const [isValidatingCode, setIsValidatingCode] = useState(false);
@@ -81,10 +28,7 @@ function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
 
   // Calculate the final price after discount
   const finalPrice = selectedPlan
-    ? Math.max(
-        selectedPlan.price - (selectedPlan.price * discountAmount) / 100,
-        0
-      ).toFixed(2)
+    ? calculateFinalPrice(selectedPlan.price, discountAmount).toFixed(2)
     : '0.00';
 
   // Handle discount code validation
@@ -117,31 +61,33 @@ function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
 
   // Handle subscription submission
   const handleSubscribe = async () => {
-    if (!selectedPlan) {
+    if (!selectedPlan || !user) {
       return;
     }
 
     setIsSubscribing(true);
 
     try {
-      // Here you would integrate with your payment processor (Stripe, etc.)
-      // For now, we'll just simulate a successful subscription
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Validate Stripe configuration
+      validateStripeConfig();
 
-      // Call onComplete callback if provided
-      if (onSubscribe) {
-        onSubscribe(selectedPlan.id, discountCode);
-      }
+      // Redirect to Stripe Checkout
+      await redirectToCheckout(selectedPlan.id, user.id, discountCode || undefined);
+
     } catch (error) {
       console.error('Subscription error:', error);
+      // Fallback to callback if Stripe fails
+      if (onSubscribe) {
+        await onSubscribe(selectedPlan.id, discountCode);
+      }
     } finally {
       setIsSubscribing(false);
     }
   };
 
   // Filter plans based on period selection
-  const filteredPlans = PLANS.filter(plan =>
-    showAnnual ? plan.period === 'annual' : plan.period === 'monthly'
+  const filteredPlans = SUBSCRIPTION_PLANS.filter(plan =>
+    showAnnual ? plan.period === 'year' : plan.period === 'month'
   );
 
   return (
@@ -182,9 +128,9 @@ function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
           >
             <h3 className='text-xl font-bold mb-2'>{plan.name}</h3>
             <p className='text-3xl font-bold mb-4'>
-              ${plan.price.toFixed(2)}
+              {formatPrice(plan.price)}
               <span className='text-sm font-normal text-gray-600'>
-                /{plan.period === 'monthly' ? 'month' : 'year'}
+                /{plan.period === 'month' ? 'month' : 'year'}
               </span>
             </p>
 
@@ -260,7 +206,7 @@ function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
           <div className='flex justify-between items-center mb-4'>
             <span className='font-medium'>Plan:</span>
             <span>
-              {selectedPlan.name} (${selectedPlan.price.toFixed(2)})
+              {selectedPlan.name} ({formatPrice(selectedPlan.price)})
             </span>
           </div>
 
@@ -268,7 +214,7 @@ function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
             <div className='flex justify-between items-center mb-4 text-green-600'>
               <span className='font-medium'>Discount:</span>
               <span>
-                -${((selectedPlan.price * discountAmount) / 100).toFixed(2)}
+                -{formatPrice((selectedPlan.price * discountAmount) / 100)}
               </span>
             </div>
           )}
