@@ -17,7 +17,12 @@
       "Bash(vercel:*)",
       "Bash(pnpm run build)",
       "Bash(pnpm install:*)",
-      "Bash(pnpm add:*)"
+      "Bash(pnpm add:*)",
+      "Bash(pnpm run dev)",
+      "Bash(npm install:*)",
+      "Bash(VERCEL_TOKEN=WfLRZ8HC46dyrUzmkKFT0ABt vercel:*)",
+      "Bash(export:*)",
+      "Bash(printf:*)"
     ],
     "deny": [],
     "ask": []
