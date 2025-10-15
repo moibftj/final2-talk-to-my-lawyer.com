@@ -58,7 +58,7 @@ export const Logo: React.FC<LogoProps> = ({
       {/* Logo Icon - Golden scales of justice in a rounded square */}
       <div className={cn(
         'relative rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-2 shadow-lg',
-        sizeClasses[size]
+        const validatedSize = ['sm', 'md', 'lg', 'xl'].includes(size) ? size : 'md';
       )}>
         <ScalesIcon className={cn(
           'text-amber-400',
