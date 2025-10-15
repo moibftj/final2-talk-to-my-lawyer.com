@@ -47,12 +47,6 @@ export const Logo: React.FC<LogoProps> = ({
     xl: 'text-3xl'
   };
 
-  const variantClasses = {
-    default: 'text-blue-600 dark:text-blue-400',
-    dark: 'text-gray-900 dark:text-gray-100',
-    light: 'text-white'
-  };
-
   const textVariantClasses = {
     default: 'text-gray-900 dark:text-gray-100',
     dark: 'text-gray-900 dark:text-gray-100',
