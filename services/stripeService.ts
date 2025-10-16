@@ -3,11 +3,11 @@ import { loadStripe } from '@stripe/stripe-js';
 // Environment variables - these should be set in your .env file
 const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
-// Price IDs - these should match your Stripe products
+// Price IDs - these should be set in your .env file and match your Stripe products
 export const STRIPE_PRICES = {
-  ONE_LETTER: 'price_one_letter', // $19.99
-  FOUR_MONTHLY: 'price_four_monthly', // $49.99/month
-  EIGHT_YEARLY: 'price_eight_yearly', // $199.99/year
+  ONE_LETTER: import.meta.env.VITE_STRIPE_PRICE_ONE_LETTER, // $19.99
+  FOUR_MONTHLY: import.meta.env.VITE_STRIPE_PRICE_FOUR_MONTHLY, // $49.99/month
+  EIGHT_YEARLY: import.meta.env.VITE_STRIPE_PRICE_EIGHT_YEARLY, // $199.99/year
 } as const;
 
 export interface SubscriptionPlan {
