@@ -8,7 +8,9 @@ set -e
 echo "🚀 Setting up environment variables for MVP..."
 
 # Gemini API Key
-GEMINI_API_KEY="AIzaSyAQWtiejvbACEQjWKx7j5XdW_uQACvwZLQ"
+if [ -z "$GEMINI_API_KEY" ]; then
+  read -p "Enter your Gemini API Key: " GEMINI_API_KEY
+fi
 
 echo "📝 Creating .env file for local development..."
 
