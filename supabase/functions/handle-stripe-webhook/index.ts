@@ -72,32 +72,56 @@ async function verifyStripeSignature(
   secret: string
 ): Promise<any> {
   const body = await req.text();
-  const signature = req.headers.get('stripe-signature');
+  const signatureHeader = req.headers.get('stripe-signature');
 
-  if (!signature) {
+  if (!signatureHeader) {
     throw new Error('No Stripe signature found');
   }
 
-  // Use subtle crypto for verification
-  const timestamp = signature.split('t=')[1]?.split(',')[0];
+  // Parse Stripe-Signature header
+  // Example: t=timestamp,v1=signature,v0=old_signature
+  const sigParts = signatureHeader.split(',').reduce((acc, part) => {
+    const [key, value] = part.split('=');
+    acc[key] = value;
+    return acc;
+  }, {} as Record<string, string>);
+  const timestamp = sigParts['t'];
+  const v1Signature = sigParts['v1'];
+  if (!timestamp || !v1Signature) {
+    throw new Error('Malformed Stripe signature header');
+  }
   const signedPayload = `${timestamp}.${body}`;
 
-  const expectedSignature = await crypto.subtle.importKey(
+  // Compute HMAC-SHA256
+  const key = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
   );
-
-  const actualSignature = await crypto.subtle.sign(
+  const signatureBuffer = await crypto.subtle.sign(
     'HMAC',
-    expectedSignature,
+    key,
     new TextEncoder().encode(signedPayload)
   );
+  // Convert ArrayBuffer to hex string
+  const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+  const computedSignature = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-  // For simplicity in this implementation, we'll skip the full signature verification
-  // In production, you should verify the signature properly
+  // Constant-time comparison
+  function safeCompare(a: string, b: string): boolean {
+    if (a.length !== b.length) return false;
+    let result = 0;
+    for (let i = 0; i < a.length; i++) {
+      result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return result === 0;
+  }
+
+  if (!safeCompare(computedSignature, v1Signature)) {
+    throw new Error('Invalid Stripe webhook signature');
+  }
   return JSON.parse(body);
 }
 
