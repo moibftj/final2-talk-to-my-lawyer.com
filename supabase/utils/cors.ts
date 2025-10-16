@@ -31,7 +31,7 @@ function getAllowedOrigins(): string[] {
   // Allow custom origins from environment variable
   const customOrigins = Deno.env.get('ALLOWED_ORIGINS');
   if (customOrigins) {
-    return [...allowedOrigins[environment as keyof typeof allowedOrigins] || [], ...customOrigins.split(',')];
+    return [...allowedOrigins[environment as keyof typeof allowedOrigins], ...customOrigins.split(',')];
   }
 
   return allowedOrigins[environment as keyof typeof allowedOrigins] || allowedOrigins.development;
