@@ -155,8 +155,8 @@ async function createStripeCheckoutSession(
       planId,
       discountCode: discountCode || '',
     },
-    success_url: `${req.headers.get('origin')}/dashboard?success=true`,
-    cancel_url: `${req.headers.get('origin')}/subscription?cancelled=true`,
+    success_url: `${request.headers.get('origin')}/dashboard?success=true`,
+    cancel_url: `${request.headers.get('origin')}/subscription?cancelled=true`,
     allow_promotion_codes: true,
   };
 
