@@ -47,12 +47,6 @@ export const Logo: React.FC<LogoProps> = ({
     xl: 'text-3xl'
   };
 
-  const variantClasses = {
-    default: 'text-blue-600 dark:text-blue-400',
-    dark: 'text-gray-900 dark:text-gray-100',
-    light: 'text-white'
-  };
-
   const textVariantClasses = {
     default: 'text-gray-900 dark:text-gray-100',
     dark: 'text-gray-900 dark:text-gray-100',
@@ -64,7 +58,7 @@ export const Logo: React.FC<LogoProps> = ({
       {/* Logo Icon - Golden scales of justice in a rounded square */}
       <div className={cn(
         'relative rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-2 shadow-lg',
-        sizeClasses[size]
+        const validatedSize = ['sm', 'md', 'lg', 'xl'].includes(size) ? size : 'md';
       )}>
         <ScalesIcon className={cn(
           'text-amber-400',
@@ -78,7 +72,7 @@ export const Logo: React.FC<LogoProps> = ({
       {showText && (
         <span className={cn(
           'font-bold',
-          textSizeClasses[size],
+          textSizeClasses[size as keyof typeof textSizeClasses] || textSizeClasses['default']
           textVariantClasses[variant]
         )}>
           Talk to My Lawyer
@@ -127,7 +121,7 @@ export const LogoImage: React.FC<LogoImageProps> = ({
       <img 
         src="/images/talk-to-my-lawyer-logo.png" 
         alt="Talk to My Lawyer" 
-        className={cn('object-contain', sizeClasses[size])}
+        className={cn('object-contain', sizeClasses[size] || sizeClasses['default'])}
       />
       
       {showText && (

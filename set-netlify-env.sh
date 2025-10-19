@@ -3,11 +3,12 @@
 
 set -euo pipefail
 
-netlify env:set VITE_SUPABASE_URL "https://your-project-ref.supabase.co"
-netlify env:set VITE_SUPABASE_ANON_KEY "your-supabase-anon-key"
-netlify env:set VITE_API_URL "https://your-project-ref.supabase.co"
-netlify env:set SUPABASE_URL "https://your-project-ref.supabase.co"
-netlify env:set SUPABASE_SERVICE_ROLE_KEY "your-supabase-service-role-key"
+netlify env:set VITE_SUPABASE_URL "https://qrqnknpxgpbghnbiybyx.supabase.co"
+netlify env:set VITE_SUPABASE_ANON_KEY "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFycW5rbnB4Z3BiZ2huYml5Ynl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1MzI4NzYsImV4cCI6MjA3MjEwODg3Nn0.yqAFETCuZrzb_Oi14eC-oHmZTUt6uG092l-oWZHPOfg"
+netlify env:set VITE_API_URL "https://qrqnknpxgpbghnbiybyx.supabase.co"
+netlify env:set SUPABASE_URL "https://qrqnknpxgpbghnbiybyx.supabase.co"
+netlify env:set SUPABASE_SERVICE_ROLE_KEY "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFycW5rbnB4Z3BiZ2huYml5Ynl4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NjUzMjg3NiwiZXhwIjoyMDcyMTA4ODc2fQ.E6NX2wCTKFoalMF8YpQU_Q-2wwo_6k6Cp0X8DfHXLHk"
+netlify env:set SENDGRID_API_KEY "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"
 netlify env:set OPENAI_API_KEY "your-openai-api-key"
 =======
 if ! command -v netlify >/dev/null 2>&1; then

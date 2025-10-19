@@ -1,23 +1,26 @@
-// FIX: Replaced unsupported 'lib' reference with a 'types' reference to a stable Deno types URL to resolve TypeScript errors.
-/// <reference types="https://raw.githubusercontent.com/denoland/deno/v1.40.2/cli/dts/lib.deno.ns.d.ts" />
-
 // Follow this guide to deploy the function to your Supabase project:
 // https://supabase.com/docs/guides/functions/deploy
 
+/// <reference types="https://deno.land/x/xhr@0.3.0/mod.d.ts" />
+/// <reference lib="deno.ns" />
+
 import { createClient } from '@supabase/supabase-js';
+import { requireAdmin } from '../../utils/auth.ts';
+import {
+  createCorsResponse,
+  createJsonResponse,
+  createErrorResponse,
+} from '../../utils/cors.ts';
 
-Deno.serve(async req => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers':
-      'authorization, x-client-info, apikey, content-type',
-  };
-
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return createCorsResponse();
   }
 
   try {
+    // SECURITY: Require admin authentication
+    const { user, profile } = await requireAdmin(req);
+
     // Create a Supabase client with the service_role key to bypass RLS
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -34,14 +37,15 @@ Deno.serve(async req => {
       throw error;
     }
 
-    return new Response(JSON.stringify({ letters }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    return createJsonResponse(
+      {
+        letters,
+        requestedBy: { id: user.id, role: profile.role },
+      },
+      200
+    );
+  } catch (error: unknown) {
+    console.error('Error fetching letters:', error);
+    return createErrorResponse(error);
   }
 });

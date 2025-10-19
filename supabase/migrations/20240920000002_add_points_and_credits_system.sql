@@ -44,19 +44,22 @@ ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS billing_details JSONB;
 ALTER TABLE employee_points ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_credits ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for employee_points
+-- RLS Policies for employee_points (drop existing first)
 
 -- Employees can view their own points
+DROP POLICY IF EXISTS "Employees can view their own points" ON employee_points;
 CREATE POLICY "Employees can view their own points"
     ON employee_points FOR SELECT
     USING (employee_id = auth.uid());
 
 -- System can insert points (for automated rewards)
+DROP POLICY IF EXISTS "System can insert employee points" ON employee_points;
 CREATE POLICY "System can insert employee points"
     ON employee_points FOR INSERT
     WITH CHECK (true);
 
 -- Admins can view all points
+DROP POLICY IF EXISTS "Admins can view all employee points" ON employee_points;
 CREATE POLICY "Admins can view all employee points"
     ON employee_points FOR ALL
     USING (
@@ -67,19 +70,22 @@ CREATE POLICY "Admins can view all employee points"
         )
     );
 
--- RLS Policies for user_credits
+-- RLS Policies for user_credits (drop existing first)
 
 -- Users can view their own credits
+DROP POLICY IF EXISTS "Users can view their own credits" ON user_credits;
 CREATE POLICY "Users can view their own credits"
     ON user_credits FOR SELECT
     USING (user_id = auth.uid());
 
 -- System can manage user credits
+DROP POLICY IF EXISTS "System can manage user credits" ON user_credits;
 CREATE POLICY "System can manage user credits"
     ON user_credits FOR ALL
     WITH CHECK (true);
 
 -- Admins can view all credits
+DROP POLICY IF EXISTS "Admins can view all user credits" ON user_credits;
 CREATE POLICY "Admins can view all user credits"
     ON user_credits FOR ALL
     USING (

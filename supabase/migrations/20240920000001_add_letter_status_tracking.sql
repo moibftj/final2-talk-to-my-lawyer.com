@@ -34,9 +34,10 @@ CREATE INDEX IF NOT EXISTS idx_letters_due_date_internal ON letters(due_date_int
 -- Enable RLS on letter_status_history
 ALTER TABLE letter_status_history ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for letter_status_history
+-- RLS Policies for letter_status_history (drop existing first)
 
 -- Users can view history of their own letters
+DROP POLICY IF EXISTS "Users can view their letter status history" ON letter_status_history;
 CREATE POLICY "Users can view their letter status history"
     ON letter_status_history FOR SELECT
     USING (
@@ -48,6 +49,7 @@ CREATE POLICY "Users can view their letter status history"
     );
 
 -- Admins and lawyers can view all history
+DROP POLICY IF EXISTS "Admins and lawyers can view all letter status history" ON letter_status_history;
 CREATE POLICY "Admins and lawyers can view all letter status history"
     ON letter_status_history FOR SELECT
     USING (
@@ -59,11 +61,13 @@ CREATE POLICY "Admins and lawyers can view all letter status history"
     );
 
 -- System can insert status history records
+DROP POLICY IF EXISTS "System can insert status history" ON letter_status_history;
 CREATE POLICY "System can insert status history"
     ON letter_status_history FOR INSERT
     WITH CHECK (true);
 
 -- Admins can update/delete history records
+DROP POLICY IF EXISTS "Admins can manage status history" ON letter_status_history;
 CREATE POLICY "Admins can manage status history"
     ON letter_status_history FOR ALL
     USING (

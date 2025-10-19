@@ -8,7 +8,7 @@ import {
   AlertCircle,
   CheckCircle,
   Target,
-  Users
+  Users,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../services/supabase';
@@ -60,8 +60,10 @@ export const EnhancedEmployeeDashboard: React.FC = () => {
 
     try {
       // Fetch employee analytics using the database function
-      const { data: analyticsData, error: analyticsError } = await supabase
-        .rpc('get_employee_analytics', { employee_uuid: user.id });
+      const { data: analyticsData, error: analyticsError } = await supabase.rpc(
+        'get_employee_analytics',
+        { employee_uuid: user.id }
+      );
 
       if (analyticsError) {
         throw analyticsError;
@@ -74,19 +76,25 @@ export const EnhancedEmployeeDashboard: React.FC = () => {
         .from('commission_payments')
         .select('commission_amount, created_at')
         .eq('employee_id', user.id)
-        .gte('created_at', new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString())
+        .gte(
+          'created_at',
+          new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString()
+        )
         .order('created_at', { ascending: true });
 
       if (monthlyError) {
         console.error('Error fetching monthly data:', monthlyError);
       } else if (monthlyCommissions) {
         // Process monthly data
-        const monthlyMap = new Map<string, { referrals: number; commissions: number }>();
+        const monthlyMap = new Map<
+          string,
+          { referrals: number; commissions: number }
+        >();
 
         monthlyCommissions.forEach(item => {
           const month = new Date(item.created_at).toLocaleDateString('en-US', {
             year: 'numeric',
-            month: 'short'
+            month: 'short',
           });
 
           if (!monthlyMap.has(month)) {
@@ -98,11 +106,13 @@ export const EnhancedEmployeeDashboard: React.FC = () => {
           existing.commissions += parseFloat(item.commission_amount.toString());
         });
 
-        const processedMonthlyData = Array.from(monthlyMap.entries()).map(([month, data]) => ({
-          month,
-          referrals: data.referrals,
-          commissions: data.commissions
-        }));
+        const processedMonthlyData = Array.from(monthlyMap.entries()).map(
+          ([month, data]) => ({
+            month,
+            referrals: data.referrals,
+            commissions: data.commissions,
+          })
+        );
 
         setMonthlyData(processedMonthlyData);
       }
@@ -130,14 +140,14 @@ export const EnhancedEmployeeDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-            <div className="h-64 bg-gray-200 rounded-2xl"></div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className='min-h-screen bg-gray-50 p-6'>
+        <div className='max-w-7xl mx-auto'>
+          <div className='animate-pulse space-y-6'>
+            <div className='h-8 bg-gray-200 rounded w-1/3'></div>
+            <div className='h-64 bg-gray-200 rounded-2xl'></div>
+            <div className='grid grid-cols-1 md:grid-cols-4 gap-6'>
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
+                <div key={i} className='h-32 bg-gray-200 rounded-xl'></div>
               ))}
             </div>
           </div>
@@ -149,30 +159,34 @@ export const EnhancedEmployeeDashboard: React.FC = () => {
   // Redirect if not employee
   if (profile?.role !== 'employee') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">This dashboard is only accessible to employees.</p>
+      <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
+        <div className='text-center'>
+          <AlertCircle className='w-16 h-16 text-red-500 mx-auto mb-4' />
+          <h2 className='text-2xl font-bold text-gray-900 mb-2'>
+            Access Denied
+          </h2>
+          <p className='text-gray-600'>
+            This dashboard is only accessible to employees.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className='min-h-screen bg-gray-50 p-6'>
+      <div className='max-w-7xl mx-auto space-y-8'>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
+          className='flex items-center justify-between'
         >
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            <h1 className='text-4xl font-bold text-gray-900 mb-2'>
               Affiliate Dashboard
             </h1>
-            <p className="text-xl text-gray-600">
+            <p className='text-xl text-gray-600'>
               Track your referrals and earnings
             </p>
           </div>
@@ -181,9 +195,11 @@ export const EnhancedEmployeeDashboard: React.FC = () => {
             whileTap={{ scale: 0.95 }}
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className='flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50'
           >
-            <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`}
+            />
             <span>Refresh</span>
           </motion.button>
         </motion.div>
@@ -201,34 +217,38 @@ export const EnhancedEmployeeDashboard: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
+            className='bg-white rounded-xl p-6 shadow-sm border border-gray-100'
           >
-            <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-              <BarChart3 className="w-6 h-6 mr-2 text-blue-600" />
+            <h3 className='text-xl font-semibold text-gray-900 mb-6 flex items-center'>
+              <BarChart3 className='w-6 h-6 mr-2 text-blue-600' />
               Monthly Performance
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
               {monthlyData.map((data, index) => (
                 <motion.div
                   key={data.month}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * index }}
-                  className="p-4 bg-gray-50 rounded-lg border"
+                  className='p-4 bg-gray-50 rounded-lg border'
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-gray-900">{data.month}</h4>
-                    <Calendar className="w-4 h-4 text-gray-500" />
+                  <div className='flex items-center justify-between mb-2'>
+                    <h4 className='font-semibold text-gray-900'>
+                      {data.month}
+                    </h4>
+                    <Calendar className='w-4 h-4 text-gray-500' />
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Referrals:</span>
-                      <span className="font-medium text-blue-600">{data.referrals}</span>
+                  <div className='space-y-2'>
+                    <div className='flex items-center justify-between text-sm'>
+                      <span className='text-gray-600'>Referrals:</span>
+                      <span className='font-medium text-blue-600'>
+                        {data.referrals}
+                      </span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Commissions:</span>
-                      <span className="font-medium text-green-600">
+                    <div className='flex items-center justify-between text-sm'>
+                      <span className='text-gray-600'>Commissions:</span>
+                      <span className='font-medium text-green-600'>
                         ${data.commissions.toFixed(2)}
                       </span>
                     </div>
@@ -245,31 +265,32 @@ export const EnhancedEmployeeDashboard: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200"
+            className='bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200'
           >
-            <div className="flex items-start space-x-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Target className="w-6 h-6 text-blue-600" />
+            <div className='flex items-start space-x-4'>
+              <div className='p-2 bg-blue-100 rounded-lg'>
+                <Target className='w-6 h-6 text-blue-600' />
               </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <div className='flex-1'>
+                <h3 className='text-lg font-semibold text-gray-900 mb-2'>
                   Ready to Start Earning?
                 </h3>
-                <p className="text-gray-600 mb-4">
-                  Share your exclusive coupon code with friends and family. For every user who signs up
-                  with your code, you'll earn $14.95 commission plus 1 point!
+                <p className='text-gray-600 mb-4'>
+                  Share your exclusive coupon code with friends and family. For
+                  every user who signs up with your code, you'll earn $14.95
+                  commission plus 1 point!
                 </p>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
+                <div className='space-y-2 text-sm text-gray-600'>
+                  <div className='flex items-center space-x-2'>
+                    <CheckCircle className='w-4 h-4 text-green-500' />
                     <span>Users get 20% discount on legal letters</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  <div className='flex items-center space-x-2'>
+                    <CheckCircle className='w-4 h-4 text-green-500' />
                     <span>You earn $14.95 commission per referral</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  <div className='flex items-center space-x-2'>
+                    <CheckCircle className='w-4 h-4 text-green-500' />
                     <span>Earn 1 point for each successful referral</span>
                   </div>
                 </div>
@@ -284,26 +305,29 @@ export const EnhancedEmployeeDashboard: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-green-50 rounded-xl p-6 border border-green-200"
+            className='bg-green-50 rounded-xl p-6 border border-green-200'
           >
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Users className="w-6 h-6 text-green-600" />
+            <div className='flex items-center space-x-3 mb-4'>
+              <div className='p-2 bg-green-100 rounded-lg'>
+                <Users className='w-6 h-6 text-green-600' />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className='text-lg font-semibold text-gray-900'>
                   Congratulations! 🎉
                 </h3>
-                <p className="text-gray-600">
-                  You've successfully referred {analytics.total_referrals} user{analytics.total_referrals !== 1 ? 's' : ''} and earned ${analytics.current_commission_earned.toFixed(2)}!
+                <p className='text-gray-600'>
+                  You've successfully referred {analytics.total_referrals} user
+                  {analytics.total_referrals !== 1 ? 's' : ''} and earned $
+                  {analytics.current_commission_earned.toFixed(2)}!
                 </p>
               </div>
             </div>
 
             {analytics.total_referrals >= 5 && (
-              <div className="bg-white rounded-lg p-4 border border-green-200">
-                <p className="text-sm text-green-700 font-medium">
-                  🌟 Super Affiliate Status! You've referred 5+ users. Keep up the great work!
+              <div className='bg-white rounded-lg p-4 border border-green-200'>
+                <p className='text-sm text-green-700 font-medium'>
+                  🌟 Super Affiliate Status! You've referred 5+ users. Keep up
+                  the great work!
                 </p>
               </div>
             )}

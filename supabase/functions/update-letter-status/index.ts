@@ -1,44 +1,79 @@
-/// <reference types="https://raw.githubusercontent.com/denoland/deno/v1.40.2/cli/dts/lib.deno.ns.d.ts" />
-
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
+import { getUserContext } from '../../utils/auth.ts';
+import {
+  createCorsResponse,
+  createJsonResponse,
+  createErrorResponse,
+} from '../../utils/cors.ts';
 
 interface StatusUpdateRequest {
-  letterId: string
-  newStatus: string
-  adminNotes?: string
-  assignedLawyerId?: string
-  dueDateInternal?: string
+  letterId: string;
+  newStatus: string;
+  adminNotes?: string;
+  assignedLawyerId?: string;
+  dueDateInternal?: string;
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+interface UpdateData {
+  status: string;
+  updated_at: string;
+  admin_notes?: string;
+  assigned_lawyer_id?: string;
+  due_date_internal?: string;
 }
 
 // Valid status transitions
-const validStatuses = ['draft', 'submitted', 'in_review', 'approved', 'completed', 'cancelled']
+const validStatuses = [
+  'draft',
+  'submitted',
+  'in_review',
+  'approved',
+  'completed',
+  'cancelled',
+];
 
-Deno.serve(async (req) => {
+Deno.serve(async req => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return createCorsResponse();
   }
 
   try {
+    // SECURITY: Require user authentication
+    const { user: _user, profile } = await getUserContext(req);
+
+    // SECURITY: Only admin and employee roles can update letter status
+    if (profile.role !== 'admin' && profile.role !== 'employee') {
+      return createJsonResponse(
+        {
+          error: 'Insufficient permissions. Admin or employee role required.',
+        },
+        403
+      );
+    }
+
     // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get request body
-    const { letterId, newStatus, adminNotes, assignedLawyerId, dueDateInternal }: StatusUpdateRequest = await req.json()
+    const {
+      letterId,
+      newStatus,
+      adminNotes,
+      assignedLawyerId,
+      dueDateInternal,
+    }: StatusUpdateRequest = await req.json();
 
     if (!letterId || !newStatus) {
-      throw new Error('Missing required fields: letterId or newStatus')
+      throw new Error('Missing required fields: letterId or newStatus');
     }
 
     // Validate status
     if (!validStatuses.includes(newStatus)) {
-      throw new Error(`Invalid status. Valid statuses are: ${validStatuses.join(', ')}`)
+      throw new Error(
+        `Invalid status. Valid statuses are: ${validStatuses.join(', ')}`
+      );
     }
 
     // Get current letter details
@@ -46,39 +81,39 @@ Deno.serve(async (req) => {
       .from('letters')
       .select('*')
       .eq('id', letterId)
-      .single()
+      .single();
 
     if (fetchError || !currentLetter) {
-      throw new Error('Letter not found')
+      throw new Error('Letter not found');
     }
 
     // Prepare update object
-    const updateData: any = {
+    const updateData: UpdateData = {
       status: newStatus,
-      updated_at: new Date().toISOString()
-    }
+      updated_at: new Date().toISOString(),
+    };
 
     // Add optional fields if provided
     if (adminNotes !== undefined) {
-      updateData.admin_notes = adminNotes
+      updateData.admin_notes = adminNotes;
     }
 
     if (assignedLawyerId !== undefined) {
-      updateData.assigned_lawyer_id = assignedLawyerId
+      updateData.assigned_lawyer_id = assignedLawyerId;
     }
 
     if (dueDateInternal !== undefined) {
-      updateData.due_date_internal = dueDateInternal
+      updateData.due_date_internal = dueDateInternal;
     }
 
     // Update the letter
     const { error: updateError } = await supabase
       .from('letters')
       .update(updateData)
-      .eq('id', letterId)
+      .eq('id', letterId);
 
     if (updateError) {
-      throw updateError
+      throw updateError;
     }
 
     // The status history will be automatically created by the database trigger
@@ -91,56 +126,45 @@ Deno.serve(async (req) => {
           old_status: currentLetter.status,
           new_status: newStatus,
           changed_by: assignedLawyerId || currentLetter.user_id,
-          notes: adminNotes
-        })
+          notes: adminNotes,
+        });
 
       if (historyError) {
-        console.warn('Failed to add detailed status history:', historyError)
+        console.warn('Failed to add detailed status history:', historyError);
       }
     }
 
     // Get updated letter with related data
     const { data: updatedLetter, error: finalFetchError } = await supabase
       .from('letters')
-      .select(`
+      .select(
+        `
         *,
         profiles:user_id (email, role),
         assigned_lawyer:assigned_lawyer_id (email)
-      `)
+      `
+      )
       .eq('id', letterId)
-      .single()
+      .single();
 
     if (finalFetchError) {
-      throw finalFetchError
+      throw finalFetchError;
     }
 
-    return new Response(
-      JSON.stringify({
+    return createJsonResponse(
+      {
         success: true,
         message: `Letter status updated to ${newStatus}`,
         data: {
           letter: updatedLetter,
           previousStatus: currentLetter.status,
-          newStatus: newStatus
-        }
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    )
-
-  } catch (error) {
-    console.error('Error updating letter status:', error)
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
-    )
+          newStatus: newStatus,
+        },
+      },
+      200
+    );
+  } catch (error: unknown) {
+    console.error('Error updating letter status:', error);
+    return createErrorResponse(error);
   }
-})
+});

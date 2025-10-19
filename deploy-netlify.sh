@@ -20,7 +20,7 @@ fi
 # Ensure build exists
 if [ ! -d dist ]; then
   echo "Building project..." >&2
-  npm run build
+  pnpm build
 fi
 
 # Check if site already exists (Netlify API)
