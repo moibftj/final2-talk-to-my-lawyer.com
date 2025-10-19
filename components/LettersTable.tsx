@@ -34,12 +34,14 @@ import {
   Clock,
   CheckCircle,
   XCircle,
+  Download,
 } from 'lucide-react';
 import { ShimmerButton } from './magicui/shimmer-button';
 import type { LetterRequest } from '../types';
 import { STATUS_STYLES, getTemplateLabel, IconSpinner } from '../constants';
 import { StatusTimelineCompact } from './StatusTimeline';
 import { PreviewModal } from './PreviewModal';
+import { generateLetterPDF, isLetterReadyForDownload } from '../services/pdfService';
 
 interface LettersTableProps {
   letters: LetterRequest[];
@@ -286,6 +288,27 @@ export function LettersTable({
                   {visibleColumns.includes('Actions') && (
                     <TableCell>
                       <div className='flex items-center gap-2'>
+                        {isLetterReadyForDownload(letter) && (
+                          <TooltipProvider>
+                            <TooltipEnhanced>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant='ghost'
+                                  size='sm'
+                                  onClick={() => generateLetterPDF(letter)}
+                                  disabled={isDeletingId === letter.id}
+                                  className='h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                                >
+                                  <Download className='h-4 w-4' />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Download PDF</p>
+                              </TooltipContent>
+                            </TooltipEnhanced>
+                          </TooltipProvider>
+                        )}
+
                         {(letter.status === 'approved' ||
                           letter.status === 'completed') &&
                           letter.aiGeneratedContent && (
@@ -303,7 +326,7 @@ export function LettersTable({
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>Preview & Download</p>
+                                  <p>Preview Letter</p>
                                 </TooltipContent>
                               </TooltipEnhanced>
                             </TooltipProvider>

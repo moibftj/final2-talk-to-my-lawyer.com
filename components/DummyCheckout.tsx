@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { validateDiscountCode } from '../services/discountService';
 import {
   createDummyCheckoutSession,
+  processDummyPayment,
   SUBSCRIPTION_PLANS,
   getPlanById,
   formatPrice,
@@ -14,11 +15,12 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { supabase } from '../services/supabase';
 
-export interface SubscriptionFormProps {
+export interface DummyCheckoutProps {
   onSubscribe?: (planId: string, discountCode?: string) => Promise<void>;
+  onComplete?: (transactionDetails: any) => void;
 }
 
-function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
+export function DummyCheckout({ onSubscribe, onComplete }: DummyCheckoutProps) {
   const { user } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [discountCode, setDiscountCode] = useState('');
@@ -79,6 +81,13 @@ function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
       // Validate dummy configuration
       validateDummyConfig();
 
+      // Create dummy checkout session
+      const session = await createDummyCheckoutSession(
+        selectedPlan.id,
+        user.id,
+        discountCode || undefined
+      );
+
       // Show payment modal
       setShowPaymentModal(true);
 
@@ -103,83 +112,80 @@ function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
     setPaymentStatus('processing');
 
     try {
-      // Create dummy checkout session
+      // Create session first
       const session = await createDummyCheckoutSession(
         selectedPlan.id,
         user.id,
         discountCode || undefined
       );
 
-      // Create subscription record in database
-      const { data: subscription, error: subscriptionError } = await supabase
-        .from('subscriptions')
-        .insert({
-          user_id: user.id,
-          plan_id: selectedPlan.id,
-          status: 'active',
-          current_period_start: new Date().toISOString(),
-          current_period_end: new Date(
-            Date.now() + (selectedPlan.period === 'month' ? 30 : 365) * 24 * 60 * 60 * 1000
-          ).toISOString(),
-          stripe_subscription_id: session.id, // Use session ID as subscription ID
-          discount_code: discountCode || null,
-          price_amount: parseFloat(finalPrice) * 100, // Convert to cents
-          created_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+      // Process dummy payment
+      const paymentResult = await processDummyPayment(session.id, 'card');
 
-      if (subscriptionError) {
-        throw new Error('Failed to create subscription');
-      }
+      if (paymentResult.success) {
+        setPaymentStatus('success');
 
-      // Create commission record if discount code was used
-      if (discountCode) {
-        try {
-          const { data: discountData } = await supabase
-            .from('discount_codes')
-            .select('employee_id')
-            .eq('code', discountCode.toUpperCase())
-            .single();
+        // Create subscription record in database
+        await supabase
+          .from('subscriptions')
+          .insert({
+            user_id: user.id,
+            plan_id: selectedPlan.id,
+            status: 'active',
+            current_period_start: new Date().toISOString(),
+            current_period_end: new Date(
+              Date.now() + (selectedPlan.period === 'month' ? 30 : 365) * 24 * 60 * 60 * 1000
+            ).toISOString(),
+            stripe_subscription_id: paymentResult.transactionId, // Use transaction ID as subscription ID
+            discount_code: discountCode || null,
+            created_at: new Date().toISOString(),
+          });
 
-          if (discountData?.employee_id) {
-            await supabase
-              .from('commissions')
-              .insert({
-                employee_id: discountData.employee_id,
-                user_id: user.id,
-                subscription_id: subscription.id,
-                plan_id: selectedPlan.id,
-                commission_amount: selectedPlan.price * 0.1 * 100, // 10% commission in cents
-                discount_code: discountCode,
-                status: 'paid',
-                created_at: new Date().toISOString(),
-              });
-
-            // Update discount code usage
-            await supabase
+        // Create commission record if discount code was used
+        if (discountCode) {
+          try {
+            const { data: discountData } = await supabase
               .from('discount_codes')
-              .update({ usage_count: supabase.rpc('increment', { amount: 1 }) })
-              .eq('code', discountCode.toUpperCase());
+              .select('employee_id')
+              .eq('code', discountCode.toUpperCase())
+              .single();
+
+            if (discountData?.employee_id) {
+              await supabase
+                .from('commissions')
+                .insert({
+                  employee_id: discountData.employee_id,
+                  user_id: user.id,
+                  subscription_id: paymentResult.transactionId,
+                  plan_id: selectedPlan.id,
+                  commission_amount: selectedPlan.price * 0.1, // 10% commission
+                  discount_code: discountCode,
+                  status: 'paid',
+                  created_at: new Date().toISOString(),
+                });
+
+              // Update discount code usage
+              await supabase
+                .from('discount_codes')
+                .update({ usage_count: supabase.rpc('increment', { amount: 1 }) })
+                .eq('code', discountCode.toUpperCase());
+            }
+          } catch (commissionError) {
+            console.error('Error creating commission record:', commissionError);
           }
-        } catch (commissionError) {
-          console.error('Error creating commission record:', commissionError);
         }
+
+        // Call completion callback
+        if (onComplete) {
+          onComplete(paymentResult);
+        }
+
+        // Close modal after success
+        setTimeout(() => {
+          setShowPaymentModal(false);
+          setPaymentStatus('idle');
+        }, 3000);
       }
-
-      setPaymentStatus('success');
-
-      // Call completion callback
-      if (onSubscribe) {
-        await onSubscribe(selectedPlan.id, discountCode);
-      }
-
-      // Close modal after success
-      setTimeout(() => {
-        setShowPaymentModal(false);
-        setPaymentStatus('idle');
-      }, 3000);
-
     } catch (error) {
       console.error('Payment processing error:', error);
       setPaymentStatus('error');
@@ -438,5 +444,4 @@ function SubscriptionForm({ onSubscribe }: SubscriptionFormProps) {
   );
 }
 
-export { SubscriptionForm };
-export default SubscriptionForm;
+export default DummyCheckout;

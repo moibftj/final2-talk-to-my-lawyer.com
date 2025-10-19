@@ -6,6 +6,7 @@ import {
   createJsonResponse,
   createErrorResponse,
 } from '../../utils/cors.ts';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 interface LetterRequest {
   senderName: string;
@@ -33,26 +34,25 @@ interface RequestBody {
 interface Config {
   supabaseUrl: string;
   supabaseServiceKey: string;
-  openAiApiKey: string;
+  geminiApiKey: string;
 }
 
-const DEFAULT_USER_ID = 'adb39d17-16f5-44c7-968a-533fad7540c6';
 
 // Configuration validation
 function getConfig(): Config {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  const openAiApiKey = Deno.env.get('OPENAI_API_KEY');
+  const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 
   if (!supabaseUrl || !supabaseServiceKey) {
     throw new Error('Missing required Supabase configuration');
   }
 
-  if (!openAiApiKey) {
-    throw new Error('OPENAI_API_KEY environment variable is not set');
+  if (!geminiApiKey) {
+    throw new Error('GEMINI_API_KEY environment variable is not set');
   }
 
-  return { supabaseUrl, supabaseServiceKey, openAiApiKey };
+  return { supabaseUrl, supabaseServiceKey, geminiApiKey };
 }
 
 // Create a new letter in the database
@@ -114,6 +114,26 @@ async function updateLetterStatus(
     letter_id_param: letterId,
     new_status: 'under_review',
     message_param: 'Letter is under attorney review',
+  });
+}
+
+// Update letter to generating status
+async function updateLetterToGenerating(
+  supabase: SupabaseClient,
+  letterId: string
+): Promise<void> {
+  await supabase
+    .from('letters')
+    .update({
+      status: 'generating',
+      timeline_status: 'generating',
+    })
+    .eq('id', letterId);
+
+  await supabase.rpc('update_letter_timeline', {
+    letter_id_param: letterId,
+    new_status: 'generating',
+    message_param: 'AI is generating your letter draft',
   });
 }
 
@@ -194,43 +214,19 @@ Maintain a ${tone || 'formal'} tone throughout.
     `;
 }
 
-// Call OpenAI API to generate letter draft
-async function generateAIDraft(
-  prompt: string,
-  openAiApiKey: string
-): Promise<string> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${openAiApiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
+// Call Gemini AI API to generate letter draft
+async function generateAIDraft(prompt: string, geminiApiKey: string): Promise<string> {
+  const genAI = new GoogleGenerativeAI(geminiApiKey);
+  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+  const result = await model.generateContent({
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: {
       temperature: 0.4,
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are OpenAI Codex assisting legal professionals by drafting polished, accurate, and compliant correspondence.',
-        },
-        { role: 'user', content: prompt },
-      ],
-    }),
+      maxOutputTokens: 2048,
+    },
   });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  const aiDraft = data.choices?.[0]?.message?.content?.trim();
-
-  if (!aiDraft) {
-    throw new Error('Failed to generate AI draft');
-  }
-
-  return aiDraft;
+  const response = await result.response;
+  return response.text();
 }
 
 // Validate request body
@@ -241,13 +237,19 @@ function validateRequestBody(requestBody: RequestBody): void {
 }
 
 Deno.serve(async (req: Request) => {
+  const origin = req.headers.get('origin');
+
   if (req.method === 'OPTIONS') {
-    return createCorsResponse();
+    return createCorsResponse(origin);
   }
 
   try {
     // SECURITY: Require user authentication
-    const { user: _user, profile: _profile } = await getUserContext(req);
+    const { user: authUser } = await getUserContext(req);
+
+    if (!authUser || !authUser.id) {
+      throw new Error('User authentication required');
+    }
 
     // Get configuration
     const config = getConfig();
@@ -263,7 +265,9 @@ Deno.serve(async (req: Request) => {
 
     // Extract request parameters
     const { letterRequest, userId, letterId } = requestBody;
-    const effectiveUserId = userId || DEFAULT_USER_ID;
+
+    // Use the authenticated user's ID, or the provided userId if it matches the authenticated user
+    const effectiveUserId = userId || authUser.id;
 
     // Create or update letter
     let currentLetterId = letterId;
@@ -278,9 +282,12 @@ Deno.serve(async (req: Request) => {
       await updateLetterStatus(supabase, letterId);
     }
 
+    // Update letter to generating status
+    await updateLetterToGenerating(supabase, currentLetterId!);
+
     // Generate AI draft
     const prompt = generatePrompt(requestBody);
-    const aiDraft = await generateAIDraft(prompt, config.openAiApiKey);
+    const aiDraft = await generateAIDraft(prompt, config.geminiApiKey);
 
     // Update letter with AI draft
     await updateLetterWithDraft(supabase, currentLetterId!, aiDraft);
@@ -290,9 +297,9 @@ Deno.serve(async (req: Request) => {
       message: 'Letter draft generated successfully',
       letterId: currentLetterId,
       aiDraft,
-    });
+    }, 200, origin || undefined);
   } catch (error: unknown) {
     console.error('Error generating draft:', error);
-    return createErrorResponse(error);
+    return createErrorResponse(error, 500, origin || undefined);
   }
 });
