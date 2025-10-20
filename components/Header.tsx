@@ -30,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   setUserDashboardView,
   onBackToLanding,
 }) => {
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -56,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const navigationItems = user && user.role === 'user' && setUserDashboardView ? [
+  const navigationItems = user && profile?.role === 'user' && setUserDashboardView ? [
     {
       id: 'dashboard',
       label: 'My Letters',
@@ -147,10 +147,10 @@ export const Header: React.FC<HeaderProps> = ({
                     </p>
                     <div className={cn(
                       'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
-                      getRoleBadgeColor(user.role)
+                      getRoleBadgeColor(profile?.role || 'user')
                     )}>
-                      {React.createElement(getRoleIcon(user.role), { className: 'w-3 h-3 mr-1' })}
-                      {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                      {React.createElement(getRoleIcon(profile?.role || 'user'), { className: 'w-3 h-3 mr-1' })}
+                      {(profile?.role || 'user').charAt(0).toUpperCase() + (profile?.role || 'user').slice(1)}
                     </div>
                   </div>
                 </motion.button>
@@ -178,10 +178,10 @@ export const Header: React.FC<HeaderProps> = ({
                             </p>
                             <div className={cn(
                               'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border mt-1',
-                              getRoleBadgeColor(user.role)
+                              getRoleBadgeColor(profile?.role || 'user')
                             )}>
-                              {React.createElement(getRoleIcon(user.role), { className: 'w-3 h-3 mr-1' })}
-                              {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                              {React.createElement(getRoleIcon(profile?.role || 'user'), { className: 'w-3 h-3 mr-1' })}
+                              {(profile?.role || 'user').charAt(0).toUpperCase() + (profile?.role || 'user').slice(1)}
                             </div>
                           </div>
                         </div>
